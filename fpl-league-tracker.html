@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FPL Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #0a1410;
+  --bg-elev: #0f1c16;
+  --bg-elev-2: #142720;
+  --border: #1f362c;
+  --border-soft: #182b23;
+  --text: #eef4ee;
+  --text-dim: #93a89c;
+  --text-faint: #5d7267;
+  --lime: #c6ff3d;
+  --lime-dim: #8fb82b;
+  --gold: #e8b94f;
+  --red: #ff6b5c;
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body);
+  background-image:
+    linear-gradient(180deg, rgba(198,255,61,0.04) 0%, transparent 12%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 64px);
+  min-height: 100vh; padding: 28px 16px 60px;
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+
+.eyebrow {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--lime); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.eyebrow::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--lime);
+  box-shadow: 0 0 8px var(--lime); animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: 0.01em;
+  margin: 0 0 4px; text-transform: uppercase;
+}
+.subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 20px; }
+.subtitle span { color: var(--text); font-weight: 600; }
+
+.sync-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 14px; margin-bottom: 18px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+}
+.sync-bar.ok { border-color: var(--lime-dim); }
+.sync-bar.error { border-color: var(--red); }
+.sync-bar.syncing { border-color: var(--gold); }
+.sync-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  font-family: var(--font-mono); font-size: 11px; padding: 5px 10px; border-radius: 3px; cursor: pointer;
+}
+.sync-btn:hover { border-color: var(--lime); color: var(--lime); }
+.sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Tabs ---- */
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: none; border: none; color: var(--text-faint);
+  font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 10px 16px; cursor: pointer; position: relative; top: 1px;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: var(--lime); border-bottom-color: var(--lime); }
+.tab-btn:hover:not(.active) { color: var(--text-dim); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.scoreboard {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px;
+  padding: 22px 24px; margin-bottom: 20px; position: relative; overflow: hidden;
+}
+.scoreboard::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--lime));
+}
+.scoreboard-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.leader-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 6px;
+}
+.leader-name { font-family: var(--font-display); font-size: 24px; font-weight: 600; text-transform: uppercase; line-height: 1.1; }
+.leader-manager { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.leader-pts { font-family: var(--font-mono); font-size: 46px; font-weight: 700; color: var(--lime); line-height: 1; letter-spacing: -0.02em; }
+.leader-pts-label {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-align: right;
+  letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
+}
+
+.section-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-faint); margin: 28px 0 10px; display: flex; justify-content: space-between; align-items: center;
+}
+
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-faint); padding: 0 10px 8px; font-weight: 500;
+}
+thead th.num { text-align: right; }
+tbody tr { background: var(--bg-elev); border: 1px solid var(--border-soft); }
+tbody tr.me {
+  background: linear-gradient(90deg, rgba(198,255,61,0.10), rgba(198,255,61,0.02));
+  border: 1px solid var(--lime-dim);
+}
+tbody td { padding: 12px 10px; font-size: 14px; border-top: 1px solid var(--border-soft); vertical-align: top; }
+tbody tr:first-child td { border-top: none; }
+td.rank { font-family: var(--font-mono); font-weight: 700; color: var(--text-dim); width: 34px; }
+tr.me td.rank { color: var(--lime); }
+td.team { font-weight: 600; }
+td.manager { color: var(--text-dim); font-size: 12px; display: block; font-weight: 400; margin-top: 2px; }
+td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+td.total { font-weight: 700; }
+.move { font-family: var(--font-mono); font-size: 11px; margin-left: 6px; }
+.move.up { color: var(--lime); }
+.move.down { color: var(--red); }
+.move.same { color: var(--text-faint); }
+
+.chart-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 18px; margin-top: 10px; }
+canvas { width: 100% !important; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text-dim);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.empty-note { font-size: 13px; color: var(--text-faint); text-align: center; padding: 30px 10px; }
+
+.chip-pill {
+  display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em;
+  padding: 3px 8px; border-radius: 3px; margin: 0 5px 5px 0; border: 1px solid; white-space: nowrap;
+}
+.chip-wildcard { color: var(--lime); border-color: var(--lime-dim); background: rgba(198,255,61,0.08); }
+.chip-bboost   { color: var(--gold); border-color: var(--gold); background: rgba(232,185,79,0.08); }
+.chip-3xc      { color: #7fd4ff; border-color: #3d6f85; background: rgba(127,212,255,0.08); }
+.chip-freehit  { color: #ff8fb0; border-color: #85405a; background: rgba(255,143,176,0.08); }
+.chip-none { color: var(--text-faint); font-family: var(--font-mono); font-size: 12px; }
+
+.add-panel {
+  margin-top: 28px; background: var(--bg-elev); border: 1px dashed var(--border); border-radius: 4px; padding: 18px;
+}
+.add-panel-head { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+.add-panel-title { font-family: var(--font-display); font-size: 15px; text-transform: uppercase; letter-spacing: 0.02em; }
+.add-panel-sub { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+.chev { color: var(--text-faint); font-family: var(--font-mono); transition: transform 0.2s; }
+.add-panel.open .chev { transform: rotate(90deg); }
+.add-panel-body { display: none; margin-top: 16px; }
+.add-panel.open .add-panel-body { display: block; }
+
+label {
+  display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+  font-family: var(--font-mono); letter-spacing: 0.04em;
+}
+input[type=number] {
+  width: 90px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-mono); padding: 8px 10px; border-radius: 3px; font-size: 14px; margin-bottom: 14px;
+  margin-right: 10px;
+}
+select {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 9px 10px; border-radius: 3px; font-size: 14px; margin-bottom: 14px;
+}
+textarea {
+  width: 100%; min-height: 110px; background: var(--bg-elev-2); border: 1px solid var(--border);
+  color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; padding: 10px; border-radius: 3px;
+  resize: vertical; margin-bottom: 14px;
+}
+textarea::placeholder { color: var(--text-faint); }
+button {
+  background: var(--lime); color: #0a1410; border: none; font-family: var(--font-body); font-weight: 700;
+  font-size: 13px; padding: 11px 20px; border-radius: 3px; cursor: pointer; letter-spacing: 0.01em;
+}
+button:hover { background: #d4ff66; }
+button:disabled { background: var(--border); color: var(--text-faint); cursor: not-allowed; }
+.msg { font-size: 12px; margin-top: 10px; font-family: var(--font-mono); }
+.msg.err { color: var(--red); }
+.msg.ok { color: var(--lime); }
+
+.snap-list { margin-top: 16px; }
+.snap-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px;
+  background: var(--bg-elev-2); border: 1px solid var(--border); padding: 5px 9px; border-radius: 3px;
+  margin: 0 6px 6px 0; color: var(--text-dim);
+}
+.snap-chip button.del {
+  background: none; border: none; color: var(--text-faint); padding: 0; font-size: 13px; line-height: 1; cursor: pointer;
+}
+.snap-chip button.del:hover { color: var(--red); }
+
+.field-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+
+.rank-stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.rank-stat {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; flex: 1; min-width: 130px;
+}
+.rank-stat-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+.rank-stat-val { font-family: var(--font-mono); font-size: 28px; font-weight: 700; margin-top: 6px; }
+.rank-stat-val.gold { color: var(--gold); }
+.rank-stat-val.lime { color: var(--lime); }
+.rank-stat-delta { font-family: var(--font-mono); font-size: 12px; margin-top: 4px; }
+.rank-stat-delta.up { color: var(--lime); }
+.rank-stat-delta.down { color: var(--red); }
+.rank-stat-delta.same { color: var(--text-faint); }
+
+.footer-note { text-align: center; color: var(--text-faint); font-size: 11px; margin-top: 30px; font-family: var(--font-mono); }
+
+/* ---- FPL Info tab ---- */
+.countdown-row { display: flex; gap: 18px; margin-top: 6px; }
+.countdown-unit { text-align: center; }
+.countdown-val {
+  font-family: var(--font-mono); font-size: 34px; font-weight: 700; color: var(--lime); line-height: 1;
+}
+.countdown-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+.fdr-scroll { overflow-x: auto; }
+.fdr-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.fdr-table th {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--border);
+}
+.fdr-table th:first-child { text-align: left; }
+.fdr-table td { padding: 4px; text-align: center; }
+.fdr-table td.team-name {
+  text-align: left; font-family: var(--font-body); font-weight: 600; font-size: 13px; padding: 4px 10px;
+  white-space: nowrap;
+}
+.fdr-cell {
+  display: inline-block; width: 100%; min-width: 54px; padding: 6px 4px; border-radius: 3px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+}
+.fdr-1 { background: #1c4d2e; color: #b8f5c8; }
+.fdr-2 { background: #2c5d2e; color: #d3f5c8; }
+.fdr-3 { background: #4a4a2a; color: #f0e8b8; }
+.fdr-4 { background: #5d3220; color: #f5c8b8; }
+.fdr-5 { background: #5d1f1f; color: #f5b8b8; }
+
+.price-row, .injury-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 10px 12px; margin-bottom: 6px; border-radius: 3px;
+}
+.price-name, .injury-name { font-weight: 600; font-size: 13px; }
+.price-meta, .injury-meta { color: var(--text-dim); font-size: 11px; margin-top: 2px; font-family: var(--font-mono); }
+.price-change { font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+.price-change.up { color: var(--lime); }
+.price-change.down { color: var(--red); }
+.injury-status {
+  font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
+  letter-spacing: 0.05em; white-space: nowrap; margin-left: 10px;
+}
+.injury-status.chance-high { background: rgba(232,185,79,0.15); color: var(--gold); border: 1px solid var(--gold); }
+.injury-status.chance-mid { background: rgba(255,107,92,0.12); color: #ff9a7a; border: 1px solid #ff9a7a; }
+.injury-status.chance-low { background: rgba(255,107,92,0.18); color: var(--red); border: 1px solid var(--red); }
+.injury-news { font-size: 12px; color: var(--text-dim); margin-top: 4px; max-width: 420px; }
+.injury-left { flex: 1; min-width: 0; }
+.scroll-note { font-size: 10px; color: var(--text-faint); font-family: var(--font-mono); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Live-fed tracker</div>
+  <h1>FPL Tracker</h1>
+  <div class="subtitle">Team <span>BYFARTHEGREATESTEAM</span> · 2026/27</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="league">Almost Champions</button>
+    <button class="tab-btn" data-tab="cyprus">Cyprus</button>
+    <button class="tab-btn" data-tab="fplharry">FPL Harry</button>
+    <button class="tab-btn" data-tab="info">FPL Info</button>
+  </div>
+
+  <div id="syncBar" class="sync-bar">
+    <span id="syncStatusText">Not synced yet</span>
+    <button id="syncNowBtn" class="sync-btn">↻ Sync now</button>
+  </div>
+
+  <!-- ================= ALMOST CHAMPIONS TAB ================= -->
+  <div class="tab-panel active" id="tab-league">
+
+    <div id="scoreboard" class="scoreboard" style="display:none">
+      <div class="scoreboard-row">
+        <div>
+          <div class="leader-label">Leading</div>
+          <div class="leader-name" id="leaderName">—</div>
+          <div class="leader-manager" id="leaderManager">—</div>
+        </div>
+        <div>
+          <div class="leader-pts" id="leaderPts">—</div>
+          <div class="leader-pts-label">Total pts</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label"><span>Standings</span><span id="gwLabel"></span></div>
+    <div id="tableWrap"></div>
+
+    <div class="section-label">Points over time</div>
+    <div class="chart-card">
+      <canvas id="chart" height="220"></canvas>
+      <div class="legend" id="legend"></div>
+      <div class="empty-note" id="chartEmpty" style="display:none">Add a second gameweek snapshot to see the trend line.</div>
+    </div>
+
+    <div class="section-label">Chips used</div>
+    <div id="chipsWrap"></div>
+
+  </div>
+
+  <!-- ================= CYPRUS TAB ================= -->
+  <div class="tab-panel" id="tab-cyprus">
+
+    <div class="section-label">Your position — Cyprus overall league</div>
+    <div class="rank-stat-row" id="cyprusStats">
+      <div class="empty-note">No snapshots yet — add your first one below.</div>
+    </div>
+
+    <div class="section-label"><span>Nearby standings</span><span id="cyContextLabel"></span></div>
+    <div id="cyContextWrap"></div>
+    <div class="section-label">Rank &amp; points over time</div>
+    <div class="chart-card">
+      <canvas id="cyprusChart" height="220"></canvas>
+      <div class="empty-note" id="cyprusChartEmpty" style="display:none">Add a second gameweek snapshot to see the trend.</div>
+    </div>
+
+  </div>
+
+  <!-- ================= FPL HARRY TAB ================= -->
+  <div class="tab-panel" id="tab-fplharry">
+
+    <div class="section-label">Your position — www.youtube.com/@FPLHarry league</div>
+    <div class="rank-stat-row" id="fhStats">
+      <div class="empty-note">No snapshots yet — add your first one below.</div>
+    </div>
+
+    <div class="section-label"><span>Nearby standings</span><span id="fhContextLabel"></span></div>
+    <div id="fhContextWrap"></div>
+    <div class="section-label">Rank &amp; points over time</div>
+    <div class="chart-card">
+      <canvas id="fhChart" height="220"></canvas>
+      <div class="empty-note" id="fhChartEmpty" style="display:none">Add a second gameweek snapshot to see the trend.</div>
+    </div>
+
+  </div>
+
+  <!-- ================= FPL INFO TAB ================= -->
+  <div class="tab-panel" id="tab-info">
+
+    <div class="section-label">Deadline</div>
+    <div class="scoreboard" id="deadlineCard" style="display:none">
+      <div class="leader-label" id="deadlineGwLabel">—</div>
+      <div class="countdown-row" id="countdownRow"></div>
+      <div class="leader-manager" id="deadlineDateLabel" style="margin-top:10px"></div>
+    </div>
+
+    <div class="section-label">Fixture difficulty — next 5 gameweeks</div>
+    <div id="fdrWrap"></div>
+
+    <div class="section-label">Price changes today</div>
+    <div id="priceWrap"></div>
+
+    <div class="section-label">Injuries &amp; fitness</div>
+    <div id="injuryWrap"></div>
+
+  </div>
+
+  <div class="footer-note">Data persists in this artifact — paste new snapshots each gameweek to keep it current.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const STORAGE_KEY = 'league-1209674-snapshots';
+const CHIPS_KEY = 'league-1209674-chips';
+const CYPRUS_KEY = 'league-76-rank-snapshots';
+const FPLHARRY_KEY = 'league-7735-rank-snapshots';
+const CYPRUS_CONTEXT_KEY = 'league-76-context';
+const FH_CONTEXT_KEY = 'league-7735-context';
+const FPL_INFO_KEY = 'fpl-info';
+const MY_ENTRY = 5580812;
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMDnOjV441p8yKzc_yAs4u35-4TQYA72CF85dnGoOx8qZq9yM2vUhizb9AhBkl6T50/exec';
+let lastSyncedAt = null;
+let syncStatus = 'idle'; // idle | syncing | ok | error
+
+const PALETTE = ['#c6ff3d', '#e8b94f', '#7fd4ff', '#ff8fb0', '#ff6b5c', '#b48cff', '#5ee6c4', '#ffd166'];
+
+const CHIP_LABELS = {
+  wildcard: { label: 'Wildcard', cls: 'chip-wildcard' },
+  bboost:   { label: 'Bench Boost', cls: 'chip-bboost' },
+  '3xc':    { label: 'Triple Captain', cls: 'chip-3xc' },
+  freehit:  { label: 'Free Hit', cls: 'chip-freehit' }
+};
+
+/* ---- Storage abstraction ----
+   Uses Claude's window.storage when this runs inside the Claude artifact
+   panel (persists to your account). Falls back to the browser's own
+   localStorage when opened as a standalone HTML file (persists to this
+   browser/device only). Either way, data survives closing the tab. */
+const CLOUD_STORAGE_AVAILABLE = (typeof window !== 'undefined' && !!window.storage);
+let storageModeNoted = false;
+
+async function storageGet(key) {
+  if (CLOUD_STORAGE_AVAILABLE) {
+    try {
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    } catch (e) { return null; }
+  }
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+async function storageSet(key, value) {
+  if (CLOUD_STORAGE_AVAILABLE) {
+    try { await window.storage.set(key, value, false); return true; }
+    catch (e) { console.error('window.storage save failed', e); return false; }
+  }
+  try { localStorage.setItem(key, value); return true; }
+  catch (e) { console.error('localStorage save failed', e); return false; }
+}
+
+function noteStorageMode() {
+  if (storageModeNoted) return;
+  storageModeNoted = true;
+  const el = document.createElement('div');
+  el.className = 'footer-note';
+  el.style.marginTop = '6px';
+  el.textContent = CLOUD_STORAGE_AVAILABLE
+    ? 'Saving to your Claude-linked storage.'
+    : 'Saving to this browser\'s local storage (standalone mode) — data stays on this device/browser only.';
+  document.querySelector('.wrap').appendChild(el);
+}
+
+let snapshots = [];
+let chipsData = {};
+let cyprusSnapshots = [];
+let fhSnapshots = [];
+let cyContext = null;
+let fhContext = null;
+let fplInfo = null;
+let countdownInterval = null;
+let chartInstance = null;
+let cyprusChartInstance = null;
+let fhChartInstance = null;
+
+const SEED_GW1 = {
+  gw: 1, savedAt: '2026-08-22T20:13:25Z',
+  results: [
+    { entry: 5580812, entry_name: 'BYFARTHEGREATESTEAM', player_name: 'christodoulos panagi', event_total: 41, total: 41 },
+    { entry: 762636,  entry_name: '¡HalaMadrid!',         player_name: 'Vasos Georgiou',          event_total: 38, total: 38 },
+    { entry: 4313858, entry_name: 'L1MASSOL',             player_name: 'Andreas Papatheodoulou',  event_total: 33, total: 33 },
+    { entry: 5151433, entry_name: 'Leventogiannides Fc',  player_name: 'Giannis Andronikides',    event_total: 32, total: 32 },
+    { entry: 5968907, entry_name: 'Kiaolos FC',           player_name: 'Mario Pintus',             event_total: 30, total: 30 },
+    { entry: 3362695, entry_name: 'DreamTeam1',           player_name: 'Savvas Evangelou',         event_total: 16, total: 16 }
+  ]
+};
+
+const SEED_CYPRUS_GW1 = { gw: 1, savedAt: '2026-08-22T23:18:00Z', rank: 785, total: 41 };
+
+async function loadSnapshots() {
+  try {
+    const val = await storageGet(STORAGE_KEY);
+    if (val) { snapshots = JSON.parse(val); return; }
+  } catch (e) {}
+  snapshots = [SEED_GW1];
+  await saveSnapshots();
+}
+async function saveSnapshots() {
+  await storageSet(STORAGE_KEY, JSON.stringify(snapshots));
+}
+
+async function loadChips() {
+  try {
+    const val = await storageGet(CHIPS_KEY);
+    if (val) { chipsData = JSON.parse(val); return; }
+  } catch (e) {}
+  chipsData = {};
+}
+async function saveChips() {
+  await storageSet(CHIPS_KEY, JSON.stringify(chipsData));
+}
+
+async function loadCyprus() {
+  try {
+    const val = await storageGet(CYPRUS_KEY);
+    if (val) { cyprusSnapshots = JSON.parse(val); return; }
+  } catch (e) {}
+  cyprusSnapshots = [SEED_CYPRUS_GW1];
+  await saveCyprus();
+}
+async function saveCyprus() {
+  await storageSet(CYPRUS_KEY, JSON.stringify(cyprusSnapshots));
+}
+
+async function loadFH() {
+  try {
+    const val = await storageGet(FPLHARRY_KEY);
+    if (val) { fhSnapshots = JSON.parse(val); return; }
+  } catch (e) {}
+  fhSnapshots = [];
+}
+async function saveFH() {
+  await storageSet(FPLHARRY_KEY, JSON.stringify(fhSnapshots));
+}
+
+async function loadCyContext() {
+  try {
+    const val = await storageGet(CYPRUS_CONTEXT_KEY);
+    if (val) { cyContext = JSON.parse(val); return; }
+  } catch (e) {}
+  cyContext = null;
+}
+async function saveCyContext() {
+  await storageSet(CYPRUS_CONTEXT_KEY, JSON.stringify(cyContext));
+}
+
+async function loadFHContext() {
+  try {
+    const val = await storageGet(FH_CONTEXT_KEY);
+    if (val) { fhContext = JSON.parse(val); return; }
+  } catch (e) {}
+  fhContext = null;
+}
+async function saveFHContext() {
+  await storageSet(FH_CONTEXT_KEY, JSON.stringify(fhContext));
+}
+
+function renderContextTable(wrapId, labelId, context) {
+  const wrap = document.getElementById(wrapId);
+  const label = document.getElementById(labelId);
+  if (!context || !context.results || !context.results.length) {
+    wrap.innerHTML = '<div class="empty-note">Paste a standings page below to see the managers around your rank.</div>';
+    label.textContent = '';
+    return;
+  }
+  const rows = [...context.results].sort((a, b) => a.rank - b.rank);
+  label.textContent = context.savedAt ? new Date(context.savedAt).toLocaleDateString() : '';
+  let html = '<table><thead><tr><th>#</th><th>Team</th><th class="num">GW</th><th class="num">Total</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const isMe = r.entry === MY_ENTRY;
+    html += `<tr class="${isMe ? 'me' : ''}">
+      <td class="rank">${r.rank}</td>
+      <td class="team">${escapeHtml(r.entry_name)}<span class="manager">${escapeHtml(r.player_name)}</span></td>
+      <td class="num">${r.event_total}</td>
+      <td class="num total">${r.total}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+async function loadFplInfo() {
+  const val = await storageGet(FPL_INFO_KEY);
+  if (val) { fplInfo = JSON.parse(val); return; }
+  fplInfo = null;
+}
+async function saveFplInfo() {
+  await storageSet(FPL_INFO_KEY, JSON.stringify(fplInfo));
+}
+
+function parseContextJson(raw) {
+  const parsed = JSON.parse(raw);
+  const results = parsed?.standings?.results;
+  if (!Array.isArray(results) || !results.length) throw new Error('no results');
+  return {
+    savedAt: new Date().toISOString(),
+    results: results.map(r => ({
+      entry: r.entry, entry_name: r.entry_name, player_name: r.player_name,
+      event_total: r.event_total, total: r.total, rank: r.rank
+    }))
+  };
+}
+
+/* ---- FPL Info tab rendering ---- */
+function renderFplInfo() {
+  if (!fplInfo) {
+    document.getElementById('fdrWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    document.getElementById('priceWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    document.getElementById('injuryWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    return;
+  }
+  renderDeadline(fplInfo.deadline);
+  renderFdr(fplInfo.fixtureDifficulty);
+  renderPriceChanges(fplInfo.priceChanges);
+  renderInjuries(fplInfo.injuries);
+}
+
+function renderDeadline(deadline) {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  const card = document.getElementById('deadlineCard');
+  if (!deadline || !deadline.deadline_time) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  document.getElementById('deadlineGwLabel').textContent = `Gameweek ${deadline.gw}`;
+  const target = new Date(deadline.deadline_time);
+  document.getElementById('deadlineDateLabel').textContent = target.toLocaleString(undefined, {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+  });
+
+  function tick() {
+    const diff = target.getTime() - Date.now();
+    const row = document.getElementById('countdownRow');
+    if (diff <= 0) {
+      row.innerHTML = '<div class="countdown-unit"><div class="countdown-val">GW LIVE</div></div>';
+      clearInterval(countdownInterval);
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    row.innerHTML = ['DAYS', 'HRS', 'MIN', 'SEC'].map((label, i) => {
+      const val = [d, h, m, s][i];
+      return `<div class="countdown-unit"><div class="countdown-val">${String(val).padStart(2, '0')}</div><div class="countdown-label">${label}</div></div>`;
+    }).join('');
+  }
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+function renderFdr(fdr) {
+  const wrap = document.getElementById('fdrWrap');
+  if (!fdr || !fdr.teams || !fdr.teams.length) { wrap.innerHTML = '<div class="empty-note">No fixture data yet.</div>'; return; }
+  const gws = fdr.gws;
+  let html = '<div class="scroll-note">Scroll → for more gameweeks</div><div class="fdr-scroll"><table class="fdr-table"><thead><tr><th>Team</th>' +
+    gws.map(gw => `<th>GW${gw}</th>`).join('') + '</tr></thead><tbody>';
+  const teamsSorted = [...fdr.teams].sort((a, b) => a.team.localeCompare(b.team));
+  teamsSorted.forEach(t => {
+    html += `<tr><td class="team-name">${escapeHtml(t.team)}</td>`;
+    gws.forEach(gw => {
+      const f = t.fixtures.find(x => x.gw === gw);
+      if (f) {
+        html += `<td><span class="fdr-cell fdr-${f.difficulty}">${escapeHtml(f.opponent)} (${f.venue})</span></td>`;
+      } else {
+        html += `<td><span class="fdr-cell" style="background:var(--bg-elev-2);color:var(--text-faint)">—</span></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function renderPriceChanges(changes) {
+  const wrap = document.getElementById('priceWrap');
+  if (!changes || !changes.length) { wrap.innerHTML = '<div class="empty-note">No confirmed price changes today.</div>'; return; }
+  wrap.innerHTML = changes.map(p => {
+    const isUp = p.change > 0;
+    return `<div class="price-row">
+      <div>
+        <div class="price-name">${escapeHtml(p.name)}</div>
+        <div class="price-meta">${escapeHtml(p.team)} · ${p.position} · now £${p.nowCost.toFixed(1)}m</div>
+      </div>
+      <div class="price-change ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} £${Math.abs(p.change).toFixed(1)}m</div>
+    </div>`;
+  }).join('');
+}
+
+function renderInjuries(injuries) {
+  const wrap = document.getElementById('injuryWrap');
+  if (!injuries || !injuries.length) { wrap.innerHTML = '<div class="empty-note">No injury news right now.</div>'; return; }
+  wrap.innerHTML = injuries.map(p => {
+    let cls = 'chance-high', label = p.chance != null ? p.chance + '%' : p.status.toUpperCase();
+    if (p.chance != null) {
+      if (p.chance <= 25) cls = 'chance-low';
+      else if (p.chance <= 50) cls = 'chance-mid';
+      else cls = 'chance-high';
+    } else if (p.status === 'i' || p.status === 's' || p.status === 'u') {
+      cls = 'chance-low'; label = p.status === 'i' ? 'INJURED' : p.status === 's' ? 'SUSPENDED' : 'OUT';
+    }
+    return `<div class="injury-row">
+      <div class="injury-left">
+        <div class="injury-name">${escapeHtml(p.name)} <span class="injury-meta">${escapeHtml(p.team)} · ${p.position}</span></div>
+        ${p.news ? `<div class="injury-news">${escapeHtml(p.news)}</div>` : ''}
+      </div>
+      <span class="injury-status ${cls}">${label}</span>
+    </div>`;
+  }).join('');
+}
+
+function currentStandings() {
+  if (!snapshots.length) return [];
+  const latest = snapshots[snapshots.length - 1];
+  const prev = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
+  const rows = [...latest.results].sort((a, b) => b.total - a.total);
+  return rows.map((r, i) => {
+    const rank = i + 1;
+    let prevRank = null;
+    if (prev) {
+      const prevSorted = [...prev.results].sort((a, b) => b.total - a.total);
+      const idx = prevSorted.findIndex(p => p.entry === r.entry);
+      if (idx !== -1) prevRank = idx + 1;
+    }
+    return { ...r, rank, prevRank };
+  });
+}
+
+function render() {
+  const rows = currentStandings();
+  const latest = snapshots[snapshots.length - 1];
+  document.getElementById('gwLabel').textContent = latest ? `Through GW${latest.gw}` : '';
+
+  if (rows.length) {
+    document.getElementById('scoreboard').style.display = 'block';
+    const leader = rows[0];
+    document.getElementById('leaderName').textContent = leader.entry_name;
+    document.getElementById('leaderManager').textContent = leader.player_name;
+    document.getElementById('leaderPts').textContent = leader.total;
+  }
+
+  const tableWrap = document.getElementById('tableWrap');
+  if (!rows.length) {
+    tableWrap.innerHTML = '<div class="empty-note">No snapshots yet — paste your first one below.</div>';
+  } else {
+    let html = '<table><thead><tr><th>#</th><th>Team</th><th class="num">GW</th><th class="num">Total</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      const isMe = r.entry === MY_ENTRY;
+      let moveHtml = '<span class="move same">–</span>';
+      if (r.prevRank != null) {
+        if (r.prevRank > r.rank) moveHtml = `<span class="move up">▲${r.prevRank - r.rank}</span>`;
+        else if (r.prevRank < r.rank) moveHtml = `<span class="move down">▼${r.rank - r.prevRank}</span>`;
+      }
+      html += `<tr class="${isMe ? 'me' : ''}">
+        <td class="rank">${r.rank}</td>
+        <td class="team">${escapeHtml(r.entry_name)}${moveHtml}<span class="manager">${escapeHtml(r.player_name)}</span></td>
+        <td class="num">${r.event_total}</td>
+        <td class="num total">${r.total}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    tableWrap.innerHTML = html;
+  }
+
+  renderChart();
+  renderChips(rows);
+}
+
+function renderChart() {
+  const canvas = document.getElementById('chart');
+  const emptyNote = document.getElementById('chartEmpty');
+  const legend = document.getElementById('legend');
+  if (snapshots.length < 2) {
+    canvas.style.display = 'none'; emptyNote.style.display = 'block'; legend.innerHTML = ''; return;
+  }
+  canvas.style.display = 'block'; emptyNote.style.display = 'none';
+  const labels = snapshots.map(s => `GW${s.gw}`);
+  const entryMap = {};
+  snapshots.forEach(s => s.results.forEach(r => { entryMap[r.entry] = r.entry_name; }));
+  const datasets = Object.keys(entryMap).map((entry, i) => {
+    const data = snapshots.map(s => {
+      const r = s.results.find(x => x.entry == entry);
+      return r ? r.total : null;
+    });
+    const isMe = Number(entry) === MY_ENTRY;
+    const color = isMe ? '#c6ff3d' : PALETTE[i % PALETTE.length];
+    return {
+      label: entryMap[entry], data, borderColor: color, backgroundColor: color,
+      borderWidth: isMe ? 3 : 1.5, pointRadius: 3, pointHoverRadius: 5, tension: 0.25, spanGaps: true
+    };
+  });
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line', data: { labels, datasets },
+    options: {
+      responsive: true, plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } },
+        y: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } }
+      }
+    }
+  });
+  legend.innerHTML = Object.keys(entryMap).map((entry, i) => {
+    const isMe = Number(entry) === MY_ENTRY;
+    const color = isMe ? '#c6ff3d' : PALETTE[i % PALETTE.length];
+    return `<div class="legend-item"><span class="legend-dot" style="background:${color}"></span>${escapeHtml(entryMap[entry])}${isMe ? ' (you)' : ''}</div>`;
+  }).join('');
+}
+
+function renderChips(rows) {
+  const wrap = document.getElementById('chipsWrap');
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="empty-note">Add a league snapshot first, then add each manager\'s chip history below.</div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Team</th><th>Chips played</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const isMe = r.entry === MY_ENTRY;
+    const chips = chipsData[r.entry];
+    let chipsHtml;
+    if (!chips) chipsHtml = '<span class="chip-none">no data yet</span>';
+    else if (!chips.length) chipsHtml = '<span class="chip-none">none played</span>';
+    else {
+      chipsHtml = chips.slice().sort((a, b) => a.event - b.event).map(c => {
+        const meta = CHIP_LABELS[c.name] || { label: c.name, cls: 'chip-wildcard' };
+        return `<span class="chip-pill ${meta.cls}">${meta.label} · GW${c.event}</span>`;
+      }).join('');
+    }
+    html += `<tr class="${isMe ? 'me' : ''}">
+      <td class="team">${escapeHtml(r.entry_name)}<span class="manager">${escapeHtml(r.player_name)}</span></td>
+      <td>${chipsHtml}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+/* ---- Cyprus tab rendering ---- */
+function renderCyprus() {
+  const sorted = [...cyprusSnapshots].sort((a, b) => a.gw - b.gw);
+  const statsWrap = document.getElementById('cyprusStats');
+
+  if (!sorted.length) {
+    statsWrap.innerHTML = '<div class="empty-note">No snapshots yet — add your first one below.</div>';
+  } else {
+    const latest = sorted[sorted.length - 1];
+    const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
+
+    let rankDeltaHtml = '<div class="rank-stat-delta same">First snapshot</div>';
+    if (prev) {
+      const diff = prev.rank - latest.rank;
+      if (diff > 0) rankDeltaHtml = `<div class="rank-stat-delta up">▲ up ${diff.toLocaleString()} places</div>`;
+      else if (diff < 0) rankDeltaHtml = `<div class="rank-stat-delta down">▼ down ${Math.abs(diff).toLocaleString()} places</div>`;
+      else rankDeltaHtml = '<div class="rank-stat-delta same">No change</div>';
+    }
+
+    let ptsDeltaHtml = '';
+    if (prev) {
+      const diff = latest.total - prev.total;
+      ptsDeltaHtml = `<div class="rank-stat-delta ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${diff} pts this GW</div>`;
+    }
+
+    statsWrap.innerHTML = `
+      <div class="rank-stat">
+        <div class="rank-stat-label">Rank · GW${latest.gw}</div>
+        <div class="rank-stat-val gold">#${latest.rank.toLocaleString()}</div>
+        ${rankDeltaHtml}
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-label">Total points</div>
+        <div class="rank-stat-val lime">${latest.total}</div>
+        ${ptsDeltaHtml}
+      </div>
+    `;
+  }
+
+  renderCyprusChart(sorted);
+}
+
+function renderCyprusChart(sorted) {
+  const canvas = document.getElementById('cyprusChart');
+  const emptyNote = document.getElementById('cyprusChartEmpty');
+  if (sorted.length < 2) {
+    canvas.style.display = 'none'; emptyNote.style.display = 'block'; return;
+  }
+  canvas.style.display = 'block'; emptyNote.style.display = 'none';
+
+  const labels = sorted.map(s => `GW${s.gw}`);
+  if (cyprusChartInstance) cyprusChartInstance.destroy();
+  cyprusChartInstance = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Rank', data: sorted.map(s => s.rank),
+          borderColor: '#e8b94f', backgroundColor: '#e8b94f', yAxisID: 'yRank',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        },
+        {
+          type: 'line', label: 'Total points', data: sorted.map(s => s.total),
+          borderColor: '#c6ff3d', backgroundColor: '#c6ff3d', yAxisID: 'yPts',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, labels: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } },
+        yRank: {
+          position: 'left', reverse: true,
+          ticks: { color: '#e8b94f', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: '#1f362c' },
+          title: { display: true, text: 'Rank (lower = better)', color: '#e8b94f', font: { size: 10 } }
+        },
+        yPts: {
+          position: 'right',
+          ticks: { color: '#c6ff3d', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { display: false },
+          title: { display: true, text: 'Points', color: '#c6ff3d', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+/* ---- FPL Harry tab rendering ---- */
+function renderFH() {
+  const sorted = [...fhSnapshots].sort((a, b) => a.gw - b.gw);
+  const statsWrap = document.getElementById('fhStats');
+
+  if (!sorted.length) {
+    statsWrap.innerHTML = '<div class="empty-note">No snapshots yet — add your first one below.</div>';
+  } else {
+    const latest = sorted[sorted.length - 1];
+    const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
+
+    let rankDeltaHtml = '<div class="rank-stat-delta same">First snapshot</div>';
+    if (prev) {
+      const diff = prev.rank - latest.rank;
+      if (diff > 0) rankDeltaHtml = `<div class="rank-stat-delta up">▲ up ${diff.toLocaleString()} places</div>`;
+      else if (diff < 0) rankDeltaHtml = `<div class="rank-stat-delta down">▼ down ${Math.abs(diff).toLocaleString()} places</div>`;
+      else rankDeltaHtml = '<div class="rank-stat-delta same">No change</div>';
+    }
+
+    let ptsDeltaHtml = '';
+    if (prev) {
+      const diff = latest.total - prev.total;
+      ptsDeltaHtml = `<div class="rank-stat-delta ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${diff} pts this GW</div>`;
+    }
+
+    statsWrap.innerHTML = `
+      <div class="rank-stat">
+        <div class="rank-stat-label">Rank · GW${latest.gw}</div>
+        <div class="rank-stat-val gold">#${latest.rank.toLocaleString()}</div>
+        ${rankDeltaHtml}
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-label">Total points</div>
+        <div class="rank-stat-val lime">${latest.total}</div>
+        ${ptsDeltaHtml}
+      </div>
+    `;
+  }
+
+  renderFHChart(sorted);
+}
+
+function renderFHChart(sorted) {
+  const canvas = document.getElementById('fhChart');
+  const emptyNote = document.getElementById('fhChartEmpty');
+  if (sorted.length < 2) {
+    canvas.style.display = 'none'; emptyNote.style.display = 'block'; return;
+  }
+  canvas.style.display = 'block'; emptyNote.style.display = 'none';
+
+  const labels = sorted.map(s => `GW${s.gw}`);
+  if (fhChartInstance) fhChartInstance.destroy();
+  fhChartInstance = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Rank', data: sorted.map(s => s.rank),
+          borderColor: '#e8b94f', backgroundColor: '#e8b94f', yAxisID: 'yRank',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        },
+        {
+          type: 'line', label: 'Total points', data: sorted.map(s => s.total),
+          borderColor: '#c6ff3d', backgroundColor: '#c6ff3d', yAxisID: 'yPts',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, labels: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } },
+        yRank: {
+          position: 'left', reverse: true,
+          ticks: { color: '#e8b94f', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: '#1f362c' },
+          title: { display: true, text: 'Rank (lower = better)', color: '#e8b94f', font: { size: 10 } }
+        },
+        yPts: {
+          position: 'right',
+          ticks: { color: '#c6ff3d', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { display: false },
+          title: { display: true, text: 'Points', color: '#c6ff3d', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ---- Auto-sync from Apps Script ---- */
+function setSyncBar(status, text) {
+  syncStatus = status;
+  const bar = document.getElementById('syncBar');
+  const txt = document.getElementById('syncStatusText');
+  bar.className = 'sync-bar ' + status;
+  txt.textContent = text;
+}
+
+async function syncFromScript(manual) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_') !== -1) {
+    setSyncBar('error', 'No Apps Script URL configured.');
+    return;
+  }
+  setSyncBar('syncing', manual ? 'Syncing…' : 'Auto-syncing…');
+  document.getElementById('syncNowBtn').disabled = true;
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const gw = data.currentGameweek;
+
+    // Almost Champions
+    if (data.almostChampions && Array.isArray(data.almostChampions.results)) {
+      snapshots = snapshots.filter(s => s.gw !== gw);
+      snapshots.push({ gw, savedAt: data.generatedAt, results: data.almostChampions.results });
+      snapshots.sort((a, b) => a.gw - b.gw);
+      await saveSnapshots();
+    }
+
+    // Chips
+    if (data.chips) {
+      Object.keys(data.chips).forEach(entryId => {
+        if (data.chips[entryId] !== null) chipsData[entryId] = data.chips[entryId];
+      });
+      await saveChips();
+    }
+
+    // Cyprus
+    if (data.cyprus && data.cyprus.rank) {
+      cyprusSnapshots = cyprusSnapshots.filter(s => s.gw !== gw);
+      cyprusSnapshots.push({ gw, savedAt: data.generatedAt, rank: data.cyprus.rank, total: data.cyprus.total });
+      cyprusSnapshots.sort((a, b) => a.gw - b.gw);
+      await saveCyprus();
+    }
+
+    // FPL Harry
+    if (data.fplHarry && data.fplHarry.rank) {
+      fhSnapshots = fhSnapshots.filter(s => s.gw !== gw);
+      fhSnapshots.push({ gw, savedAt: data.generatedAt, rank: data.fplHarry.rank, total: data.fplHarry.total });
+      fhSnapshots.sort((a, b) => a.gw - b.gw);
+      await saveFH();
+    }
+
+    // Nearby standings context (auto-computed page based on rank)
+    if (data.cyprusContext && Array.isArray(data.cyprusContext.results)) {
+      cyContext = { savedAt: data.generatedAt, results: data.cyprusContext.results };
+      await saveCyContext();
+    }
+    if (data.fplHarryContext && Array.isArray(data.fplHarryContext.results)) {
+      fhContext = { savedAt: data.generatedAt, results: data.fplHarryContext.results };
+      await saveFHContext();
+    }
+
+    // General FPL info (deadline, injuries, price changes, fixture difficulty)
+    if (data.deadline || data.injuries || data.priceChanges || data.fixtureDifficulty) {
+      fplInfo = {
+        deadline: data.deadline || null,
+        injuries: data.injuries || [],
+        priceChanges: data.priceChanges || [],
+        fixtureDifficulty: data.fixtureDifficulty || null
+      };
+      await saveFplInfo();
+    }
+
+    lastSyncedAt = new Date();
+    render();
+    renderCyprus();
+    renderFH();
+    renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
+    renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
+    renderFplInfo();
+    setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
+  } catch (e) {
+    console.error('Sync failed', e);
+    setSyncBar('error', 'Auto-sync failed — using last saved data. Manual paste still works below.');
+  } finally {
+    document.getElementById('syncNowBtn').disabled = false;
+  }
+}
+
+/* ---- Tabs ---- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---- Add-panel toggles ---- */
+
+/* ---- League snapshot save ---- */
+/* ---- Chip history save ---- */
+/* ---- Cyprus snapshot save ---- */
+/* ---- FPL Harry snapshot save ---- */
+(async function init() {
+  await loadSnapshots();
+  await loadChips();
+  await loadCyprus();
+  await loadFH();
+  await loadCyContext();
+  await loadFHContext();
+  await loadFplInfo();
+  render();
+  renderCyprus();
+  renderFH();
+  renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
+  renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
+  renderFplInfo();
+  noteStorageMode();
+
+  document.getElementById('syncNowBtn').addEventListener('click', () => syncFromScript(true));
+
+  // Auto-sync on open, then every 5 minutes while the tab stays open
+  syncFromScript(false);
+  setInterval(() => syncFromScript(false), 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
