@@ -1,817 +1,2773 @@
-// ====== CONFIG ======
-const AC_LEAGUE_ID = 1209674;
-const CYPRUS_LEAGUE_ID = 76;
-const FPLHARRY_LEAGUE_ID = 7735;
-const MY_ENTRY_ID = 5580812;
-const AC_ENTRIES = [5580812, 762636, 4313858, 5151433, 5968907, 3362695];
-const FIXTURE_GWS_AHEAD = 5;
-const POSITIONS = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FPL Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-function doGet(e) {
-  if (e && e.parameter && e.parameter.playerId) {
-    const trend = fetchPlayerTrendOnDemand(Number(e.parameter.playerId));
-    return ContentService.createTextOutput(JSON.stringify(trend))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  const data = buildSnapshot();
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+:root {
+  --bg: #0a1410;
+  --bg-elev: #0f1c16;
+  --bg-elev-2: #142720;
+  --border: #1f362c;
+  --border-soft: #182b23;
+  --text: #eef4ee;
+  --text-dim: #93a89c;
+  --text-faint: #5d7267;
+  --lime: #c6ff3d;
+  --lime-dim: #8fb82b;
+  --gold: #e8b94f;
+  --red: #ff6b5c;
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body);
+  background-image:
+    linear-gradient(180deg, rgba(198,255,61,0.04) 0%, transparent 12%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 64px);
+  min-height: 100vh; padding: 28px 16px 60px;
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+
+.eyebrow {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--lime); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.eyebrow::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--lime);
+  box-shadow: 0 0 8px var(--lime); animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: 0.01em;
+  margin: 0 0 4px; text-transform: uppercase;
+}
+.subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 20px; }
+.subtitle span { color: var(--text); font-weight: 600; }
+
+.sync-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 14px; margin-bottom: 18px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+}
+.sync-bar.ok { border-color: var(--lime-dim); }
+.sync-bar.error { border-color: var(--red); }
+.sync-bar.syncing { border-color: var(--gold); }
+.sync-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  font-family: var(--font-mono); font-size: 11px; padding: 5px 10px; border-radius: 3px; cursor: pointer;
+}
+.sync-btn:hover { border-color: var(--lime); color: var(--lime); }
+.sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Tabs ---- */
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: none; border: none; color: var(--text-faint);
+  font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 10px 16px; cursor: pointer; position: relative; top: 1px;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: var(--lime); border-bottom-color: var(--lime); }
+.tab-btn:hover:not(.active) { color: var(--text-dim); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.scoreboard {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px;
+  padding: 22px 24px; margin-bottom: 20px; position: relative; overflow: hidden;
+}
+.scoreboard::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--lime));
+}
+.scoreboard-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.leader-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 6px;
+}
+.leader-name { font-family: var(--font-display); font-size: 24px; font-weight: 600; text-transform: uppercase; line-height: 1.1; }
+.leader-manager { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.leader-pts { font-family: var(--font-mono); font-size: 46px; font-weight: 700; color: var(--lime); line-height: 1; letter-spacing: -0.02em; }
+.leader-pts-label {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-align: right;
+  letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
 }
 
-function fetchPlayerTrendOnDemand(playerId) {
+.section-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-faint); margin: 28px 0 10px; display: flex; justify-content: space-between; align-items: center;
+}
+
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-faint); padding: 0 10px 8px; font-weight: 500;
+}
+thead th.num { text-align: right; }
+tbody tr { background: var(--bg-elev); border: 1px solid var(--border-soft); }
+tbody tr.me {
+  background: linear-gradient(90deg, rgba(198,255,61,0.10), rgba(198,255,61,0.02));
+  border: 1px solid var(--lime-dim);
+}
+tbody td { padding: 12px 10px; font-size: 14px; border-top: 1px solid var(--border-soft); vertical-align: top; }
+tbody tr:first-child td { border-top: none; }
+td.rank { font-family: var(--font-mono); font-weight: 700; color: var(--text-dim); width: 34px; }
+tr.me td.rank { color: var(--lime); }
+td.team { font-weight: 600; }
+td.manager { color: var(--text-dim); font-size: 12px; display: block; font-weight: 400; margin-top: 2px; }
+td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+td.total { font-weight: 700; }
+.move { font-family: var(--font-mono); font-size: 11px; margin-left: 6px; }
+.move.up { color: var(--lime); }
+.move.down { color: var(--red); }
+.move.same { color: var(--text-faint); }
+
+.chart-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 18px; margin-top: 10px; }
+canvas { width: 100% !important; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text-dim);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.empty-note { font-size: 13px; color: var(--text-faint); text-align: center; padding: 30px 10px; }
+
+.chip-pill {
+  display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em;
+  padding: 3px 8px; border-radius: 3px; margin: 0 5px 5px 0; border: 1px solid; white-space: nowrap;
+}
+.chip-wildcard { color: var(--lime); border-color: var(--lime-dim); background: rgba(198,255,61,0.08); }
+.chip-bboost   { color: var(--gold); border-color: var(--gold); background: rgba(232,185,79,0.08); }
+.chip-3xc      { color: #7fd4ff; border-color: #3d6f85; background: rgba(127,212,255,0.08); }
+.chip-freehit  { color: #ff8fb0; border-color: #85405a; background: rgba(255,143,176,0.08); }
+.chip-none { color: var(--text-faint); font-family: var(--font-mono); font-size: 12px; }
+
+.add-panel {
+  margin-top: 28px; background: var(--bg-elev); border: 1px dashed var(--border); border-radius: 4px; padding: 18px;
+}
+.add-panel-head { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+.add-panel-title { font-family: var(--font-display); font-size: 15px; text-transform: uppercase; letter-spacing: 0.02em; }
+.add-panel-sub { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+.chev { color: var(--text-faint); font-family: var(--font-mono); transition: transform 0.2s; }
+.add-panel.open .chev { transform: rotate(90deg); }
+.add-panel-body { display: none; margin-top: 16px; }
+.add-panel.open .add-panel-body { display: block; }
+
+label {
+  display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
+  font-family: var(--font-mono); letter-spacing: 0.04em;
+}
+input[type=number] {
+  width: 90px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-mono); padding: 8px 10px; border-radius: 3px; font-size: 14px; margin-bottom: 14px;
+  margin-right: 10px;
+}
+select {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 9px 10px; border-radius: 3px; font-size: 14px; margin-bottom: 14px;
+}
+textarea {
+  width: 100%; min-height: 110px; background: var(--bg-elev-2); border: 1px solid var(--border);
+  color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; padding: 10px; border-radius: 3px;
+  resize: vertical; margin-bottom: 14px;
+}
+textarea::placeholder { color: var(--text-faint); }
+button {
+  background: var(--lime); color: #0a1410; border: none; font-family: var(--font-body); font-weight: 700;
+  font-size: 13px; padding: 11px 20px; border-radius: 3px; cursor: pointer; letter-spacing: 0.01em;
+}
+button:hover { background: #d4ff66; }
+button:disabled { background: var(--border); color: var(--text-faint); cursor: not-allowed; }
+.msg { font-size: 12px; margin-top: 10px; font-family: var(--font-mono); }
+.msg.err { color: var(--red); }
+.msg.ok { color: var(--lime); }
+
+.snap-list { margin-top: 16px; }
+.snap-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px;
+  background: var(--bg-elev-2); border: 1px solid var(--border); padding: 5px 9px; border-radius: 3px;
+  margin: 0 6px 6px 0; color: var(--text-dim);
+}
+.snap-chip button.del {
+  background: none; border: none; color: var(--text-faint); padding: 0; font-size: 13px; line-height: 1; cursor: pointer;
+}
+.snap-chip button.del:hover { color: var(--red); }
+
+.field-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+
+.rank-stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.rank-stat {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; flex: 1; min-width: 130px;
+}
+.rank-stat-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+.rank-stat-val { font-family: var(--font-mono); font-size: 28px; font-weight: 700; margin-top: 6px; }
+.rank-stat-val.gold { color: var(--gold); }
+.rank-stat-val.lime { color: var(--lime); }
+.rank-stat-delta { font-family: var(--font-mono); font-size: 12px; margin-top: 4px; }
+.rank-stat-delta.up { color: var(--lime); }
+.rank-stat-delta.down { color: var(--red); }
+.rank-stat-delta.same { color: var(--text-faint); }
+
+.footer-note { text-align: center; color: var(--text-faint); font-size: 11px; margin-top: 30px; font-family: var(--font-mono); }
+
+/* ---- FPL Info tab ---- */
+.countdown-row { display: flex; gap: 18px; margin-top: 6px; }
+.countdown-unit { text-align: center; }
+.countdown-val {
+  font-family: var(--font-mono); font-size: 34px; font-weight: 700; color: var(--lime); line-height: 1;
+}
+.countdown-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+.fdr-scroll { overflow-x: auto; }
+.fdr-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.fdr-table th {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--border);
+}
+.fdr-table th:first-child { text-align: left; }
+.fdr-table td { padding: 4px; text-align: center; }
+.fdr-table td.team-name {
+  text-align: left; font-family: var(--font-body); font-weight: 600; font-size: 13px; padding: 4px 10px;
+  white-space: nowrap;
+}
+.fdr-cell {
+  display: inline-block; width: 100%; min-width: 54px; padding: 6px 4px; border-radius: 3px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+}
+.fdr-1 { background: #1c4d2e; color: #b8f5c8; }
+.fdr-2 { background: #2c5d2e; color: #d3f5c8; }
+.fdr-3 { background: #4a4a2a; color: #f0e8b8; }
+.fdr-4 { background: #5d3220; color: #f5c8b8; }
+.fdr-5 { background: #5d1f1f; color: #f5b8b8; }
+
+.price-row, .injury-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 10px 12px; margin-bottom: 6px; border-radius: 3px;
+}
+.price-name, .injury-name { font-weight: 600; font-size: 13px; }
+.price-meta, .injury-meta { color: var(--text-dim); font-size: 11px; margin-top: 2px; font-family: var(--font-mono); }
+.price-change { font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+.price-change.up { color: var(--lime); }
+.price-change.down { color: var(--red); }
+.injury-status {
+  font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
+  letter-spacing: 0.05em; white-space: nowrap; margin-left: 10px;
+}
+.injury-status.chance-high { background: rgba(232,185,79,0.15); color: var(--gold); border: 1px solid var(--gold); }
+.injury-status.chance-mid { background: rgba(255,107,92,0.12); color: #ff9a7a; border: 1px solid #ff9a7a; }
+.injury-status.chance-low { background: rgba(255,107,92,0.18); color: var(--red); border: 1px solid var(--red); }
+.injury-news { font-size: 12px; color: var(--text-dim); margin-top: 4px; max-width: 420px; }
+.injury-left { flex: 1; min-width: 0; }
+.scroll-note { font-size: 10px; color: var(--text-faint); font-family: var(--font-mono); margin-bottom: 8px; }
+
+/* ---- Cyprus #1 chase panel ---- */
+.chase-card {
+  background: linear-gradient(135deg, rgba(232,185,79,0.08), var(--bg-elev));
+  border: 1px solid var(--gold); border-radius: 4px; padding: 16px 20px; margin-bottom: 14px;
+}
+.chase-label { font-family: var(--font-mono); font-size: 11px; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+.chase-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.chase-leader-name { font-family: var(--font-display); font-size: 20px; font-weight: 600; text-transform: uppercase; }
+.chase-leader-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.chase-gap-val { font-family: var(--font-mono); font-size: 30px; font-weight: 700; color: var(--gold); text-align: right; line-height: 1; }
+.chase-gap-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-align: right; text-transform: uppercase; margin-top: 4px; }
+
+/* ---- Decisions tab ---- */
+.gw-hero {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 18px 20px; margin-bottom: 4px;
+}
+.gw-hero-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.gw-hero-stat { min-width: 120px; }
+.gw-hero-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.gw-hero-val { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--lime); margin-top: 4px; }
+.gw-hero-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+.rival-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 10px 14px; margin-bottom: 6px; border-radius: 3px;
+  flex-wrap: wrap; gap: 8px;
+}
+.rival-row.me { border-color: var(--lime-dim); background: linear-gradient(90deg, rgba(198,255,61,0.08), var(--bg-elev)); }
+.rival-name { font-weight: 600; font-size: 13px; }
+.rival-sub { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.rival-pts { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--lime); }
+
+.perf-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 9px 12px; margin-bottom: 5px; border-radius: 3px;
+}
+.perf-name { font-weight: 600; font-size: 13px; }
+.perf-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.perf-pts { font-family: var(--font-mono); font-size: 16px; font-weight: 700; }
+.perf-pts.good { color: var(--lime); }
+.perf-pts.bad { color: var(--red); }
+
+.diff-pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.diff-pill {
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 8px 12px; min-width: 140px;
+}
+.diff-pill.unique { border-color: var(--lime-dim); }
+.diff-pill.missing { border-color: var(--red); }
+.diff-pill-name { font-weight: 600; font-size: 13px; }
+.diff-pill-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+
+/* ---- Home Command Centre ---- */
+.home-strip {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px;
+}
+.home-chip {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; flex: 1; min-width: 100px;
+}
+.home-chip-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.home-chip-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--lime); margin-top: 3px; }
+
+.targets-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.target-card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; flex: 1; min-width: 150px;
+}
+.target-card.leading { border-color: var(--lime-dim); }
+.target-title { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.target-pos { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--gold); margin-top: 4px; }
+.target-gap { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.target-gap.positive { color: var(--lime); }
+.target-gap.negative { color: var(--red); }
+
+.squad-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 9px 12px; margin-bottom: 5px; border-radius: 3px;
+}
+.squad-row.bench { opacity: 0.55; }
+.squad-name-block { display: flex; align-items: center; gap: 8px; }
+.squad-badge {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 2px;
+}
+.squad-badge.c { background: var(--gold); color: #0a1410; }
+.squad-badge.v { background: var(--text-faint); color: #0a1410; }
+.squad-name { font-weight: 600; font-size: 13px; }
+.squad-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.squad-pts { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--lime); }
+.squad-flag { color: var(--red); font-size: 12px; margin-left: 6px; }
+
+.gw-status-card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px;
+  display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px;
+}
+.gw-status-item { min-width: 110px; }
+.gw-status-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.gw-status-val { font-family: var(--font-mono); font-size: 15px; font-weight: 700; margin-top: 3px; }
+.gw-status-val.warn { color: var(--red); }
+.gw-status-val.ok { color: var(--lime); }
+.estimate-tag {
+  font-family: var(--font-mono); font-size: 8px; color: var(--text-faint); text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 2px; padding: 1px 4px; margin-left: 5px; vertical-align: middle;
+}
+
+/* ---- Rivals tab ---- */
+.heuristic-note {
+  font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); margin: -4px 0 14px;
+  border-left: 2px solid var(--border); padding-left: 8px;
+}
+.rival-ov-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 11px 14px; margin-bottom: 6px;
+  border-radius: 3px; cursor: pointer; transition: border-color 0.15s;
+}
+.rival-ov-row:hover { border-color: var(--lime-dim); }
+.rival-ov-row.me { border-color: var(--lime-dim); background: linear-gradient(90deg, rgba(198,255,61,0.07), var(--bg-elev)); cursor: default; }
+.rival-ov-row.selected { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime); }
+.rival-ov-left { min-width: 0; }
+.rival-ov-name { font-weight: 600; font-size: 13px; }
+.rival-ov-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.rival-ov-right { display: flex; align-items: center; gap: 10px; }
+.rival-ov-gap { font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-align: right; min-width: 70px; }
+.rival-ov-gap.ahead { color: var(--lime); }
+.rival-ov-gap.behind { color: var(--red); }
+.threat-badge {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; padding: 3px 7px; border-radius: 3px; text-transform: uppercase;
+}
+.threat-low { background: rgba(198,255,61,0.12); color: var(--lime); border: 1px solid var(--lime-dim); }
+.threat-med { background: rgba(232,185,79,0.12); color: var(--gold); border: 1px solid var(--gold); }
+.threat-high { background: rgba(255,107,92,0.14); color: var(--red); border: 1px solid var(--red); }
+
+.h2h-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.h2h-side { text-align: center; flex: 1; }
+.h2h-name { font-family: var(--font-display); font-size: 17px; font-weight: 600; text-transform: uppercase; }
+.h2h-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.h2h-pts { font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--lime); margin-top: 6px; }
+.h2h-vs { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); padding: 0 14px; }
+
+.h2h-row {
+  display: flex; justify-content: space-between; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  padding: 10px 14px; margin-bottom: 6px; border-radius: 3px; font-size: 13px;
+}
+.h2h-row-label { color: var(--text-faint); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; margin-bottom: 3px; }
+.h2h-row-vals { display: flex; justify-content: space-between; }
+
+.swing-card {
+  background: linear-gradient(135deg, rgba(198,255,61,0.06), var(--bg-elev)); border: 1px solid var(--border);
+  border-radius: 4px; padding: 16px; margin: 10px 0;
+}
+.swing-cols { display: flex; gap: 16px; flex-wrap: wrap; }
+.swing-col { flex: 1; min-width: 160px; }
+.swing-col-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 6px; }
+.swing-player { font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border-soft); display: flex; justify-content: space-between; }
+.swing-player:last-child { border-bottom: none; }
+.swing-total {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center;
+  font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+}
+.swing-total.pos { color: var(--lime); }
+.swing-total.neg { color: var(--red); }
+
+.captain-battle {
+  display: flex; gap: 14px; background: var(--bg-elev); border: 1px solid var(--gold); border-radius: 4px; padding: 14px 16px; margin: 10px 0;
+}
+.captain-side { flex: 1; text-align: center; }
+.captain-side-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.captain-side-name { font-weight: 700; font-size: 14px; margin-top: 4px; }
+.captain-side-pts { font-family: var(--font-mono); font-size: 20px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+.swing-potential { text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 8px; grid-column: 1 / -1; width: 100%; }
+
+/* ---- Player Analysis (Phase 3A) ---- */
+.pa-card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; margin-bottom: 10px;
+}
+.pa-card.bench { opacity: 0.6; }
+.pa-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.pa-name-block { display: flex; align-items: center; gap: 8px; }
+.pa-name { font-weight: 700; font-size: 15px; }
+.pa-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.pa-bucket {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 3px;
+  white-space: nowrap;
+}
+.pa-bucket.strong { background: rgba(198,255,61,0.14); color: var(--lime); border: 1px solid var(--lime-dim); }
+.pa-bucket.hold { background: rgba(198,255,61,0.08); color: var(--lime); border: 1px solid var(--lime-dim); }
+.pa-bucket.monitor { background: rgba(232,185,79,0.10); color: var(--gold); border: 1px solid var(--gold); }
+.pa-bucket.concern { background: rgba(255,107,92,0.10); color: #ff9a7a; border: 1px solid #ff9a7a; }
+.pa-bucket.sell { background: rgba(255,107,92,0.18); color: var(--red); border: 1px solid var(--red); }
+
+.pa-section-tag {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint); margin: 8px 0 6px; display: flex; align-items: center; gap: 6px;
+}
+.pa-section-tag.official::before { content: '●'; color: #7fd4ff; }
+.pa-section-tag.heuristic::before { content: '●'; color: var(--gold); }
+
+.pa-stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; }
+.pa-stat { background: var(--bg-elev-2); border-radius: 3px; padding: 6px 8px; }
+.pa-stat-label { font-family: var(--font-mono); font-size: 8px; color: var(--text-faint); text-transform: uppercase; }
+.pa-stat-val { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+.pa-heuristic-note { font-size: 11px; color: var(--text-dim); margin-top: 8px; line-height: 1.4; }
+.pa-news { font-size: 12px; color: var(--red); margin-top: 6px; }
+
+/* ---- GW Planner (Phase 3B) ---- */
+.warning-banner {
+  background: rgba(255,107,92,0.10); border: 1px solid var(--red); border-radius: 4px;
+  padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #ff9a7a;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.planner-squad-row {
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 10px 12px; margin-bottom: 6px;
+}
+.planner-squad-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.planner-squad-name { font-weight: 600; font-size: 13px; }
+.planner-squad-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.planner-fx-row { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.planner-fx-cell {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 4px 7px; border-radius: 3px; min-width: 54px; text-align: center;
+}
+
+.sandbox-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
+.sandbox-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.sandbox-col { flex: 1; min-width: 200px; position: relative; }
+.sandbox-col select, .sandbox-col input[type=text] {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 9px 10px; border-radius: 3px; font-size: 14px;
+}
+.sandbox-search-results {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 10; background: var(--bg-elev-2);
+  border: 1px solid var(--border); border-top: none; border-radius: 0 0 3px 3px; max-height: 220px; overflow-y: auto;
+}
+.sandbox-search-item { padding: 8px 10px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border-soft); }
+.sandbox-search-item:hover { background: var(--bg-elev); }
+.sandbox-search-item .ssi-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+.sandbox-selected-in {
+  margin-top: 10px; font-size: 12px; color: var(--lime); font-family: var(--font-mono);
+}
+.roll-ft-btn {
+  width: 100%; margin-top: 14px; background: var(--bg-elev-2); color: var(--text-dim); border: 1px dashed var(--border);
+  font-family: var(--font-body); font-weight: 600; font-size: 13px; padding: 11px; border-radius: 3px; cursor: pointer;
+}
+.roll-ft-btn:hover { border-color: var(--lime-dim); color: var(--lime); }
+.roll-ft-note { text-align: center; font-size: 12px; color: var(--lime); margin-top: 8px; font-family: var(--font-mono); }
+
+.sandbox-result-card { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+.sandbox-verdict {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700; padding: 8px 12px; border-radius: 3px; margin-bottom: 12px;
+}
+.sandbox-verdict.ok { background: rgba(198,255,61,0.10); color: var(--lime); border: 1px solid var(--lime-dim); }
+.sandbox-verdict.bad { background: rgba(255,107,92,0.10); color: var(--red); border: 1px solid var(--red); }
+.sandbox-compare-table { width: 100%; border-collapse: collapse; }
+.sandbox-compare-table th { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; padding: 4px 8px; text-align: center; }
+.sandbox-compare-table th:first-child { text-align: left; }
+.sandbox-compare-table td { padding: 6px 8px; text-align: center; font-family: var(--font-mono); font-size: 12px; border-top: 1px solid var(--border-soft); }
+.sandbox-compare-table td:first-child { text-align: left; color: var(--text-faint); font-size: 10px; text-transform: uppercase; }
+.sandbox-approx-tag { font-size: 9px; color: var(--text-faint); font-family: var(--font-mono); }
+
+.problem-row {
+  display: flex; gap: 10px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px;
+  padding: 9px 12px; margin-bottom: 6px; font-size: 12px;
+}
+.problem-icon { flex-shrink: 0; }
+.problem-text b { color: var(--text); }
+.problem-text { color: var(--text-dim); }
+
+.pm-position-group { margin-bottom: 14px; }
+.pm-position-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 6px; }
+.pm-candidate-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev);
+  border: 1px solid var(--border-soft); border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px;
+}
+.pm-candidate-name { font-weight: 600; }
+.pm-candidate-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+
+.swing-list-row {
+  display: flex; justify-content: space-between; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px; font-family: var(--font-mono);
+}
+
+/* ---- Captain & Chips (Phase 3C) ---- */
+.cc-table-scroll { overflow-x: auto; }
+.cc-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.cc-table th {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase;
+  padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.cc-table th:first-child { text-align: left; }
+.cc-table td { padding: 7px 8px; text-align: center; font-family: var(--font-mono); font-size: 12px; border-top: 1px solid var(--border-soft); white-space: nowrap; }
+.cc-table td:first-child { text-align: left; font-family: var(--font-body); font-weight: 600; }
+.cc-table tr.cc-added { background: rgba(127,212,255,0.05); }
+.cc-remove-btn { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 12px; margin-left: 6px; }
+.cc-remove-btn:hover { color: var(--red); }
+.cc-fresh-tag { font-family: var(--font-mono); font-size: 8px; color: #7fd4ff; }
+
+.cc-pick-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.cc-pick-card { flex: 1; min-width: 260px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
+.cc-pick-card.safe { border-color: var(--lime-dim); }
+.cc-pick-card.upside { border-color: var(--gold); }
+.cc-pick-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.cc-pick-card.safe .cc-pick-label { color: var(--lime); }
+.cc-pick-card.upside .cc-pick-label { color: var(--gold); }
+.cc-pick-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; text-transform: uppercase; }
+.cc-pick-explain { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.4; }
+.cc-pick-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cc-pick-stat { background: var(--bg-elev-2); border-radius: 3px; padding: 5px 8px; font-family: var(--font-mono); font-size: 11px; }
+
+.chip-centre-row {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 12px 14px; margin-bottom: 8px;
+}
+.chip-centre-name { font-family: var(--font-display); font-weight: 600; font-size: 14px; text-transform: uppercase; }
+.chip-centre-status { font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 3px; }
+.chip-centre-status.active { background: rgba(232,185,79,0.16); color: var(--gold); border: 1px solid var(--gold); }
+.chip-centre-status.used { background: rgba(255,107,92,0.10); color: var(--text-faint); border: 1px solid var(--border); }
+.chip-centre-status.hold { background: rgba(255,255,255,0.03); color: var(--text-dim); border: 1px solid var(--border); }
+.chip-centre-status.watch { background: rgba(232,185,79,0.10); color: var(--gold); border: 1px solid var(--gold); }
+.chip-centre-status.available { background: rgba(198,255,61,0.10); color: var(--lime); border: 1px solid var(--lime-dim); }
+.chip-centre-detail { font-size: 12px; color: var(--text-dim); width: 100%; margin-top: 4px; }
+
+.rival-chip-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.rcs-item { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; flex: 1; min-width: 110px; text-align: center; }
+.rcs-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.rcs-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--lime); margin-top: 4px; }
+
+.captaincy-history-table { width: 100%; border-collapse: collapse; }
+.captaincy-history-table th { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; padding: 5px 8px; text-align: center; }
+.captaincy-history-table th:nth-child(2) { text-align: left; }
+.captaincy-history-table td { padding: 7px 8px; text-align: center; font-family: var(--font-mono); font-size: 12px; border-top: 1px solid var(--border-soft); }
+.captaincy-history-table td:nth-child(2) { text-align: left; font-family: var(--font-body); font-weight: 600; }
+.captaincy-history-table td.diff-zero { color: var(--lime); }
+.captaincy-history-table td.diff-gap { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Live-fed tracker</div>
+  <h1>FPL Tracker</h1>
+  <div class="subtitle">Team <span>BYFARTHEGREATESTEAM</span> · 2026/27</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="home">🏠 Home</button>
+    <button class="tab-btn" data-tab="league">Almost Champions</button>
+    <button class="tab-btn" data-tab="cyprus">Cyprus</button>
+    <button class="tab-btn" data-tab="fplharry">FPL Harry</button>
+    <button class="tab-btn" data-tab="info">FPL Info</button>
+    <button class="tab-btn" data-tab="decisions">Decisions</button>
+    <button class="tab-btn" data-tab="rivals">⚔️ Rivals</button>
+    <button class="tab-btn" data-tab="analysis">📊 Analysis</button>
+    <button class="tab-btn" data-tab="planner">🧠 Planner</button>
+    <button class="tab-btn" data-tab="captain">👑 Captain &amp; Chips</button>
+  </div>
+
+  <div id="syncBar" class="sync-bar">
+    <span id="syncStatusText">Not synced yet</span>
+    <button id="syncNowBtn" class="sync-btn">↻ Sync now</button>
+  </div>
+
+  <!-- ================= ALMOST CHAMPIONS TAB ================= -->
+  <!-- ================= HOME COMMAND CENTRE TAB ================= -->
+  <div class="tab-panel active" id="tab-home">
+
+    <div class="home-strip" id="homeStrip">
+      <div class="empty-note">Waiting for first sync…</div>
+    </div>
+
+    <div class="section-label">Targets</div>
+    <div class="targets-row" id="targetsRow"></div>
+
+    <div class="section-label">Squad — live points</div>
+    <div id="squadWrap"></div>
+
+    <div class="section-label">Gameweek status</div>
+    <div class="gw-status-card" id="gwStatusCard"></div>
+
+    <div class="section-label">Upcoming</div>
+    <div class="gw-status-card" id="upcomingCard"></div>
+
+  </div>
+
+  <div class="tab-panel" id="tab-league">
+
+    <div id="scoreboard" class="scoreboard" style="display:none">
+      <div class="scoreboard-row">
+        <div>
+          <div class="leader-label">Leading</div>
+          <div class="leader-name" id="leaderName">—</div>
+          <div class="leader-manager" id="leaderManager">—</div>
+        </div>
+        <div>
+          <div class="leader-pts" id="leaderPts">—</div>
+          <div class="leader-pts-label">Total pts</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label"><span>Standings</span><span id="gwLabel"></span></div>
+    <div id="tableWrap"></div>
+
+    <div class="section-label">Points over time</div>
+    <div class="chart-card">
+      <canvas id="chart" height="220"></canvas>
+      <div class="legend" id="legend"></div>
+      <div class="empty-note" id="chartEmpty" style="display:none">Add a second gameweek snapshot to see the trend line.</div>
+    </div>
+
+    <div class="section-label">Chips used</div>
+    <div id="chipsWrap"></div>
+
+  </div>
+
+  <!-- ================= CYPRUS TAB ================= -->
+  <div class="tab-panel" id="tab-cyprus">
+
+    <div class="section-label">Your position — Cyprus overall league</div>
+    <div class="chase-card" id="cyChaseCard" style="display:none">
+      <div class="chase-label">🏆 Chasing #1</div>
+      <div class="chase-row">
+        <div>
+          <div class="chase-leader-name" id="cyLeaderName">—</div>
+          <div class="chase-leader-sub" id="cyLeaderManager">—</div>
+        </div>
+        <div class="chase-gap">
+          <div class="chase-gap-val" id="cyGapVal">—</div>
+          <div class="chase-gap-label">pts behind</div>
+        </div>
+      </div>
+    </div>
+    <div class="rank-stat-row" id="cyprusStats">
+      <div class="empty-note">No snapshots yet — add your first one below.</div>
+    </div>
+
+    <div class="section-label"><span>Nearby standings</span><span id="cyContextLabel"></span></div>
+    <div id="cyContextWrap"></div>
+    <div class="section-label">Rank &amp; points over time</div>
+    <div class="chart-card">
+      <canvas id="cyprusChart" height="220"></canvas>
+      <div class="empty-note" id="cyprusChartEmpty" style="display:none">Add a second gameweek snapshot to see the trend.</div>
+    </div>
+
+  </div>
+
+  <!-- ================= FPL HARRY TAB ================= -->
+  <div class="tab-panel" id="tab-fplharry">
+
+    <div class="section-label">Your position — www.youtube.com/@FPLHarry league</div>
+    <div class="rank-stat-row" id="fhStats">
+      <div class="empty-note">No snapshots yet — add your first one below.</div>
+    </div>
+
+    <div class="section-label"><span>Nearby standings</span><span id="fhContextLabel"></span></div>
+    <div id="fhContextWrap"></div>
+    <div class="section-label">Rank &amp; points over time</div>
+    <div class="chart-card">
+      <canvas id="fhChart" height="220"></canvas>
+      <div class="empty-note" id="fhChartEmpty" style="display:none">Add a second gameweek snapshot to see the trend.</div>
+    </div>
+
+  </div>
+
+  <!-- ================= FPL INFO TAB ================= -->
+  <div class="tab-panel" id="tab-info">
+
+    <div class="section-label">Deadline</div>
+    <div class="scoreboard" id="deadlineCard" style="display:none">
+      <div class="leader-label" id="deadlineGwLabel">—</div>
+      <div class="countdown-row" id="countdownRow"></div>
+      <div class="leader-manager" id="deadlineDateLabel" style="margin-top:10px"></div>
+    </div>
+
+    <div class="section-label">Fixture difficulty — next 5 gameweeks</div>
+    <div id="fdrWrap"></div>
+
+    <div class="section-label">Price changes today</div>
+    <div id="priceWrap"></div>
+
+    <div class="section-label">Injuries &amp; fitness</div>
+    <div id="injuryWrap"></div>
+
+  </div>
+
+  <!-- ================= DECISIONS TAB ================= -->
+  <div class="tab-panel" id="tab-decisions">
+
+    <div class="section-label"><span>This gameweek</span><span id="decGwLabel"></span></div>
+    <div class="gw-hero" id="decHero">
+      <div class="empty-note">Waiting for first sync…</div>
+    </div>
+
+    <div class="section-label">Rival captains &amp; chips</div>
+    <div id="rivalWrap"></div>
+
+    <div class="section-label">Helping you most</div>
+    <div id="topPerfWrap"></div>
+
+    <div class="section-label">Hurting you most</div>
+    <div id="worstPerfWrap"></div>
+
+    <div class="section-label">Your differentials <span style="font-weight:400">(only you own)</span></div>
+    <div id="myDiffWrap"></div>
+
+    <div class="section-label">Template you're missing <span style="font-weight:400">(3+ rivals own)</span></div>
+    <div id="templateMissWrap"></div>
+
+  </div>
+
+  <!-- ================= RIVALS TAB ================= -->
+  <div class="tab-panel" id="tab-rivals">
+
+    <div class="section-label"><span>League overview</span><span id="rivalsGwLabel"></span></div>
+    <div id="rivalsOverviewWrap">
+      <div class="empty-note">Waiting for first sync…</div>
+    </div>
+    <div class="heuristic-note">🧮 "Threat this GW" is a heuristic (current gap + 2× players still to play), not an official stat.</div>
+
+    <div class="section-label">Head-to-head</div>
+    <div id="rivalCompareWrap">
+      <div class="empty-note">Select a rival above to compare.</div>
+    </div>
+
+  </div>
+
+  <!-- ================= ANALYSIS TAB ================= -->
+  <div class="tab-panel" id="tab-analysis">
+
+    <div class="section-label"><span>Player analysis — squad</span><span id="analysisGwLabel"></span></div>
+    <div class="heuristic-note">🧾 Each card separates <b>OFFICIAL DATA</b> (from FPL directly) from our <b>HEURISTIC</b> (minutes security, xGI trend vs season, next-fixture difficulty, availability — never raw points).</div>
+    <div id="analysisWrap">
+      <div class="empty-note">Waiting for first sync…</div>
+    </div>
+
+  </div>
+
+  <!-- ================= PLANNER TAB ================= -->
+  <div class="tab-panel" id="tab-planner">
+
+    <div class="section-label"><span>Planning state</span><span id="plannerGwLabel"></span></div>
+    <div class="gw-status-card" id="plannerStateCard">
+      <div class="empty-note">Waiting for first sync…</div>
+    </div>
+    <div id="plannerWarningWrap"></div>
+
+    <div class="section-label">Squad — next 5 fixtures</div>
+    <div id="plannerSquadWrap"></div>
+
+    <div class="section-label">Transfer sandbox</div>
+    <div class="sandbox-card">
+      <div class="sandbox-row">
+        <div class="sandbox-col">
+          <label for="sandboxOut">OUT</label>
+          <select id="sandboxOut"><option value="">Select a player to sell…</option></select>
+        </div>
+        <div class="sandbox-col">
+          <label for="sandboxInSearch">IN</label>
+          <input type="text" id="sandboxInSearch" placeholder="Search a replacement…" autocomplete="off">
+          <div id="sandboxInResults" class="sandbox-search-results"></div>
+        </div>
+      </div>
+      <div id="sandboxSelectedIn" class="sandbox-selected-in"></div>
+      <div id="sandboxResult"></div>
+      <button id="rollFtBtn" class="roll-ft-btn">↺ Roll my free transfer this week</button>
+      <div id="rollFtNote" class="roll-ft-note"></div>
+    </div>
+
+    <div class="section-label">Squad problems</div>
+    <div id="squadProblemsWrap"></div>
+
+    <div class="section-label">Possible moves <span style="font-weight:400">(heuristic candidates — not tied to a specific sale)</span></div>
+    <div id="possibleMovesWrap"></div>
+
+    <div class="section-label">Future watch <span style="font-weight:400">(fixture swings, blanks &amp; doubles, next 5 GWs)</span></div>
+    <div id="futureWatchWrap"></div>
+
+  </div>
+
+  <!-- ================= CAPTAIN & CHIPS TAB ================= -->
+  <div class="tab-panel" id="tab-captain">
+
+    <div class="section-label">Captain centre <span style="font-weight:400">— candidates from your squad</span></div>
+    <div class="sandbox-col" style="margin-bottom:12px">
+      <label for="captainAddSearch">Add another player for comparison</label>
+      <input type="text" id="captainAddSearch" placeholder="Search any player…" autocomplete="off">
+      <div id="captainAddResults" class="sandbox-search-results"></div>
+    </div>
+    <div class="cc-table-scroll">
+      <table class="cc-table" id="captainTable">
+        <thead>
+          <tr><th>Player</th><th>Fixture</th><th>ep_next</th><th>Form</th><th>xG/90</th><th>xA/90</th><th>xGI/90</th><th>L3 xGI/90</th><th>L3 Mins</th><th>News</th><th>Own%</th></tr>
+        </thead>
+        <tbody id="captainTableBody"><tr><td class="empty-note">Waiting for first sync…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="heuristic-note" style="margin-top:14px">👑 <b>HEURISTIC</b> — internal ranking only, no score shown. Override anytime; you make the final call.</div>
+    <div class="cc-pick-row" id="captainPicksWrap"></div>
+
+    <div class="section-label">Chip centre <span style="font-weight:400">— season status, not a recommender</span></div>
+    <div class="heuristic-note">Based on the current 2-uses-per-season rule (one before GW19, one after). Verify exact deadline in-app — rules can be adjusted mid-season.</div>
+    <div id="chipCentreWrap"></div>
+
+    <div class="section-label">Rival chip intelligence</div>
+    <div id="rivalChipWrap"></div>
+
+    <div class="section-label">Captaincy history <span style="font-weight:400">— season log</span></div>
+    <div class="heuristic-note">"Best Squad Outcome" is hindsight, not a judgment of your decision — the best pick was rarely obvious beforehand.</div>
+    <div id="captaincyHistoryWrap"></div>
+
+  </div>
+
+  <div class="footer-note">Data persists in this artifact — paste new snapshots each gameweek to keep it current.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const STORAGE_KEY = 'league-1209674-snapshots';
+const CHIPS_KEY = 'league-1209674-chips';
+const CYPRUS_KEY = 'league-76-rank-snapshots';
+const FPLHARRY_KEY = 'league-7735-rank-snapshots';
+const CYPRUS_CONTEXT_KEY = 'league-76-context';
+const FH_CONTEXT_KEY = 'league-7735-context';
+const FPL_INFO_KEY = 'fpl-info';
+const GW_DECISION_KEY = 'gw-decision-summary';
+const CYPRUS_LEADER_KEY = 'cyprus-leader';
+const HOME_KEY = 'home-data';
+const CYPRUS_DETAIL_KEY = 'cyprus-detail';
+const RIVAL_INTEL_KEY = 'rival-intel';
+const PLAYER_ANALYSIS_KEY = 'player-analysis';
+const GW_PLANNER_KEY = 'gw-planner';
+const CAPTAINCY_HISTORY_KEY = 'captaincy-history';
+const MY_ENTRY = 5580812;
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMDnOjV441p8yKzc_yAs4u35-4TQYA72CF85dnGoOx8qZq9yM2vUhizb9AhBkl6T50/exec';
+let lastSyncedAt = null;
+let syncStatus = 'idle'; // idle | syncing | ok | error
+
+const PALETTE = ['#c6ff3d', '#e8b94f', '#7fd4ff', '#ff8fb0', '#ff6b5c', '#b48cff', '#5ee6c4', '#ffd166'];
+
+const CHIP_LABELS = {
+  wildcard: { label: 'Wildcard', cls: 'chip-wildcard' },
+  bboost:   { label: 'Bench Boost', cls: 'chip-bboost' },
+  '3xc':    { label: 'Triple Captain', cls: 'chip-3xc' },
+  freehit:  { label: 'Free Hit', cls: 'chip-freehit' }
+};
+
+/* ---- Storage abstraction ----
+   Uses Claude's window.storage when this runs inside the Claude artifact
+   panel (persists to your account). Falls back to the browser's own
+   localStorage when opened as a standalone HTML file (persists to this
+   browser/device only). Either way, data survives closing the tab. */
+const CLOUD_STORAGE_AVAILABLE = (typeof window !== 'undefined' && !!window.storage);
+let storageModeNoted = false;
+
+async function storageGet(key) {
+  if (CLOUD_STORAGE_AVAILABLE) {
+    try {
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    } catch (e) { return null; }
+  }
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+async function storageSet(key, value) {
+  if (CLOUD_STORAGE_AVAILABLE) {
+    try { await window.storage.set(key, value, false); return true; }
+    catch (e) { console.error('window.storage save failed', e); return false; }
+  }
+  try { localStorage.setItem(key, value); return true; }
+  catch (e) { console.error('localStorage save failed', e); return false; }
+}
+
+function noteStorageMode() {
+  if (storageModeNoted) return;
+  storageModeNoted = true;
+  const el = document.createElement('div');
+  el.className = 'footer-note';
+  el.style.marginTop = '6px';
+  el.textContent = CLOUD_STORAGE_AVAILABLE
+    ? 'Saving to your Claude-linked storage.'
+    : 'Saving to this browser\'s local storage (standalone mode) — data stays on this device/browser only.';
+  document.querySelector('.wrap').appendChild(el);
+}
+
+let snapshots = [];
+let chipsData = {};
+let cyprusSnapshots = [];
+let fhSnapshots = [];
+let cyContext = null;
+let fhContext = null;
+let fplInfo = null;
+let gwDecision = null;
+let cyprusLeader = null;
+let homeData = null;
+let cyprusDetail = null;
+let rivalIntel = null;
+let selectedRivalEntry = null;
+let playerAnalysis = null;
+let gwPlanner = null;
+let sandboxOutElement = null;
+let sandboxInElement = null;
+let captaincyHistory = null;
+let captainCandidates = [];
+let countdownInterval = null;
+let chartInstance = null;
+let cyprusChartInstance = null;
+let fhChartInstance = null;
+
+const SEED_GW1 = {
+  gw: 1, savedAt: '2026-08-22T20:13:25Z',
+  results: [
+    { entry: 5580812, entry_name: 'BYFARTHEGREATESTEAM', player_name: 'christodoulos panagi', event_total: 41, total: 41 },
+    { entry: 762636,  entry_name: '¡HalaMadrid!',         player_name: 'Vasos Georgiou',          event_total: 38, total: 38 },
+    { entry: 4313858, entry_name: 'L1MASSOL',             player_name: 'Andreas Papatheodoulou',  event_total: 33, total: 33 },
+    { entry: 5151433, entry_name: 'Leventogiannides Fc',  player_name: 'Giannis Andronikides',    event_total: 32, total: 32 },
+    { entry: 5968907, entry_name: 'Kiaolos FC',           player_name: 'Mario Pintus',             event_total: 30, total: 30 },
+    { entry: 3362695, entry_name: 'DreamTeam1',           player_name: 'Savvas Evangelou',         event_total: 16, total: 16 }
+  ]
+};
+
+const SEED_CYPRUS_GW1 = { gw: 1, savedAt: '2026-08-22T23:18:00Z', rank: 785, total: 41 };
+
+async function loadSnapshots() {
   try {
-    const summary = fetchJson(`https://fantasy.premierleague.com/api/element-summary/${playerId}/`);
-    const hist = (summary.history || []).slice(-3);
-    if (!hist.length) return { element: playerId, trend: null };
-    const totalMins = hist.reduce((s, h) => s + h.minutes, 0);
-    const totalXgi = hist.reduce((s, h) => s + parseFloat(h.expected_goal_involvements || 0), 0);
-    return {
-      element: playerId,
-      trend: {
-        last3MinutesAvg: totalMins / hist.length,
-        last3XgiPer90: totalMins > 0 ? (totalXgi / (totalMins / 90)) : 0,
-        gwsUsed: hist.length
-      }
-    };
-  } catch (err) {
-    return { element: playerId, trend: null, error: true };
-  }
+    const val = await storageGet(STORAGE_KEY);
+    if (val) { snapshots = JSON.parse(val); return; }
+  } catch (e) {}
+  snapshots = [SEED_GW1];
+  await saveSnapshots();
+}
+async function saveSnapshots() {
+  await storageSet(STORAGE_KEY, JSON.stringify(snapshots));
 }
 
-function buildSnapshot() {
-  const acStandings = fetchJson(`https://fantasy.premierleague.com/api/leagues-classic/${AC_LEAGUE_ID}/standings/`);
-  const myEntry = fetchJson(`https://fantasy.premierleague.com/api/entry/${MY_ENTRY_ID}/`);
-  const bootstrap = fetchJson('https://fantasy.premierleague.com/api/bootstrap-static/');
-  const fixtures = fetchJson('https://fantasy.premierleague.com/api/fixtures/');
-  const gw = myEntry.current_event;
+async function loadChips() {
+  try {
+    const val = await storageGet(CHIPS_KEY);
+    if (val) { chipsData = JSON.parse(val); return; }
+  } catch (e) {}
+  chipsData = {};
+}
+async function saveChips() {
+  await storageSet(CHIPS_KEY, JSON.stringify(chipsData));
+}
 
-  const cyprus = (myEntry.leagues.classic || []).find(l => l.id === CYPRUS_LEAGUE_ID) || null;
-  const fplHarry = (myEntry.leagues.classic || []).find(l => l.id === FPLHARRY_LEAGUE_ID) || null;
+async function loadCyprus() {
+  try {
+    const val = await storageGet(CYPRUS_KEY);
+    if (val) { cyprusSnapshots = JSON.parse(val); return; }
+  } catch (e) {}
+  cyprusSnapshots = [SEED_CYPRUS_GW1];
+  await saveCyprus();
+}
+async function saveCyprus() {
+  await storageSet(CYPRUS_KEY, JSON.stringify(cyprusSnapshots));
+}
 
-  const chips = {};
-  AC_ENTRIES.forEach(id => {
-    try {
-      const hist = fetchJson(`https://fantasy.premierleague.com/api/entry/${id}/history/`);
-      chips[id] = (hist.chips || []).map(c => ({ name: c.name, event: c.event }));
-    } catch (err) {
-      chips[id] = null;
-    }
+async function loadFH() {
+  try {
+    const val = await storageGet(FPLHARRY_KEY);
+    if (val) { fhSnapshots = JSON.parse(val); return; }
+  } catch (e) {}
+  fhSnapshots = [];
+}
+async function saveFH() {
+  await storageSet(FPLHARRY_KEY, JSON.stringify(fhSnapshots));
+}
+
+async function loadCyContext() {
+  try {
+    const val = await storageGet(CYPRUS_CONTEXT_KEY);
+    if (val) { cyContext = JSON.parse(val); return; }
+  } catch (e) {}
+  cyContext = null;
+}
+async function saveCyContext() {
+  await storageSet(CYPRUS_CONTEXT_KEY, JSON.stringify(cyContext));
+}
+
+async function loadFHContext() {
+  try {
+    const val = await storageGet(FH_CONTEXT_KEY);
+    if (val) { fhContext = JSON.parse(val); return; }
+  } catch (e) {}
+  fhContext = null;
+}
+async function saveFHContext() {
+  await storageSet(FH_CONTEXT_KEY, JSON.stringify(fhContext));
+}
+
+function renderContextTable(wrapId, labelId, context) {
+  const wrap = document.getElementById(wrapId);
+  const label = document.getElementById(labelId);
+  if (!context || !context.results || !context.results.length) {
+    wrap.innerHTML = '<div class="empty-note">Paste a standings page below to see the managers around your rank.</div>';
+    label.textContent = '';
+    return;
+  }
+  const rows = [...context.results].sort((a, b) => a.rank - b.rank);
+  label.textContent = context.savedAt ? new Date(context.savedAt).toLocaleDateString() : '';
+  let html = '<table><thead><tr><th>#</th><th>Team</th><th class="num">GW</th><th class="num">Total</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const isMe = r.entry === MY_ENTRY;
+    html += `<tr class="${isMe ? 'me' : ''}">
+      <td class="rank">${r.rank}</td>
+      <td class="team">${escapeHtml(r.entry_name)}<span class="manager">${escapeHtml(r.player_name)}</span></td>
+      <td class="num">${r.event_total}</td>
+      <td class="num total">${r.total}</td>
+    </tr>`;
   });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
 
-  const cyprusContext = cyprus ? fetchNearbyStandings(CYPRUS_LEAGUE_ID, cyprus.entry_rank) : null;
-  const cyprusLeaderInfo = cyprus ? fetchLeagueLeaderDetailed(CYPRUS_LEAGUE_ID) : null;
-  const fplHarryContext = fplHarry ? fetchNearbyStandings(FPLHARRY_LEAGUE_ID, fplHarry.entry_rank) : null;
+async function loadFplInfo() {
+  const val = await storageGet(FPL_INFO_KEY);
+  if (val) { fplInfo = JSON.parse(val); return; }
+  fplInfo = null;
+}
+async function saveFplInfo() {
+  await storageSet(FPL_INFO_KEY, JSON.stringify(fplInfo));
+}
 
-  const acEntryNames = {};
-  acStandings.standings.results.forEach(r => { acEntryNames[r.entry] = { entry_name: r.entry_name, player_name: r.player_name }; });
+async function loadGwDecision() {
+  const val = await storageGet(GW_DECISION_KEY);
+  if (val) { gwDecision = JSON.parse(val); return; }
+  gwDecision = null;
+}
+async function saveGwDecision() {
+  await storageSet(GW_DECISION_KEY, JSON.stringify(gwDecision));
+}
 
-  const elementsById = {};
-  bootstrap.elements.forEach(e => { elementsById[e.id] = e; });
-  const teamsById = {};
-  bootstrap.teams.forEach(t => { teamsById[t.id] = t.short_name; });
+async function loadCyprusLeader() {
+  const val = await storageGet(CYPRUS_LEADER_KEY);
+  if (val) { cyprusLeader = JSON.parse(val); return; }
+  cyprusLeader = null;
+}
+async function saveCyprusLeader() {
+  await storageSet(CYPRUS_LEADER_KEY, JSON.stringify(cyprusLeader));
+}
 
-  const upcoming = fixtures.filter(f => !f.finished && f.event !== null);
-  const nextGw = upcoming.length ? Math.min(...upcoming.map(f => f.event)) : null;
-  const nextFixtureByTeam = {};
-  const nextGwFixtureCountByTeam = {};
-  if (nextGw) {
-    upcoming.filter(f => f.event === nextGw).forEach(f => {
-      const homeShort = teamsById[f.team_h];
-      const awayShort = teamsById[f.team_a];
-      nextFixtureByTeam[homeShort] = { opponent: awayShort, venue: 'H', difficulty: f.team_h_difficulty };
-      nextFixtureByTeam[awayShort] = { opponent: homeShort, venue: 'A', difficulty: f.team_a_difficulty };
-      nextGwFixtureCountByTeam[homeShort] = (nextGwFixtureCountByTeam[homeShort] || 0) + 1;
-      nextGwFixtureCountByTeam[awayShort] = (nextGwFixtureCountByTeam[awayShort] || 0) + 1;
-    });
-  }
+async function loadHomeData() {
+  const val = await storageGet(HOME_KEY);
+  if (val) { homeData = JSON.parse(val); return; }
+  homeData = null;
+}
+async function saveHomeData() {
+  await storageSet(HOME_KEY, JSON.stringify(homeData));
+}
 
-  let liveById = {};
-  let liveStatsById = {};
-  if (gw) {
-    try {
-      const live = fetchJson(`https://fantasy.premierleague.com/api/event/${gw}/live/`);
-      live.elements.forEach(e => {
-        liveById[e.id] = e.stats.total_points;
-        liveStatsById[e.id] = {
-          points: e.stats.total_points,
-          minutes: e.stats.minutes,
-          xG: parseFloat(e.stats.expected_goals || 0),
-          xA: parseFloat(e.stats.expected_assists || 0),
-          xGI: parseFloat(e.stats.expected_goal_involvements || 0)
-        };
-      });
-    } catch (err) { /* leave empty */ }
-  }
+async function loadCyprusDetail() {
+  const val = await storageGet(CYPRUS_DETAIL_KEY);
+  if (val) { cyprusDetail = JSON.parse(val); return; }
+  cyprusDetail = null;
+}
+async function saveCyprusDetail() {
+  await storageSet(CYPRUS_DETAIL_KEY, JSON.stringify(cyprusDetail));
+}
 
-  const managersFull = gw ? AC_ENTRIES.map(id => {
-    let picksData;
-    try {
-      picksData = fetchJson(`https://fantasy.premierleague.com/api/entry/${id}/event/${gw}/picks/`);
-    } catch (err) {
-      return null;
-    }
-    const captainPick = picksData.picks.find(p => p.is_captain);
-    const captainElement = captainPick ? elementsById[captainPick.element] : null;
-    const captainRawPts = captainPick ? (liveById[captainPick.element] || 0) : 0;
+async function loadRivalIntel() {
+  const val = await storageGet(RIVAL_INTEL_KEY);
+  if (val) { rivalIntel = JSON.parse(val); return; }
+  rivalIntel = null;
+}
+async function saveRivalIntel() {
+  await storageSet(RIVAL_INTEL_KEY, JSON.stringify(rivalIntel));
+}
 
-    const picksResolved = picksData.picks.map(p => {
-      const el = elementsById[p.element];
-      const rawPts = liveById[p.element] || 0;
-      const teamShort = el ? teamsById[el.team] : null;
-      return {
-        element: p.element,
-        name: el ? el.web_name : '?',
-        team: teamShort,
-        position: el ? POSITIONS[el.element_type] : '?',
-        multiplier: p.multiplier,
-        isCaptain: !!p.is_captain,
-        isVice: !!p.is_vice_captain,
-        isBench: p.multiplier === 0,
-        rawPoints: rawPts,
-        contribution: rawPts * p.multiplier,
-        news: el ? el.news : '',
-        status: el ? el.status : 'a',
-        nextFixture: teamShort && nextFixtureByTeam[teamShort] ? nextFixtureByTeam[teamShort] : null
-      };
-    });
+async function loadPlayerAnalysis() {
+  const val = await storageGet(PLAYER_ANALYSIS_KEY);
+  if (val) { playerAnalysis = JSON.parse(val); return; }
+  playerAnalysis = null;
+}
+async function savePlayerAnalysis() {
+  await storageSet(PLAYER_ANALYSIS_KEY, JSON.stringify(playerAnalysis));
+}
 
-    const captainPlayed = captainPick ? (rawPtsOf(liveById, captainPick.element) !== 0) : false;
+async function loadGwPlanner() {
+  const val = await storageGet(GW_PLANNER_KEY);
+  if (val) { gwPlanner = JSON.parse(val); return; }
+  gwPlanner = null;
+}
+async function saveGwPlanner() {
+  await storageSet(GW_PLANNER_KEY, JSON.stringify(gwPlanner));
+}
 
-    return {
-      entry: id,
-      entry_name: acEntryNames[id] ? acEntryNames[id].entry_name : ('Entry ' + id),
-      player_name: acEntryNames[id] ? acEntryNames[id].player_name : '',
-      captainName: captainElement ? captainElement.web_name : null,
-      captainPoints: captainRawPts,
-      captainPlayed: captainPlayed,
-      chipActive: picksData.active_chip || null,
-      gwPoints: picksData.entry_history ? picksData.entry_history.points : null,
-      gwRank: picksData.entry_history ? picksData.entry_history.rank : null,
-      overallRank: picksData.entry_history ? picksData.entry_history.overall_rank : null,
-      bank: picksData.entry_history ? picksData.entry_history.bank / 10 : null,
-      teamValue: picksData.entry_history ? picksData.entry_history.value / 10 : null,
-      picks: picksResolved
-    };
-  }).filter(Boolean) : [];
+async function loadCaptaincyHistory() {
+  const val = await storageGet(CAPTAINCY_HISTORY_KEY);
+  if (val) { captaincyHistory = JSON.parse(val); return; }
+  captaincyHistory = null;
+}
+async function saveCaptaincyHistory() {
+  await storageSet(CAPTAINCY_HISTORY_KEY, JSON.stringify(captaincyHistory));
+}
 
-  const gwDecisionSummary = buildGwDecisionSummary(gw, managersFull);
-  const home = buildHomeData(gw, managersFull, bootstrap, acStandings, cyprus, cyprusLeaderInfo,
-    nextGwFixtureCountByTeam, nextGw, myEntry.summary_overall_points);
-
-  const me = managersFull.find(m => m.entry === MY_ENTRY_ID);
-  const playerAnalysis = buildPlayerAnalysis(me, elementsById, liveStatsById);
-
-  const deadlineResult = buildDeadline(bootstrap);
-  const fixtureDifficultyResult = buildFixtureDifficulty(bootstrap, fixtures);
-  const gwPlanner = buildGwPlanner(me, bootstrap, fixtureDifficultyResult, playerAnalysis,
-    elementsById, teamsById, deadlineResult, nextGw, home ? home.freeTransfersEstimate : null);
-
+function parseContextJson(raw) {
+  const parsed = JSON.parse(raw);
+  const results = parsed?.standings?.results;
+  if (!Array.isArray(results) || !results.length) throw new Error('no results');
   return {
-    generatedAt: new Date().toISOString(),
-    currentGameweek: gw,
-    almostChampions: {
-      results: acStandings.standings.results.map(r => ({
-        entry: r.entry, entry_name: r.entry_name, player_name: r.player_name,
-        event_total: r.event_total, total: r.total
-      }))
-    },
-    cyprus: cyprus ? { rank: cyprus.entry_rank, total: myEntry.summary_overall_points, event_total: myEntry.summary_event_points } : null,
-    fplHarry: fplHarry ? { rank: fplHarry.entry_rank, total: myEntry.summary_overall_points, event_total: myEntry.summary_event_points } : null,
-    chips: chips,
-    cyprusContext: cyprusContext,
-    fplHarryContext: fplHarryContext,
-    cyprusLeader: cyprusLeaderInfo ? { entry_name: cyprusLeaderInfo.entry_name, player_name: cyprusLeaderInfo.player_name, total: cyprusLeaderInfo.total } : null,
-    cyprusDetail: cyprusLeaderInfo,
-
-    deadline: deadlineResult,
-    injuries: buildInjuries(bootstrap),
-    priceChanges: buildPriceChanges(bootstrap),
-    fixtureDifficulty: fixtureDifficultyResult,
-
-    gwDecisionSummary: gwDecisionSummary,
-    home: home,
-
-    rivalIntel: {
-      gw: gw,
-      managers: managersFull.map(m => ({
-        entry: m.entry,
-        entry_name: m.entry_name,
-        player_name: m.player_name,
-        gwPoints: m.gwPoints,
-        captainName: m.captainName,
-        captainPoints: m.captainPoints,
-        chipActive: m.chipActive,
-        picks: m.picks,
-        seasonChips: chips[m.entry] || []
-      }))
-    },
-
-    playerAnalysis: playerAnalysis,
-
-    gwPlanner: gwPlanner,
-
-    captaincyHistory: readCaptainLog()
+    savedAt: new Date().toISOString(),
+    results: results.map(r => ({
+      entry: r.entry, entry_name: r.entry_name, player_name: r.player_name,
+      event_total: r.event_total, total: r.total, rank: r.rank
+    }))
   };
 }
 
-function rawPtsOf(liveById, elementId) {
-  return liveById[elementId] || 0;
+/* ---- Home Command Centre rendering ---- */
+function renderHome() {
+  const strip = document.getElementById('homeStrip');
+  const targetsRow = document.getElementById('targetsRow');
+  const squadWrap = document.getElementById('squadWrap');
+  const gwStatusCard = document.getElementById('gwStatusCard');
+  const upcomingCard = document.getElementById('upcomingCard');
+
+  if (!homeData) {
+    strip.innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    targetsRow.innerHTML = '';
+    squadWrap.innerHTML = '';
+    gwStatusCard.innerHTML = '';
+    upcomingCard.innerHTML = '';
+    return;
+  }
+
+  const h = homeData;
+
+  strip.innerHTML = `
+    <div class="home-chip"><div class="home-chip-label">Gameweek</div><div class="home-chip-val">GW${h.gw}</div></div>
+    <div class="home-chip"><div class="home-chip-label">Live points</div><div class="home-chip-val">${h.livePoints ?? '—'}</div></div>
+    <div class="home-chip"><div class="home-chip-label">GW rank</div><div class="home-chip-val">${h.gwRank != null ? h.gwRank.toLocaleString() : '—'}</div></div>
+    <div class="home-chip"><div class="home-chip-label">Overall rank</div><div class="home-chip-val">${h.overallRank != null ? h.overallRank.toLocaleString() : '—'}</div></div>
+  `;
+
+  const cy = h.targets.cyprus;
+  const ac = h.targets.almostChampions;
+  targetsRow.innerHTML = `
+    <div class="target-card">
+      <div class="target-title">🌍 Overall</div>
+      <div class="target-pos">#${h.overallRank != null ? h.overallRank.toLocaleString() : '—'}</div>
+      <div class="target-gap">rank this season</div>
+    </div>
+    <div class="target-card ${cy && cy.gap <= 0 ? 'leading' : ''}">
+      <div class="target-title">🇨🇾 Cyprus</div>
+      <div class="target-pos">#${cy ? cy.rank.toLocaleString() : '—'}</div>
+      <div class="target-gap ${cy && cy.gap <= 0 ? 'positive' : 'negative'}">${cy ? (cy.gap <= 0 ? '🥇 leading' : cy.gap + ' behind ' + escapeHtml(cy.leaderName)) : '—'}</div>
+    </div>
+    <div class="target-card ${ac.position === 1 ? 'leading' : ''}">
+      <div class="target-title">🏆 Almost Champions</div>
+      <div class="target-pos">#${ac.position}</div>
+      <div class="target-gap ${ac.gap >= 0 ? 'positive' : 'negative'}">${ac.position === 1 ? '🥇 leading' : (ac.gap != null ? ac.gap + ' behind ' + escapeHtml(ac.leaderName) : '—')}</div>
+    </div>
+  `;
+
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const starters = h.squad.filter(p => !p.isBench).sort((a, b) => (order[a.position] || 9) - (order[b.position] || 9));
+  const bench = h.squad.filter(p => p.isBench);
+  squadWrap.innerHTML = [...starters, ...bench].map(p => `
+    <div class="squad-row ${p.isBench ? 'bench' : ''}">
+      <div>
+        <div class="squad-name-block">
+          ${p.isCaptain ? '<span class="squad-badge c">C</span>' : ''}${p.isVice ? '<span class="squad-badge v">V</span>' : ''}
+          <span class="squad-name">${escapeHtml(p.name)}</span>
+          ${p.news ? '<span class="squad-flag" title="' + escapeHtml(p.news) + '">⚠️</span>' : ''}
+        </div>
+        <div class="squad-meta">${escapeHtml(p.team || '')} · ${p.position} ${fixtureBadge(p.nextFixture)}</div>
+      </div>
+      <div class="squad-pts">${p.contribution}</div>
+    </div>
+  `).join('');
+
+  gwStatusCard.innerHTML = `
+    <div class="gw-status-item"><div class="gw-status-label">Points</div><div class="gw-status-val ok">${h.livePoints ?? '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Played</div><div class="gw-status-val">${h.playersPlayed}/${h.playersInPlay}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Captain</div><div class="gw-status-val ${h.captainPlayed ? 'ok' : 'warn'}">${escapeHtml(h.captainName || '—')} ${h.captainPlayed ? '✓' : '⏳'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">GW average</div><div class="gw-status-val">${h.gwAverage ?? '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Chip</div><div class="gw-status-val" style="color:${h.chipActive ? 'var(--gold)' : 'var(--text-faint)'}">${h.chipActive ? h.chipActive.toUpperCase() : 'None'}</div></div>
+  `;
+
+  const blanksHtml = h.upcoming.blanks.length
+    ? h.upcoming.blanks.map(t => `<span class="chip-pill chip-freehit">${escapeHtml(t)} BLANK</span>`).join('')
+    : '<span class="chip-none">none</span>';
+  const doublesHtml = h.upcoming.doubles.length
+    ? h.upcoming.doubles.map(t => `<span class="chip-pill chip-bboost">${escapeHtml(t)} DOUBLE</span>`).join('')
+    : '<span class="chip-none">none</span>';
+
+  upcomingCard.innerHTML = `
+    <div class="gw-status-item"><div class="gw-status-label">Free transfers<span class="estimate-tag">est.</span></div><div class="gw-status-val">${h.freeTransfersEstimate ?? '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Bank</div><div class="gw-status-val">£${h.bank != null ? h.bank.toFixed(1) : '—'}m</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Team value</div><div class="gw-status-val">£${h.teamValue != null ? h.teamValue.toFixed(1) : '—'}m</div></div>
+    <div class="gw-status-item" style="min-width:200px"><div class="gw-status-label">Blanks next GW</div><div style="margin-top:4px">${blanksHtml}</div></div>
+    <div class="gw-status-item" style="min-width:200px"><div class="gw-status-label">Doubles next GW</div><div style="margin-top:4px">${doublesHtml}</div></div>
+  `;
 }
 
-function buildPlayerAnalysis(me, elementsById, liveStatsById) {
-  if (!me) return null;
+/* ---- Rival Intelligence rendering ---- */
+function computeThreat(myPts, rivalPts, rivalPlayersRemaining) {
+  const score = (rivalPts - myPts) + (rivalPlayersRemaining * 2);
+  if (score <= -5) return { label: 'LOW', cls: 'threat-low' };
+  if (score <= 5) return { label: 'MED', cls: 'threat-med' };
+  return { label: 'HIGH', cls: 'threat-high' };
+}
 
-  return me.picks.map(p => {
-    const el = elementsById[p.element];
-    if (!el) return null;
+function playersRemainingCount(picks) {
+  return picks.filter(p => p.multiplier > 0 && p.contribution === 0).length;
+}
 
-    const seasonMinutes = el.minutes || 0;
-    const seasonXG = parseFloat(el.expected_goals || 0);
-    const seasonXA = parseFloat(el.expected_assists || 0);
-    const seasonXGI = parseFloat(el.expected_goal_involvements || 0);
-    const seasonXgiPer90 = seasonMinutes > 0 ? (seasonXGI / (seasonMinutes / 90)) : 0;
+function renderRivalsOverview() {
+  const wrap = document.getElementById('rivalsOverviewWrap');
+  const gwLabel = document.getElementById('rivalsGwLabel');
+  if (!rivalIntel || !rivalIntel.managers.length) {
+    wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    gwLabel.textContent = '';
+    return;
+  }
+  gwLabel.textContent = `GW${rivalIntel.gw}`;
 
-    const liveStats = liveStatsById[p.element] || null;
+  const me = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const sorted = [...rivalIntel.managers].sort((a, b) => (b.gwPoints ?? -1) - (a.gwPoints ?? -1));
 
-    let trend = { minutesAvg: null, xgiAvg: null, xgiPer90: null, gwsUsed: 0 };
-    try {
-      const summary = fetchJson(`https://fantasy.premierleague.com/api/element-summary/${p.element}/`);
-      const hist = (summary.history || []).slice(-3);
-      if (hist.length) {
-        const totalMins = hist.reduce((s, h) => s + h.minutes, 0);
-        const totalXgi = hist.reduce((s, h) => s + parseFloat(h.expected_goal_involvements || 0), 0);
-        trend = {
-          minutesAvg: totalMins / hist.length,
-          xgiAvg: totalXgi / hist.length,
-          xgiPer90: totalMins > 0 ? (totalXgi / (totalMins / 90)) : 0,
-          gwsUsed: hist.length
-        };
-      }
-    } catch (err) { /* leave nulls */ }
-
-    let score = 0;
-    if (trend.minutesAvg !== null) {
-      if (trend.minutesAvg >= 60) score += 2;
-      else if (trend.minutesAvg >= 30) score += 1;
-      else score -= 2;
+  wrap.innerHTML = sorted.map(m => {
+    const isMe = m.entry === MY_ENTRY;
+    const gap = me && m.gwPoints != null && me.gwPoints != null ? m.gwPoints - me.gwPoints : null;
+    const remaining = playersRemainingCount(m.picks);
+    let threatHtml = '';
+    if (!isMe && me) {
+      const threat = computeThreat(me.gwPoints ?? 0, m.gwPoints ?? 0, remaining);
+      threatHtml = `<span class="threat-badge ${threat.cls}">${threat.label}</span>`;
     }
-    if (trend.xgiPer90 !== null && seasonXgiPer90 > 0) {
-      if (trend.xgiPer90 >= seasonXgiPer90 * 1.1) score += 2;
-      else if (trend.xgiPer90 <= seasonXgiPer90 * 0.7) score -= 2;
-    }
-    const fixtureDiff = p.nextFixture ? p.nextFixture.difficulty : 3;
-    if (fixtureDiff <= 2) score += 1;
-    else if (fixtureDiff >= 4) score -= 1;
-    if (el.status !== 'a') score -= 3;
+    return `
+      <div class="rival-ov-row ${isMe ? 'me' : ''} ${selectedRivalEntry === m.entry ? 'selected' : ''}" data-entry="${m.entry}">
+        <div class="rival-ov-left">
+          <div class="rival-ov-name">${escapeHtml(m.entry_name)}${isMe ? ' (you)' : ''}</div>
+          <div class="rival-ov-meta">C: ${m.captainName ? escapeHtml(m.captainName) : '—'} (${m.captainPoints ?? 0})${m.chipActive ? ' · ' + m.chipActive.toUpperCase() : ''} · ${remaining} left to play</div>
+        </div>
+        <div class="rival-ov-right">
+          ${!isMe && gap != null ? `<span class="rival-ov-gap ${gap > 0 ? 'behind' : 'ahead'}">${gap > 0 ? '+' + gap : gap}</span>` : ''}
+          ${threatHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
 
-    let bucket;
-    if (score >= 4) bucket = { emoji: '🔥', label: 'Strong' };
-    else if (score >= 2) bucket = { emoji: '✅', label: 'Hold' };
-    else if (score >= 0) bucket = { emoji: '👀', label: 'Monitor' };
-    else if (score >= -2) bucket = { emoji: '⚠️', label: 'Concern' };
-    else bucket = { emoji: '🔴', label: 'Sell candidate' };
+  wrap.querySelectorAll('.rival-ov-row:not(.me)').forEach(row => {
+    row.addEventListener('click', () => {
+      selectedRivalEntry = Number(row.dataset.entry);
+      renderRivalsOverview();
+      renderRivalCompare();
+    });
+  });
+}
 
-    return {
-      element: p.element,
-      name: p.name,
-      team: p.team,
-      position: p.position,
-      isCaptain: p.isCaptain,
-      isVice: p.isVice,
-      isBench: p.isBench,
+function renderRivalCompare() {
+  const wrap = document.getElementById('rivalCompareWrap');
+  if (!rivalIntel || !selectedRivalEntry) {
+    wrap.innerHTML = '<div class="empty-note">Select a rival above to compare.</div>';
+    return;
+  }
+  const me = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const them = rivalIntel.managers.find(m => m.entry === selectedRivalEntry);
+  if (!me || !them) { wrap.innerHTML = '<div class="empty-note">No data for this rival yet.</div>'; return; }
+
+  const myIds = new Set(me.picks.map(p => p.element));
+  const theirIds = new Set(them.picks.map(p => p.element));
+  const shared = me.picks.filter(p => theirIds.has(p.element));
+  const oursOnly = me.picks.filter(p => !theirIds.has(p.element) && p.multiplier > 0);
+  const theirsOnly = them.picks.filter(p => !myIds.has(p.element) && p.multiplier > 0);
+
+  const ourDiffPts = oursOnly.reduce((s, p) => s + p.contribution, 0);
+  const theirDiffPts = theirsOnly.reduce((s, p) => s + p.contribution, 0);
+  const netSwing = ourDiffPts - theirDiffPts;
+
+  const myRemaining = playersRemainingCount(me.picks);
+  const theirRemaining = playersRemainingCount(them.picks);
+
+  const myCapPlayed = me.picks.find(p => p.isCaptain)?.contribution !== 0;
+  const theirCapPlayed = them.picks.find(p => p.isCaptain)?.contribution !== 0;
+  const swingActive = !myCapPlayed || !theirCapPlayed;
+
+  const chipLabel = c => ({ wildcard: 'WC', bboost: 'BB', '3xc': 'TC', freehit: 'FH' }[c] || c);
+  const chipHistoryHtml = (chips) => chips.length
+    ? chips.map(c => `<span class="chip-pill chip-${c.name === '3xc' ? '3xc' : c.name}">${chipLabel(c.name)} GW${c.event}</span>`).join('')
+    : '<span class="chip-none">none used</span>';
+
+  wrap.innerHTML = `
+    <div class="h2h-header">
+      <div class="h2h-side">
+        <div class="h2h-name">Us</div>
+        <div class="h2h-sub">C: ${me.captainName ? escapeHtml(me.captainName) : '—'} (${me.captainPoints ?? 0})</div>
+        <div class="h2h-pts">${me.gwPoints ?? '—'}</div>
+      </div>
+      <div class="h2h-vs">VS</div>
+      <div class="h2h-side">
+        <div class="h2h-name">${escapeHtml(them.entry_name)}</div>
+        <div class="h2h-sub">C: ${them.captainName ? escapeHtml(them.captainName) : '—'} (${them.captainPoints ?? 0})</div>
+        <div class="h2h-pts">${them.gwPoints ?? '—'}</div>
+      </div>
+    </div>
+
+    <div class="h2h-row"><div style="flex:1"><div class="h2h-row-label">Active chip</div>${me.chipActive ? me.chipActive.toUpperCase() : 'None'}</div><div style="flex:1;text-align:right"><div class="h2h-row-label">Active chip</div>${them.chipActive ? them.chipActive.toUpperCase() : 'None'}</div></div>
+    <div class="h2h-row"><div style="flex:1"><div class="h2h-row-label">Players left to play</div>${myRemaining}</div><div style="flex:1;text-align:right"><div class="h2h-row-label">Players left to play</div>${theirRemaining}</div></div>
+    <div class="h2h-row"><div style="flex:1"><div class="h2h-row-label">Shared players</div>${shared.length}</div><div style="flex:1;text-align:right"><div class="h2h-row-label">Chips used this season</div>${chipHistoryHtml(me.seasonChips || [])}</div></div>
+    <div class="h2h-row"><div></div><div style="flex:1;text-align:right"><div class="h2h-row-label">Their chips used this season</div>${chipHistoryHtml(them.seasonChips || [])}</div></div>
+
+    <div class="captain-battle">
+      <div class="captain-side">
+        <div class="captain-side-label">Our captain</div>
+        <div class="captain-side-name">${me.captainName ? escapeHtml(me.captainName) : '—'}</div>
+        <div class="captain-side-pts">${me.captainPoints ?? 0} pts</div>
+      </div>
+      <div class="captain-side">
+        <div class="captain-side-label">Their captain</div>
+        <div class="captain-side-name">${them.captainName ? escapeHtml(them.captainName) : '—'}</div>
+        <div class="captain-side-pts">${them.captainPoints ?? 0} pts</div>
+      </div>
+      <div class="swing-potential">Captaincy swing potential: ${swingActive ? '🟡 active — a captain still to play' : '✅ settled — both captains have played'}</div>
+    </div>
+
+    <div class="section-label">Differential battle</div>
+    <div class="swing-card">
+      <div class="swing-cols">
+        <div class="swing-col">
+          <div class="swing-col-label">Ours only (${oursOnly.length})</div>
+          ${oursOnly.length ? oursOnly.map(p => `<div class="swing-player"><span>${escapeHtml(p.name)}</span><span>${p.contribution}</span></div>`).join('') : '<div class="empty-note" style="padding:8px 0">None</div>'}
+        </div>
+        <div class="swing-col">
+          <div class="swing-col-label">Theirs only (${theirsOnly.length})</div>
+          ${theirsOnly.length ? theirsOnly.map(p => `<div class="swing-player"><span>${escapeHtml(p.name)}</span><span>${p.contribution}</span></div>`).join('') : '<div class="empty-note" style="padding:8px 0">None</div>'}
+        </div>
+      </div>
+      <div class="swing-total ${netSwing >= 0 ? 'pos' : 'neg'}">
+        Differential score: Us +${ourDiffPts} / Them +${theirDiffPts} · Net swing: ${netSwing >= 0 ? '+' : ''}${netSwing} ${netSwing >= 0 ? 'us' : 'them'}
+      </div>
+    </div>
+  `;
+}
+
+/* ---- Player Analysis (Phase 3A) rendering ---- */
+const BUCKET_CLASS = {
+  'Strong': 'strong', 'Hold': 'hold', 'Monitor': 'monitor', 'Concern': 'concern', 'Sell candidate': 'sell'
+};
+
+function renderPlayerAnalysis() {
+  const wrap = document.getElementById('analysisWrap');
+  const gwLabel = document.getElementById('analysisGwLabel');
+
+  if (!playerAnalysis || !playerAnalysis.length) {
+    wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    gwLabel.textContent = '';
+    return;
+  }
+
+  gwLabel.textContent = rivalIntel ? `GW${rivalIntel.gw}` : '';
+
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const sorted = [...playerAnalysis].sort((a, b) => {
+    if (a.isBench !== b.isBench) return a.isBench ? 1 : -1;
+    return (order[a.position] || 9) - (order[b.position] || 9);
+  });
+
+  wrap.innerHTML = sorted.map(p => {
+    const o = p.official;
+    const t = p.trend;
+    const h = p.heuristic;
+    const bucketCls = BUCKET_CLASS[h.bucket] || 'monitor';
+
+    return `
+      <div class="pa-card ${p.isBench ? 'bench' : ''}">
+        <div class="pa-head">
+          <div>
+            <div class="pa-name-block">
+              ${p.isCaptain ? '<span class="squad-badge c">C</span>' : ''}${p.isVice ? '<span class="squad-badge v">V</span>' : ''}
+              <span class="pa-name">${escapeHtml(p.name)}</span>
+            </div>
+            <div class="pa-meta">${escapeHtml(p.team || '')} · ${p.position} ${p.isBench ? '· bench' : ''} ${fixtureBadge(p.nextFixture)}</div>
+          </div>
+          <div class="pa-bucket ${bucketCls}">${h.emoji} ${h.bucket}</div>
+        </div>
+
+        <div class="pa-section-tag official">Official data — this gameweek</div>
+        <div class="pa-stat-grid">
+          <div class="pa-stat"><div class="pa-stat-label">Points</div><div class="pa-stat-val">${o.gwPointsScored ?? '—'}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">Minutes</div><div class="pa-stat-val">${o.gwMinutes ?? '—'}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">xG</div><div class="pa-stat-val">${o.gwXG != null ? o.gwXG.toFixed(2) : '—'}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">xA</div><div class="pa-stat-val">${o.gwXA != null ? o.gwXA.toFixed(2) : '—'}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">xGI</div><div class="pa-stat-val">${o.gwXGI != null ? o.gwXGI.toFixed(2) : '—'}</div></div>
+        </div>
+
+        <div class="pa-section-tag official">Official data — season</div>
+        <div class="pa-stat-grid">
+          <div class="pa-stat"><div class="pa-stat-label">Minutes</div><div class="pa-stat-val">${o.seasonMinutes}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">xG</div><div class="pa-stat-val">${o.seasonXG.toFixed(2)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">xA</div><div class="pa-stat-val">${o.seasonXA.toFixed(2)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">xGI</div><div class="pa-stat-val">${o.seasonXGI.toFixed(2)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">Form</div><div class="pa-stat-val">${o.form.toFixed(1)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">PPG</div><div class="pa-stat-val">${o.pointsPerGame.toFixed(1)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">ep_next</div><div class="pa-stat-val">${o.epNext.toFixed(1)}</div></div>
+        </div>
+
+        ${t.gwsUsed > 0 ? `
+        <div class="pa-section-tag official">Official data — last ${t.gwsUsed} GW vs season (trend)</div>
+        <div class="pa-stat-grid">
+          <div class="pa-stat"><div class="pa-stat-label">Last-${t.gwsUsed} mins avg</div><div class="pa-stat-val">${t.last3MinutesAvg.toFixed(0)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">Last-${t.gwsUsed} xGI/90</div><div class="pa-stat-val">${t.last3XgiPer90.toFixed(2)}</div></div>
+          <div class="pa-stat"><div class="pa-stat-label">Season xGI/90</div><div class="pa-stat-val">${t.seasonXgiPer90.toFixed(2)}</div></div>
+        </div>` : ''}
+
+        ${o.news ? `<div class="pa-news">⚠️ ${escapeHtml(o.news)}${o.chanceOfPlaying != null ? ' (' + o.chanceOfPlaying + '% chance)' : ''}</div>` : ''}
+
+        <div class="pa-section-tag heuristic">Heuristic — our model opinion</div>
+        <div class="pa-heuristic-note">${escapeHtml(h.factorsNote)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---- GW Planner (Phase 3B) rendering ---- */
+function renderPlanner() {
+  const gwLabel = document.getElementById('plannerGwLabel');
+  if (!gwPlanner) {
+    document.getElementById('plannerStateCard').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    document.getElementById('plannerWarningWrap').innerHTML = '';
+    document.getElementById('plannerSquadWrap').innerHTML = '';
+    document.getElementById('squadProblemsWrap').innerHTML = '';
+    document.getElementById('possibleMovesWrap').innerHTML = '';
+    document.getElementById('futureWatchWrap').innerHTML = '';
+    populateSandboxOut();
+    gwLabel.textContent = '';
+    return;
+  }
+  gwLabel.textContent = `GW${gwPlanner.nextGw}`;
+
+  const p = gwPlanner;
+  document.getElementById('plannerStateCard').innerHTML = `
+    <div class="gw-status-item"><div class="gw-status-label">Next GW</div><div class="gw-status-val">GW${p.nextGw}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Deadline</div><div class="gw-status-val">${p.deadline ? new Date(p.deadline.deadline_time).toLocaleString(undefined, {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Free transfers<span class="estimate-tag">est.</span></div><div class="gw-status-val">${p.ftEstimate ?? '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Bank</div><div class="gw-status-val">£${p.bank != null ? p.bank.toFixed(1) : '—'}m</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Team value</div><div class="gw-status-val">£${p.teamValue != null ? p.teamValue.toFixed(1) : '—'}m</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Chip</div><div class="gw-status-val" style="color:${p.chipActive ? 'var(--gold)' : 'var(--text-faint)'}">${p.chipActive ? p.chipActive.toUpperCase() : 'None'}</div></div>
+  `;
+
+  const myTeams = [...new Set(p.squad.map(s => s.team))];
+  const affectedBlanks = p.futureWatch.blanksAhead.filter(b => myTeams.includes(b.team));
+  const affectedDoubles = p.futureWatch.doublesAhead.filter(d => myTeams.includes(d.team));
+  let warnHtml = '';
+  affectedBlanks.forEach(b => { warnHtml += `<div class="warning-banner">🚫 ${escapeHtml(b.team)} blanks GW${b.gws.join(', GW')} — affects your squad</div>`; });
+  affectedDoubles.forEach(d => { warnHtml += `<div class="warning-banner" style="background:rgba(232,185,79,0.10);border-color:var(--gold);color:var(--gold)">✌️ ${escapeHtml(d.team)} doubles GW${d.gws.join(', GW')} — affects your squad</div>`; });
+  document.getElementById('plannerWarningWrap').innerHTML = warnHtml;
+
+  renderPlannerSquad();
+  renderSquadProblems();
+  renderPossibleMoves();
+  renderFutureWatch();
+  populateSandboxOut();
+}
+
+function renderPlannerSquad() {
+  const wrap = document.getElementById('plannerSquadWrap');
+  if (!gwPlanner || !gwPlanner.squad.length) { wrap.innerHTML = '<div class="empty-note">No squad data yet.</div>'; return; }
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const sorted = [...gwPlanner.squad].sort((a, b) => {
+    if (a.isBench !== b.isBench) return a.isBench ? 1 : -1;
+    return (order[a.position] || 9) - (order[b.position] || 9);
+  });
+  wrap.innerHTML = sorted.map(pl => {
+    const bucketCls = pl.heuristic ? (BUCKET_CLASS[pl.heuristic.bucket] || 'monitor') : '';
+    return `
+      <div class="planner-squad-row">
+        <div class="planner-squad-head">
+          <div>
+            <div class="planner-squad-name">${pl.isCaptain ? '<span class="squad-badge c">C</span> ' : ''}${pl.isVice ? '<span class="squad-badge v">V</span> ' : ''}${escapeHtml(pl.name)}</div>
+            <div class="planner-squad-meta">${escapeHtml(pl.team || '')} · ${pl.position} · £${pl.price != null ? pl.price.toFixed(1) : '—'}m · ep_next ${pl.epNext != null ? pl.epNext.toFixed(1) : '—'} · form ${pl.form != null ? pl.form.toFixed(1) : '—'}</div>
+          </div>
+          ${pl.heuristic ? `<div class="pa-bucket ${bucketCls}">${pl.heuristic.emoji} ${pl.heuristic.bucket}</div>` : ''}
+        </div>
+        ${pl.news ? `<div class="pa-news">⚠️ ${escapeHtml(pl.news)}</div>` : ''}
+        <div class="planner-fx-row">
+          ${(pl.next5 || []).map(f => `<div class="planner-fx-cell fdr-${f.difficulty}">GW${f.gw}: ${escapeHtml(f.opponent)} (${f.venue})</div>`).join('') || '<span class="chip-none">no fixtures in window</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSquadProblems() {
+  const wrap = document.getElementById('squadProblemsWrap');
+  if (!gwPlanner || !gwPlanner.squadProblems.length) { wrap.innerHTML = '<div class="empty-note">No problems detected right now.</div>'; return; }
+  const icons = { news: '⚠️', heuristic: '📉', fixtures: '🔻', blank: '🚫' };
+  wrap.innerHTML = gwPlanner.squadProblems.map(pr => `
+    <div class="problem-row">
+      <div class="problem-icon">${icons[pr.type] || '•'}</div>
+      <div class="problem-text"><b>${escapeHtml(pr.player)}</b> (${escapeHtml(pr.team || '')}) — ${escapeHtml(pr.detail)}</div>
+    </div>
+  `).join('');
+}
+
+function renderPossibleMoves() {
+  const wrap = document.getElementById('possibleMovesWrap');
+  if (!gwPlanner || !gwPlanner.possibleMoves) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+  const positions = ['GKP', 'DEF', 'MID', 'FWD'];
+  wrap.innerHTML = positions.map(pos => {
+    const list = gwPlanner.possibleMoves[pos] || [];
+    if (!list.length) return '';
+    return `
+      <div class="pm-position-group">
+        <div class="pm-position-label">${pos}</div>
+        ${list.map(c => `
+          <div class="pm-candidate-row">
+            <div>
+              <div class="pm-candidate-name">${escapeHtml(c.name)}</div>
+              <div class="pm-candidate-meta">${escapeHtml(c.team)} · £${c.price.toFixed(1)}m · form ${c.form.toFixed(1)} · xGI/90 ${c.seasonXgiPer90.toFixed(2)}</div>
+            </div>
+            ${fixtureBadge(c.nextFixture)}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFutureWatch() {
+  const wrap = document.getElementById('futureWatchWrap');
+  if (!gwPlanner || !gwPlanner.futureWatch) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+  const fw = gwPlanner.futureWatch;
+
+  const swingRow = (s, positive) => `
+    <div class="swing-list-row">
+      <span>${escapeHtml(s.team)}</span>
+      <span style="color:${positive ? 'var(--lime)' : 'var(--red)'}">${s.earlyAvg.toFixed(1)} → ${s.lateAvg.toFixed(1)} (${s.swing >= 0 ? '+' : ''}${s.swing.toFixed(1)})</span>
+    </div>`;
+
+  let html = '<div class="pm-position-label">Fixtures improving</div>';
+  html += fw.improving.length ? fw.improving.map(s => swingRow(s, true)).join('') : '<div class="empty-note" style="padding:6px 0">None significant</div>';
+  html += '<div class="pm-position-label" style="margin-top:12px">Fixtures worsening</div>';
+  html += fw.worsening.length ? fw.worsening.map(s => swingRow(s, false)).join('') : '<div class="empty-note" style="padding:6px 0">None significant</div>';
+
+  if (fw.blanksAhead.length) {
+    html += '<div class="pm-position-label" style="margin-top:12px">Blanks ahead</div>';
+    html += fw.blanksAhead.map(b => `<div class="swing-list-row"><span>${escapeHtml(b.team)}</span><span>GW${b.gws.join(', GW')}</span></div>`).join('');
+  }
+  if (fw.doublesAhead.length) {
+    html += '<div class="pm-position-label" style="margin-top:12px">Doubles ahead</div>';
+    html += fw.doublesAhead.map(d => `<div class="swing-list-row"><span>${escapeHtml(d.team)}</span><span>GW${d.gws.join(', GW')}</span></div>`).join('');
+  }
+  wrap.innerHTML = html;
+}
+
+/* ---- Transfer sandbox ---- */
+function populateSandboxOut() {
+  const sel = document.getElementById('sandboxOut');
+  if (!gwPlanner || !gwPlanner.squad.length) {
+    sel.innerHTML = '<option value="">No squad data yet</option>';
+    return;
+  }
+  const prevValue = sel.value;
+  sel.innerHTML = '<option value="">Select a player to sell…</option>' +
+    gwPlanner.squad.map(p => `<option value="${p.element}">${escapeHtml(p.name)} (${p.position}, £${p.price.toFixed(1)}m)</option>`).join('');
+  if (prevValue) sel.value = prevValue;
+}
+
+function runSandboxSearch(query) {
+  const results = document.getElementById('sandboxInResults');
+  if (!query || query.length < 2 || !sandboxOutElement || !gwPlanner) { results.innerHTML = ''; results.style.display = 'none'; return; }
+  const outPlayer = gwPlanner.squad.find(p => p.element === sandboxOutElement);
+  if (!outPlayer) { results.innerHTML = ''; results.style.display = 'none'; return; }
+  const squadIds = new Set(gwPlanner.squad.map(p => p.element));
+  const q = query.toLowerCase();
+  const matches = gwPlanner.allPlayers
+    .filter(p => p.position === outPlayer.position && !squadIds.has(p.id) && p.name.toLowerCase().includes(q))
+    .slice(0, 8);
+  if (!matches.length) { results.innerHTML = '<div class="sandbox-search-item">No matches</div>'; results.style.display = 'block'; return; }
+  results.innerHTML = matches.map(p => `
+    <div class="sandbox-search-item" data-id="${p.id}">
+      ${escapeHtml(p.name)} <span class="ssi-meta">${escapeHtml(p.team)} · £${p.price.toFixed(1)}m · ep_next ${p.epNext.toFixed(1)}</span>
+    </div>
+  `).join('');
+  results.style.display = 'block';
+  results.querySelectorAll('.sandbox-search-item[data-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      sandboxInElement = Number(el.dataset.id);
+      const p = gwPlanner.allPlayers.find(x => x.id === sandboxInElement);
+      document.getElementById('sandboxSelectedIn').textContent = p ? `Selected: ${p.name} (${p.team})` : '';
+      document.getElementById('sandboxInSearch').value = p ? p.name : '';
+      results.innerHTML = ''; results.style.display = 'none';
+      renderSandboxResult();
+    });
+  });
+}
+
+function renderSandboxResult() {
+  const wrap = document.getElementById('sandboxResult');
+  if (!sandboxOutElement || !sandboxInElement || !gwPlanner) { wrap.innerHTML = ''; return; }
+  const out = gwPlanner.squad.find(p => p.element === sandboxOutElement);
+  const inP = gwPlanner.allPlayers.find(p => p.id === sandboxInElement);
+  if (!out || !inP) { wrap.innerHTML = ''; return; }
+
+  const bankAfter = gwPlanner.bank + out.price - inP.price;
+  const affordable = bankAfter >= 0;
+
+  const squadTeamCount = gwPlanner.squad.filter(p => p.team === inP.team && p.element !== out.element).length;
+  const teamLegal = squadTeamCount < 3;
+
+  const usesHit = !gwPlanner.ftEstimate || gwPlanner.ftEstimate < 1;
+
+  const outXgiPer90 = out.seasonMinutes > 0 ? (out.seasonXGI / (out.seasonMinutes / 90)) : 0;
+  const inXgiPer90 = inP.seasonMinutes > 0 ? (inP.seasonXGI / (inP.seasonMinutes / 90)) : 0;
+
+  const outAvg5 = out.next5 && out.next5.length ? (out.next5.reduce((s, f) => s + f.difficulty, 0) / out.next5.length) : null;
+  const inAvg5 = inP.avgDifficultyNext5;
+
+  let verdictHtml = '';
+  if (!affordable) verdictHtml = `<div class="sandbox-verdict bad">❌ Not affordable — £${Math.abs(bankAfter).toFixed(1)}m short</div>`;
+  else if (!teamLegal) verdictHtml = `<div class="sandbox-verdict bad">❌ Illegal — would exceed 3 players from ${escapeHtml(inP.team)}</div>`;
+  else verdictHtml = `<div class="sandbox-verdict ok">✓ Legal move — bank after: £${bankAfter.toFixed(1)}m · ${usesHit ? '−4 hit (no FT available)' : 'uses 1 FT, no hit'}</div>`;
+
+  wrap.innerHTML = `
+    <div class="sandbox-result-card">
+      ${verdictHtml}
+      <div class="sandbox-approx-tag" style="margin-bottom:10px">⚠️ Sell price approximated as current price — your real sell value may be lower if this player has risen since you bought them.</div>
+      <table class="sandbox-compare-table">
+        <thead><tr><th></th><th>OUT: ${escapeHtml(out.name)}</th><th>IN: ${escapeHtml(inP.name)}</th></tr></thead>
+        <tbody>
+          <tr><td>Price</td><td>£${out.price.toFixed(1)}m</td><td>£${inP.price.toFixed(1)}m</td></tr>
+          <tr><td>Next fixture (1-GW)</td><td>${out.next5 && out.next5[0] ? escapeHtml(out.next5[0].opponent) + ' (' + out.next5[0].venue + ')' : '—'}</td><td>${inP.nextFixture ? escapeHtml(inP.nextFixture.opponent) + ' (' + inP.nextFixture.venue + ')' : '—'}</td></tr>
+          <tr><td>Avg difficulty (5-GW)</td><td>${outAvg5 != null ? outAvg5.toFixed(1) : '—'}</td><td>${inAvg5 != null ? inAvg5.toFixed(1) : '—'}</td></tr>
+          <tr><td>ep_next</td><td>${out.epNext != null ? out.epNext.toFixed(1) : '—'}</td><td>${inP.epNext.toFixed(1)}</td></tr>
+          <tr><td>Form</td><td>${out.form != null ? out.form.toFixed(1) : '—'}</td><td>${inP.form.toFixed(1)}</td></tr>
+          <tr><td>Season xGI/90</td><td>${outXgiPer90.toFixed(2)}</td><td>${inXgiPer90.toFixed(2)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* ---- Captain & Chips (Phase 3C) ---- */
+let addedCaptainElementIds = new Set();
+let addedCaptainTrends = {};
+
+function buildAllCaptainCandidates() {
+  const squadCandidates = (playerAnalysis || [])
+    .filter(p => !p.isBench)
+    .map(p => ({
+      element: p.element, name: p.name, team: p.team, isSquad: true,
       nextFixture: p.nextFixture,
+      epNext: p.official.epNext, form: p.official.form,
+      seasonXG90: p.official.seasonMinutes > 0 ? (p.official.seasonXG / (p.official.seasonMinutes / 90)) : 0,
+      seasonXA90: p.official.seasonMinutes > 0 ? (p.official.seasonXA / (p.official.seasonMinutes / 90)) : 0,
+      seasonXGI90: p.trend.seasonXgiPer90,
+      last3XgiPer90: p.trend.last3XgiPer90, last3MinutesAvg: p.trend.last3MinutesAvg, gwsUsedTrend: p.trend.gwsUsed,
+      news: p.official.news, status: p.official.status, ownership: p.official.ownership,
+      fresh: false
+    }));
 
-      official: {
-        gwPointsScored: liveStats ? liveStats.points : null,
-        gwMinutes: liveStats ? liveStats.minutes : null,
-        gwXG: liveStats ? liveStats.xG : null,
-        gwXA: liveStats ? liveStats.xA : null,
-        gwXGI: liveStats ? liveStats.xGI : null,
-        seasonMinutes: seasonMinutes,
-        seasonXG: seasonXG,
-        seasonXA: seasonXA,
-        seasonXGI: seasonXGI,
-        form: parseFloat(el.form || 0),
-        epNext: parseFloat(el.ep_next || 0),
-        pointsPerGame: parseFloat(el.points_per_game || 0),
-        ownership: parseFloat(el.selected_by_percent || 0),
-        news: el.news,
-        status: el.status,
-        chanceOfPlaying: (el.chance_of_playing_next_round === null || el.chance_of_playing_next_round === undefined) ? null : el.chance_of_playing_next_round
-      },
-
-      trend: {
-        last3MinutesAvg: trend.minutesAvg,
-        last3XgiAvg: trend.xgiAvg,
-        last3XgiPer90: trend.xgiPer90,
-        seasonXgiPer90: seasonXgiPer90,
-        gwsUsed: trend.gwsUsed
-      },
-
-      heuristic: {
-        bucket: bucket.label,
-        emoji: bucket.emoji,
-        score: score,
-        factorsNote: 'Minutes security, xGI trend (last ' + trend.gwsUsed + ' GW vs season), next-fixture difficulty, availability status. Raw points NOT used as an input.'
-      }
+  const addedCandidates = [...addedCaptainElementIds].map(id => {
+    const ap = gwPlanner ? gwPlanner.allPlayers.find(x => x.id === id) : null;
+    if (!ap) return null;
+    const cachedTrend = addedCaptainTrends[id];
+    return {
+      element: ap.id, name: ap.name, team: ap.team, isSquad: false,
+      nextFixture: ap.nextFixture,
+      epNext: ap.epNext, form: ap.form,
+      seasonXG90: ap.seasonMinutes > 0 ? (ap.seasonXG / (ap.seasonMinutes / 90)) : 0,
+      seasonXA90: ap.seasonMinutes > 0 ? (ap.seasonXA / (ap.seasonMinutes / 90)) : 0,
+      seasonXGI90: ap.seasonMinutes > 0 ? (ap.seasonXGI / (ap.seasonMinutes / 90)) : 0,
+      last3XgiPer90: cachedTrend ? cachedTrend.last3XgiPer90 : null,
+      last3MinutesAvg: cachedTrend ? cachedTrend.last3MinutesAvg : null,
+      gwsUsedTrend: cachedTrend ? cachedTrend.gwsUsed : 0,
+      news: ap.news, status: ap.status, ownership: ap.ownership,
+      fresh: !!cachedTrend
     };
   }).filter(Boolean);
+
+  return [...squadCandidates, ...addedCandidates];
 }
 
-function buildGwPlanner(me, bootstrap, fixtureDifficultyData, playerAnalysis, elementsById, teamsById, deadlineObj, nextGw, ftEstimate) {
-  if (!me) return null;
+function renderCaptainTable() {
+  const tbody = document.getElementById('captainTableBody');
+  const candidates = buildAllCaptainCandidates();
+  captainCandidates = candidates;
+  if (!candidates.length) { tbody.innerHTML = '<tr><td class="empty-note">Waiting for first sync…</td></tr>'; renderCaptainPicks(); return; }
 
-  const paByElement = {};
-  (playerAnalysis || []).forEach(p => { paByElement[p.element] = p; });
+  tbody.innerHTML = candidates.map(c => `
+    <tr class="${!c.isSquad ? 'cc-added' : ''}">
+      <td>${escapeHtml(c.name)}${!c.isSquad ? `<button class="cc-remove-btn" data-remove="${c.element}" title="Remove">✕</button>` : ''}</td>
+      <td>${c.nextFixture ? escapeHtml(c.nextFixture.opponent) + ' (' + c.nextFixture.venue + ', FDR' + c.nextFixture.difficulty + ')' : '—'}</td>
+      <td>${c.epNext.toFixed(1)}</td>
+      <td>${c.form.toFixed(1)}</td>
+      <td>${c.seasonXG90.toFixed(2)}</td>
+      <td>${c.seasonXA90.toFixed(2)}</td>
+      <td>${c.seasonXGI90.toFixed(2)}</td>
+      <td>${c.last3XgiPer90 != null ? c.last3XgiPer90.toFixed(2) : '—'}${c.fresh ? '<span class="cc-fresh-tag"> live</span>' : ''}</td>
+      <td>${c.last3MinutesAvg != null ? c.last3MinutesAvg.toFixed(0) : '—'}</td>
+      <td>${c.news ? '⚠️' : (c.status !== 'a' ? '🚫' : '—')}</td>
+      <td>${c.ownership.toFixed(1)}%</td>
+    </tr>
+  `).join('');
 
-  const teamFixtures = {};
-  fixtureDifficultyData.teams.forEach(t => { teamFixtures[t.team] = t.fixtures; });
-  const gwsWindow = fixtureDifficultyData.gws;
-
-  const teamGwCounts = {};
-  fixtureDifficultyData.teams.forEach(t => {
-    teamGwCounts[t.team] = {};
-    gwsWindow.forEach(gw => { teamGwCounts[t.team][gw] = 0; });
-    t.fixtures.forEach(f => { teamGwCounts[t.team][f.gw] = (teamGwCounts[t.team][f.gw] || 0) + 1; });
-  });
-  const teamBlanksDoubles = {};
-  Object.keys(teamGwCounts).forEach(team => {
-    const blanks = [];
-    const doubles = [];
-    gwsWindow.forEach(gw => {
-      const c = teamGwCounts[team][gw] || 0;
-      if (c === 0) blanks.push(gw);
-      if (c >= 2) doubles.push(gw);
-    });
-    teamBlanksDoubles[team] = { blanks: blanks, doubles: doubles };
-  });
-
-  const teamSwing = {};
-  Object.keys(teamFixtures).forEach(team => {
-    const fx = teamFixtures[team];
-    const early = fx.filter(f => gwsWindow.indexOf(f.gw) < 2);
-    const late = fx.filter(f => gwsWindow.indexOf(f.gw) >= 2);
-    const avg = arr => arr.length ? arr.reduce((s, f) => s + f.difficulty, 0) / arr.length : null;
-    const earlyAvg = avg(early);
-    const lateAvg = avg(late);
-    teamSwing[team] = {
-      earlyAvg: earlyAvg, lateAvg: lateAvg,
-      swing: (earlyAvg !== null && lateAvg !== null) ? (earlyAvg - lateAvg) : null
-    };
-  });
-
-  const squad = me.picks.map(p => {
-    const el = elementsById[p.element];
-    const pa = paByElement[p.element];
-    const seasonMinutes = el ? (el.minutes || 0) : 0;
-    const seasonXGI = el ? parseFloat(el.expected_goal_involvements || 0) : 0;
-    return {
-      element: p.element,
-      name: p.name,
-      team: p.team,
-      position: p.position,
-      isCaptain: p.isCaptain,
-      isVice: p.isVice,
-      isBench: p.isBench,
-      price: el ? el.now_cost / 10 : null,
-      status: el ? el.status : 'a',
-      news: el ? el.news : '',
-      epNext: el ? parseFloat(el.ep_next || 0) : null,
-      form: el ? parseFloat(el.form || 0) : null,
-      seasonXGI: seasonXGI,
-      seasonMinutes: seasonMinutes,
-      next5: teamFixtures[p.team] || [],
-      heuristic: pa ? pa.heuristic : null
-    };
-  });
-
-  const squadProblems = [];
-  squad.forEach(p => {
-    if (p.news) squadProblems.push({ type: 'news', player: p.name, team: p.team, detail: p.news });
-    if (p.heuristic && (p.heuristic.bucket === 'Concern' || p.heuristic.bucket === 'Sell candidate')) {
-      squadProblems.push({ type: 'heuristic', player: p.name, team: p.team, detail: p.heuristic.bucket + ' — see Analysis tab' });
-    }
-    const sw = teamSwing[p.team];
-    if (sw && sw.swing !== null && sw.swing <= -1.0) {
-      squadProblems.push({
-        type: 'fixtures', player: p.name, team: p.team,
-        detail: 'Fixtures worsen: ' + sw.earlyAvg.toFixed(1) + ' → ' + sw.lateAvg.toFixed(1) + ' avg difficulty'
-      });
-    }
-    const bd = teamBlanksDoubles[p.team];
-    if (bd && bd.blanks.length) {
-      squadProblems.push({ type: 'blank', player: p.name, team: p.team, detail: 'Blank in GW' + bd.blanks.join(', GW') });
-    }
-  });
-
-  const squadElementIds = new Set(me.picks.map(p => p.element));
-  const candidatesByPosition = { GKP: [], DEF: [], MID: [], FWD: [] };
-  bootstrap.elements.forEach(el => {
-    if (squadElementIds.has(el.id)) return;
-    if (el.status !== 'a') return;
-    const pos = POSITIONS[el.element_type];
-    if (!pos) return;
-    const teamShort = teamsById[el.team];
-    const seasonMinutes = el.minutes || 0;
-    const seasonXGI = parseFloat(el.expected_goal_involvements || 0);
-    const seasonXgiPer90 = seasonMinutes > 0 ? (seasonXGI / (seasonMinutes / 90)) : 0;
-    const form = parseFloat(el.form || 0);
-    const nextFx = (teamFixtures[teamShort] && teamFixtures[teamShort][0]) ? teamFixtures[teamShort][0] : null;
-    const fixtureDiff = nextFx ? nextFx.difficulty : 3;
-
-    let score = 0;
-    if (form >= 5) score += 2; else if (form >= 3) score += 1; else score -= 1;
-    if (seasonXgiPer90 >= 0.5) score += 2; else if (seasonXgiPer90 >= 0.3) score += 1;
-    if (fixtureDiff <= 2) score += 1; else if (fixtureDiff >= 4) score -= 1;
-
-    candidatesByPosition[pos].push({
-      element: el.id, name: el.web_name, team: teamShort, price: el.now_cost / 10,
-      form: form, seasonXgiPer90: seasonXgiPer90, epNext: parseFloat(el.ep_next || 0),
-      nextFixture: nextFx, score: score
+  tbody.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.remove);
+      addedCaptainElementIds.delete(id);
+      delete addedCaptainTrends[id];
+      renderCaptainTable();
+      renderCaptainPicks();
     });
   });
-  const possibleMoves = {};
-  Object.keys(candidatesByPosition).forEach(pos => {
-    possibleMoves[pos] = candidatesByPosition[pos].sort((a, b) => b.score - a.score).slice(0, 5);
-  });
 
-  const swingList = Object.keys(teamSwing)
-    .filter(team => teamSwing[team].swing !== null)
-    .map(team => ({ team: team, earlyAvg: teamSwing[team].earlyAvg, lateAvg: teamSwing[team].lateAvg, swing: teamSwing[team].swing }))
-    .sort((a, b) => b.swing - a.swing);
-  const improving = swingList.slice(0, 5);
-  const worsening = swingList.slice(-5).reverse();
-
-  const blanksAhead = [];
-  const doublesAhead = [];
-  Object.keys(teamBlanksDoubles).forEach(team => {
-    if (teamBlanksDoubles[team].blanks.length) blanksAhead.push({ team: team, gws: teamBlanksDoubles[team].blanks });
-    if (teamBlanksDoubles[team].doubles.length) doublesAhead.push({ team: team, gws: teamBlanksDoubles[team].doubles });
-  });
-
-  return {
-    nextGw: nextGw,
-    deadline: deadlineObj,
-    ftEstimate: ftEstimate,
-    bank: me.bank,
-    teamValue: me.teamValue,
-    chipActive: me.chipActive,
-    squad: squad,
-    allPlayers: bootstrap.elements.map(el => {
-      const teamShort = teamsById[el.team];
-      const fx5 = teamFixtures[teamShort] || [];
-      const avgDiff5 = fx5.length ? (fx5.reduce((s, f) => s + f.difficulty, 0) / fx5.length) : null;
-      return {
-        id: el.id, name: el.web_name, team: teamShort, position: POSITIONS[el.element_type],
-        price: el.now_cost / 10, status: el.status, news: el.news,
-        epNext: parseFloat(el.ep_next || 0), form: parseFloat(el.form || 0),
-        seasonXG: parseFloat(el.expected_goals || 0),
-        seasonXA: parseFloat(el.expected_assists || 0),
-        seasonXGI: parseFloat(el.expected_goal_involvements || 0),
-        seasonMinutes: el.minutes || 0,
-        ownership: parseFloat(el.selected_by_percent || 0),
-        nextFixture: fx5[0] || null, avgDifficultyNext5: avgDiff5
-      };
-    }),
-    squadProblems: squadProblems,
-    possibleMoves: possibleMoves,
-    futureWatch: { improving: improving, worsening: worsening, blanksAhead: blanksAhead, doublesAhead: doublesAhead }
-  };
+  renderCaptainPicks();
 }
 
-function fetchNearbyStandings(leagueId, rank) {
+function rankSafe(c) {
+  if (c.status !== 'a') return -999;
+  const minsSecurity = (c.last3MinutesAvg != null ? c.last3MinutesAvg : 60) / 90;
+  const fixtureDiff = c.nextFixture ? c.nextFixture.difficulty : 3;
+  const xgiSustain = c.last3XgiPer90 != null ? c.last3XgiPer90 : c.seasonXGI90;
+  return c.epNext * 2 + minsSecurity * 2 + c.form * 0.5 + (5 - fixtureDiff) * 0.5 + xgiSustain * 1.5;
+}
+function rankUpside(c) {
+  if (c.status !== 'a') return -999;
+  const fixtureDiff = c.nextFixture ? c.nextFixture.difficulty : 3;
+  const xgiRecent = c.last3XgiPer90 != null ? c.last3XgiPer90 : c.seasonXGI90;
+  return xgiRecent * 4 + c.epNext * 1 + (5 - fixtureDiff) * 0.5;
+}
+
+function explainPick(c, all, type) {
+  const reasons = [];
+  const maxEp = Math.max(...all.map(x => x.epNext));
+  if (c.epNext >= maxEp - 0.05) reasons.push('highest ep_next');
+  if (c.last3MinutesAvg != null && c.last3MinutesAvg >= 80) reasons.push('strong minutes security');
+  if (c.nextFixture && c.nextFixture.difficulty <= 2) reasons.push(`favourable ${c.nextFixture.venue === 'H' ? 'home' : 'away'} fixture`);
+  const xgiVal = c.last3XgiPer90 != null ? c.last3XgiPer90 : c.seasonXGI90;
+  const maxXgi = Math.max(...all.map(x => x.last3XgiPer90 != null ? x.last3XgiPer90 : x.seasonXGI90));
+  if (xgiVal >= maxXgi - 0.02) reasons.push(type === 'upside' ? 'strongest recent underlying threat' : 'sustained underlying threat');
+  if (c.form >= Math.max(...all.map(x => x.form)) - 0.1) reasons.push('in-form');
+  return reasons.length ? reasons.join(', ') + '.' : 'balanced profile across the available metrics.';
+}
+
+function renderCaptainPicks() {
+  const wrap = document.getElementById('captainPicksWrap');
+  const valid = captainCandidates.filter(c => c.status === 'a');
+  if (!valid.length) { wrap.innerHTML = '<div class="empty-note">No available candidates yet.</div>'; return; }
+
+  const safe = valid.reduce((best, c) => rankSafe(c) > rankSafe(best) ? c : best);
+  const upside = valid.reduce((best, c) => rankUpside(c) > rankUpside(best) ? c : best);
+
+  const cardHtml = (c, type, label) => `
+    <div class="cc-pick-card ${type}">
+      <div class="cc-pick-label">${type === 'safe' ? '🛡️' : '🚀'} ${label}</div>
+      <div class="cc-pick-name">${escapeHtml(c.name)}</div>
+      <div class="cc-pick-explain">${explainPick(c, valid, type)}</div>
+      <div class="cc-pick-stats">
+        <span class="cc-pick-stat">ep_next: ${c.epNext.toFixed(1)}</span>
+        <span class="cc-pick-stat">xGI/90: ${c.seasonXGI90.toFixed(2)}</span>
+        <span class="cc-pick-stat">L3 xGI/90: ${c.last3XgiPer90 != null ? c.last3XgiPer90.toFixed(2) : '—'}</span>
+        <span class="cc-pick-stat">Mins: ${c.last3MinutesAvg != null ? c.last3MinutesAvg.toFixed(0) + '/90' : '—'}</span>
+        <span class="cc-pick-stat">Fixture: ${c.nextFixture ? (c.nextFixture.venue === 'H' ? 'Home' : 'Away') + ', FDR ' + c.nextFixture.difficulty : '—'}</span>
+      </div>
+    </div>
+  `;
+
+  wrap.innerHTML = cardHtml(safe, 'safe', 'Safe Captain') + cardHtml(upside, 'upside', 'Upside Captain');
+}
+
+function runCaptainAddSearch(query) {
+  const results = document.getElementById('captainAddResults');
+  if (!query || query.length < 2 || !gwPlanner) { results.innerHTML = ''; results.style.display = 'none'; return; }
+  const existingIds = new Set(captainCandidates.map(c => c.element));
+  const q = query.toLowerCase();
+  const matches = gwPlanner.allPlayers
+    .filter(p => !existingIds.has(p.id) && p.name.toLowerCase().includes(q))
+    .slice(0, 8);
+  if (!matches.length) { results.innerHTML = '<div class="sandbox-search-item">No matches</div>'; results.style.display = 'block'; return; }
+  results.innerHTML = matches.map(p => `
+    <div class="sandbox-search-item" data-id="${p.id}">
+      ${escapeHtml(p.name)} <span class="ssi-meta">${escapeHtml(p.team)} · ${p.position} · ep_next ${p.epNext.toFixed(1)}</span>
+    </div>
+  `).join('');
+  results.style.display = 'block';
+  results.querySelectorAll('.sandbox-search-item[data-id]').forEach(el => {
+    el.addEventListener('click', () => addCaptainCandidate(Number(el.dataset.id)));
+  });
+}
+
+async function addCaptainCandidate(playerId) {
+  addedCaptainElementIds.add(playerId);
+  document.getElementById('captainAddSearch').value = '';
+  document.getElementById('captainAddResults').innerHTML = '';
+  document.getElementById('captainAddResults').style.display = 'none';
+  renderCaptainTable();
+
   try {
-    const page = Math.max(1, Math.ceil(rank / 50));
-    const data = fetchJson(`https://fantasy.premierleague.com/api/leagues-classic/${leagueId}/standings/?page_standings=${page}`);
-    return {
-      page: page,
-      results: data.standings.results.map(r => ({
-        entry: r.entry, entry_name: r.entry_name, player_name: r.player_name,
-        event_total: r.event_total, total: r.total, rank: r.rank
-      }))
-    };
-  } catch (err) {
-    return null;
+    const res = await fetch(`${APPS_SCRIPT_URL}?playerId=${playerId}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.trend) {
+        addedCaptainTrends[playerId] = data.trend;
+        renderCaptainTable();
+      }
+    }
+  } catch (e) {
+    console.error('On-demand trend fetch failed', e);
   }
 }
 
-function fetchLeagueLeaderDetailed(leagueId) {
-  try {
-    const data = fetchJson(`https://fantasy.premierleague.com/api/leagues-classic/${leagueId}/standings/`);
-    const results = data.standings.results;
-    const top = results[0];
-    if (!top) return null;
+/* ---- Chip Centre ---- */
+const CHIP_TYPES = [
+  { key: 'wildcard', label: 'Wildcard' },
+  { key: 'freehit', label: 'Free Hit' },
+  { key: 'bboost', label: 'Bench Boost' },
+  { key: '3xc', label: 'Triple Captain' }
+];
 
-    let leaderChips = [];
-    try {
-      const hist = fetchJson(`https://fantasy.premierleague.com/api/entry/${top.entry}/history/`);
-      leaderChips = (hist.chips || []).map(c => ({ name: c.name, event: c.event }));
-    } catch (err) { /* leave empty */ }
-
-    return {
-      entry: top.entry,
-      entry_name: top.entry_name,
-      player_name: top.player_name,
-      total: top.total,
-      chips: leaderChips,
-      top10: results.slice(0, 10).map(r => ({
-        rank: r.rank, entry_name: r.entry_name, player_name: r.player_name, total: r.total
-      }))
-    };
-  } catch (err) {
-    return null;
-  }
+function chipHalfStatus(chipKey, chipsUsed, currentGw) {
+  const usedFirstHalf = (chipsUsed || []).some(c => c.name === chipKey && c.event <= 19);
+  const usedSecondHalf = (chipsUsed || []).some(c => c.name === chipKey && c.event >= 20);
+  const inFirstHalf = currentGw <= 19;
+  const availableNow = inFirstHalf ? !usedFirstHalf : !usedSecondHalf;
+  const usedRecord = (chipsUsed || []).filter(c => c.name === chipKey);
+  return { availableNow, usedFirstHalf, usedSecondHalf, usedRecord };
 }
 
-function buildDeadline(bootstrap) {
-  const next = bootstrap.events.find(e => e.is_next) || bootstrap.events.find(e => !e.finished);
-  if (!next) return null;
-  return { gw: next.id, deadline_time: next.deadline_time };
+function renderChipCentre() {
+  const wrap = document.getElementById('chipCentreWrap');
+  if (!gwPlanner || !chipsData[MY_ENTRY]) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
+
+  const myChips = chipsData[MY_ENTRY] || [];
+  const currentGw = gwPlanner.nextGw ? gwPlanner.nextGw - 1 : 1; // last completed/active gw for half calc
+  const activeChip = gwPlanner.chipActive;
+
+  const myTeams = playerAnalysis ? [...new Set(playerAnalysis.map(p => p.team))] : [];
+  const affectedBlank = gwPlanner.futureWatch.blanksAhead.find(b => myTeams.includes(b.team));
+  const affectedDouble = gwPlanner.futureWatch.doublesAhead.find(d => myTeams.includes(d.team));
+  const concernCount = (playerAnalysis || []).filter(p => p.heuristic && (p.heuristic.bucket === 'Concern' || p.heuristic.bucket === 'Sell candidate')).length;
+
+  wrap.innerHTML = CHIP_TYPES.map(ct => {
+    const status = chipHalfStatus(ct.key, myChips, currentGw);
+    let statusCls, statusLabel, detail;
+
+    if (activeChip === ct.key) {
+      statusCls = 'active'; statusLabel = 'ACTIVE THIS GW'; detail = '';
+    } else if (!status.availableNow) {
+      statusCls = 'used';
+      const lastUse = status.usedRecord[status.usedRecord.length - 1];
+      statusLabel = 'USED';
+      detail = lastUse ? `Used GW${lastUse.event}` : '';
+    } else if (ct.key === 'freehit' && affectedBlank) {
+      statusCls = 'watch'; statusLabel = `WATCH GW${affectedBlank.gws[0]}`;
+      detail = `Blank detected for ${escapeHtml(affectedBlank.team)} — check how many of your players it affects.`;
+    } else if (ct.key === 'bboost' && affectedDouble) {
+      statusCls = 'watch'; statusLabel = `WATCH GW${affectedDouble.gws[0]}`;
+      detail = `Double detected for ${escapeHtml(affectedDouble.team)} — could strengthen a bench boost week.`;
+    } else if (ct.key === '3xc' && affectedDouble) {
+      statusCls = 'watch'; statusLabel = `WATCH GW${affectedDouble.gws[0]}`;
+      detail = `Double detected for ${escapeHtml(affectedDouble.team)} — worth checking if your captain candidate plays twice.`;
+    } else if (ct.key === 'wildcard' && concernCount >= 4) {
+      statusCls = 'watch'; statusLabel = 'CONSIDER';
+      detail = `${concernCount} squad players flagged Concern/Sell candidate in Analysis — may be worth a structural reset.`;
+    } else if (ct.key === 'wildcard') {
+      statusCls = 'available'; statusLabel = 'AVAILABLE';
+      detail = 'No urgent structural trigger.';
+    } else {
+      statusCls = 'hold'; statusLabel = 'HOLD';
+      detail = ct.key === 'bboost' ? "Current bench/fixtures don't justify consideration." : 'No exceptional opportunity detected.';
+    }
+
+    return `
+      <div class="chip-centre-row">
+        <div class="chip-centre-name">${ct.label}</div>
+        <div class="chip-centre-status ${statusCls}">${statusLabel}</div>
+        ${detail ? `<div class="chip-centre-detail">${detail}</div>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
-function buildInjuries(bootstrap) {
-  const teamsById = {};
-  bootstrap.teams.forEach(t => { teamsById[t.id] = t.short_name; });
+function renderRivalChipIntel() {
+  const wrap = document.getElementById('rivalChipWrap');
+  if (!rivalIntel || !rivalIntel.managers.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
 
-  return bootstrap.elements
-    .filter(p => p.status !== 'a')
-    .map(p => ({
-      name: p.web_name,
-      team: teamsById[p.team],
-      position: POSITIONS[p.element_type],
-      status: p.status,
-      chance: (p.chance_of_playing_next_round === null || p.chance_of_playing_next_round === undefined)
-        ? null : p.chance_of_playing_next_round,
-      news: p.news,
-      newsAdded: p.news_added
-    }))
-    .filter(p => p.news)
-    .sort((a, b) => (a.chance ?? -1) - (b.chance ?? -1));
-}
+  const currentGw = gwPlanner ? (gwPlanner.nextGw ? gwPlanner.nextGw - 1 : 1) : 1;
+  const totalManagers = rivalIntel.managers.length;
 
-function buildPriceChanges(bootstrap) {
-  const teamsById = {};
-  bootstrap.teams.forEach(t => { teamsById[t.id] = t.short_name; });
-
-  return bootstrap.elements
-    .filter(p => p.cost_change_event !== 0)
-    .map(p => ({
-      name: p.web_name,
-      team: teamsById[p.team],
-      position: POSITIONS[p.element_type],
-      nowCost: p.now_cost / 10,
-      change: p.cost_change_event / 10,
-      transfersInEvent: p.transfers_in_event,
-      transfersOutEvent: p.transfers_out_event
-    }))
-    .sort((a, b) => b.change - a.change);
-}
-
-function buildFixtureDifficulty(bootstrap, fixtures) {
-  const teamsById = {};
-  bootstrap.teams.forEach(t => { teamsById[t.id] = { name: t.name, short: t.short_name }; });
-
-  const upcoming = fixtures.filter(f => !f.finished && f.event !== null);
-  const gwsAhead = [...new Set(upcoming.map(f => f.event))].sort((a, b) => a - b).slice(0, FIXTURE_GWS_AHEAD);
-
-  const byTeam = {};
-  bootstrap.teams.forEach(t => { byTeam[t.id] = { team: t.short_name, fixtures: [] }; });
-
-  gwsAhead.forEach(gw => {
-    const gwFixtures = upcoming.filter(f => f.event === gw);
-    gwFixtures.forEach(f => {
-      if (byTeam[f.team_h]) {
-        byTeam[f.team_h].fixtures.push({ gw, opponent: teamsById[f.team_a].short, venue: 'H', difficulty: f.team_h_difficulty });
-      }
-      if (byTeam[f.team_a]) {
-        byTeam[f.team_a].fixtures.push({ gw, opponent: teamsById[f.team_h].short, venue: 'A', difficulty: f.team_a_difficulty });
-      }
-    });
+  const remainingCounts = {};
+  CHIP_TYPES.forEach(ct => {
+    remainingCounts[ct.key] = rivalIntel.managers.filter(m => chipHalfStatus(ct.key, m.seasonChips, currentGw).availableNow).length;
   });
 
-  return { gws: gwsAhead, teams: Object.values(byTeam) };
+  let html = '<div class="rival-chip-summary">' + CHIP_TYPES.map(ct => `
+    <div class="rcs-item">
+      <div class="rcs-label">${ct.label}</div>
+      <div class="rcs-val">${remainingCounts[ct.key]}/${totalManagers}</div>
+    </div>
+  `).join('') + '</div>';
+
+  const usedFlags = [];
+  rivalIntel.managers.forEach(m => {
+    (m.seasonChips || []).forEach(c => {
+      const label = (CHIP_TYPES.find(ct => ct.key === c.name) || { label: c.name }).label;
+      usedFlags.push(`${escapeHtml(m.entry_name)} — ${label} used GW${c.event}`);
+    });
+  });
+  html += usedFlags.length
+    ? '<div class="planner-squad-row">' + usedFlags.map(f => `<div class="pm-candidate-row"><span>${f}</span></div>`).join('') + '</div>'
+    : '<div class="empty-note">No chips used yet this season.</div>';
+
+  if (cyprusDetail && cyprusDetail.chips && cyprusDetail.chips.length) {
+    html += `<div class="pm-position-label" style="margin-top:12px">Cyprus leader (${escapeHtml(cyprusDetail.entry_name)}) chips</div>`;
+    html += cyprusDetail.chips.map(c => {
+      const label = (CHIP_TYPES.find(ct => ct.key === c.name) || { label: c.name }).label;
+      return `<div class="pm-candidate-row"><span>${label} used GW${c.event}</span></div>`;
+    }).join('');
+  }
+
+  wrap.innerHTML = html;
 }
 
-function buildGwDecisionSummary(gw, managersFull) {
-  if (!gw || !managersFull.length) return null;
+/* ---- Captaincy history ---- */
+function renderCaptaincyHistory() {
+  const wrap = document.getElementById('captaincyHistoryWrap');
+  if (!captaincyHistory || !captaincyHistory.length) {
+    wrap.innerHTML = '<div class="empty-note">No history yet — this fills in as gameweeks complete.</div>';
+    return;
+  }
+  const sorted = [...captaincyHistory].sort((a, b) => a.gw - b.gw);
+  wrap.innerHTML = `
+    <table class="captaincy-history-table">
+      <thead><tr><th>GW</th><th>Captain</th><th>Pts</th><th>Doubled</th><th>Best Squad Outcome</th><th>Diff</th></tr></thead>
+      <tbody>
+        ${sorted.map(r => `
+          <tr>
+            <td>${r.gw}</td>
+            <td>${escapeHtml(String(r.captain))}</td>
+            <td>${r.captainContribution}</td>
+            <td>${r.doubled}</td>
+            <td>${escapeHtml(String(r.bestSquadName))} (${r.bestSquadRawPts})</td>
+            <td class="${Number(r.difference) === 0 ? 'diff-zero' : 'diff-gap'}">${r.difference}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
 
-  const me = managersFull.find(m => m.entry === MY_ENTRY_ID);
-  const rivals = managersFull.filter(m => m.entry !== MY_ENTRY_ID);
+function renderCaptainChipsTab() {
+  renderCaptainTable();
+  renderChipCentre();
+  renderRivalChipIntel();
+  renderCaptaincyHistory();
+}
 
-  const ownership = {};
-  managersFull.forEach(m => m.picks.forEach(p => { ownership[p.element] = (ownership[p.element] || 0) + 1; }));
+/* ---- Cyprus #1 chase panel ---- */
+function renderCyChase() {
+  const card = document.getElementById('cyChaseCard');
+  if (!cyprusLeader || !cyprusSnapshots.length) { card.style.display = 'none'; return; }
+  const mySorted = [...cyprusSnapshots].sort((a, b) => a.gw - b.gw);
+  const myLatest = mySorted[mySorted.length - 1];
+  card.style.display = 'block';
+  document.getElementById('cyLeaderName').textContent = cyprusLeader.entry_name;
+  document.getElementById('cyLeaderManager').textContent = cyprusLeader.player_name;
+  const gap = cyprusLeader.total - myLatest.total;
+  document.getElementById('cyGapVal').textContent = gap <= 0 ? '🥇 You lead!' : gap;
+}
 
-  let myDifferentials = [];
-  let templateIMiss = [];
-  let myTopPerformers = [];
-  let myWorstPerformers = [];
+/* ---- Decisions tab rendering ---- */
+function fixtureBadge(f) {
+  if (!f) return '';
+  return `<span class="fdr-cell fdr-${f.difficulty}" style="display:inline-block;min-width:auto;padding:2px 6px;font-size:10px;margin-left:6px">${escapeHtml(f.opponent)} (${f.venue})</span>`;
+}
 
-  if (me) {
-    myDifferentials = me.picks
-      .filter(p => ownership[p.element] === 1)
-      .map(p => ({ name: p.name, team: p.team, contribution: p.contribution, nextFixture: p.nextFixture }));
+function renderDecisions() {
+  const heroWrap = document.getElementById('decHero');
+  const gwLabelEl = document.getElementById('decGwLabel');
 
-    const myIds = new Set(me.picks.map(p => p.element));
-    Object.keys(ownership).forEach(elIdStr => {
-      const elId = Number(elIdStr);
-      if (ownership[elId] >= 4 && !myIds.has(elId)) {
-        const owningManager = managersFull.find(m => m.picks.some(p => p.element === elId));
-        const pick = owningManager ? owningManager.picks.find(p => p.element === elId) : null;
-        if (pick) {
-          templateIMiss.push({
-            name: pick.name, team: pick.team, ownedBy: ownership[elId], nextFixture: pick.nextFixture
-          });
+  if (!gwDecision) {
+    heroWrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    ['rivalWrap', 'topPerfWrap', 'worstPerfWrap', 'myDiffWrap', 'templateMissWrap'].forEach(id => {
+      document.getElementById(id).innerHTML = '';
+    });
+    return;
+  }
+
+  gwLabelEl.textContent = `GW${gwDecision.gw}`;
+
+  const me = gwDecision.me;
+  const rivals = gwDecision.rivals || [];
+  const bestRival = rivals.length ? [...rivals].sort((a, b) => (b.gwPoints ?? -1) - (a.gwPoints ?? -1))[0] : null;
+  const myPts = me && me.gwPoints != null ? me.gwPoints : null;
+  const gapToLeader = (myPts != null && bestRival && bestRival.gwPoints != null) ? (bestRival.gwPoints - myPts) : null;
+
+  heroWrap.innerHTML = `
+    <div class="gw-hero-row">
+      <div class="gw-hero-stat">
+        <div class="gw-hero-label">Your GW points</div>
+        <div class="gw-hero-val">${myPts != null ? myPts : '—'}</div>
+        <div class="gw-hero-sub">${me && me.captainName ? 'Captain: ' + escapeHtml(me.captainName) + ' (' + me.captainPoints + ' raw)' : ''}</div>
+      </div>
+      <div class="gw-hero-stat">
+        <div class="gw-hero-label">Your chip</div>
+        <div class="gw-hero-val" style="color:${me && me.chipActive ? 'var(--gold)' : 'var(--text-faint)'}">${me && me.chipActive ? me.chipActive.toUpperCase() : 'None'}</div>
+      </div>
+      <div class="gw-hero-stat">
+        <div class="gw-hero-label">Best rival this GW</div>
+        <div class="gw-hero-val" style="color:${gapToLeader != null && gapToLeader > 0 ? 'var(--red)' : 'var(--lime)'}">${bestRival ? bestRival.gwPoints : '—'}</div>
+        <div class="gw-hero-sub">${bestRival ? escapeHtml(bestRival.entry_name) + (gapToLeader != null ? (gapToLeader > 0 ? ' · +' + gapToLeader + ' ahead of you' : ' · you\'re ahead') : '') : ''}</div>
+      </div>
+    </div>
+  `;
+
+  // Rivals table
+  const rivalWrap = document.getElementById('rivalWrap');
+  if (!rivals.length) {
+    rivalWrap.innerHTML = '<div class="empty-note">No rival data yet.</div>';
+  } else {
+    const allManagers = me ? [{ ...me, isMe: true }, ...rivals] : rivals;
+    const sortedRows = [...allManagers].sort((a, b) => (b.gwPoints ?? -1) - (a.gwPoints ?? -1));
+    rivalWrap.innerHTML = sortedRows.map(r => `
+      <div class="rival-row ${r.isMe ? 'me' : ''}">
+        <div>
+          <div class="rival-name">${escapeHtml(r.entry_name)}${r.isMe ? ' (you)' : ''}</div>
+          <div class="rival-sub">C: ${r.captainName ? escapeHtml(r.captainName) : '—'} (${r.captainPoints ?? 0})${r.chipActive ? ' · ' + r.chipActive.toUpperCase() : ''}</div>
+        </div>
+        <div class="rival-pts">${r.gwPoints != null ? r.gwPoints : '—'}</div>
+      </div>
+    `).join('');
+  }
+
+  // Top / worst performers
+  const topWrap = document.getElementById('topPerfWrap');
+  const worstWrap = document.getElementById('worstPerfWrap');
+  const top = gwDecision.myTopPerformers || [];
+  const worst = gwDecision.myWorstPerformers || [];
+
+  topWrap.innerHTML = top.length ? top.map(p => `
+    <div class="perf-row">
+      <div>
+        <div class="perf-name">${escapeHtml(p.name)}${p.isCaptain ? ' (C)' : ''}</div>
+        <div class="perf-meta">${escapeHtml(p.team || '')} ${fixtureBadge(p.nextFixture)}</div>
+      </div>
+      <div class="perf-pts good">+${p.contribution}</div>
+    </div>
+  `).join('') : '<div class="empty-note">No data yet.</div>';
+
+  worstWrap.innerHTML = worst.length ? worst.map(p => `
+    <div class="perf-row">
+      <div>
+        <div class="perf-name">${escapeHtml(p.name)}${p.isCaptain ? ' (C)' : ''}</div>
+        <div class="perf-meta">${escapeHtml(p.team || '')} ${fixtureBadge(p.nextFixture)}</div>
+      </div>
+      <div class="perf-pts bad">${p.contribution}</div>
+    </div>
+  `).join('') : '<div class="empty-note">No data yet.</div>';
+
+  // Differentials
+  const diffWrap = document.getElementById('myDiffWrap');
+  const myDiffs = gwDecision.myDifferentials || [];
+  diffWrap.innerHTML = myDiffs.length
+    ? `<div class="diff-pill-row">${myDiffs.map(d => `
+        <div class="diff-pill unique">
+          <div class="diff-pill-name">${escapeHtml(d.name)}</div>
+          <div class="diff-pill-meta">${escapeHtml(d.team || '')} · +${d.contribution} this GW ${fixtureBadge(d.nextFixture)}</div>
+        </div>
+      `).join('')}</div>`
+    : '<div class="empty-note">No unique picks this gameweek — your squad overlaps with the league.</div>';
+
+  const missWrap = document.getElementById('templateMissWrap');
+  const missing = gwDecision.templateIMiss || [];
+  missWrap.innerHTML = missing.length
+    ? `<div class="diff-pill-row">${missing.map(d => `
+        <div class="diff-pill missing">
+          <div class="diff-pill-name">${escapeHtml(d.name)}</div>
+          <div class="diff-pill-meta">${escapeHtml(d.team || '')} · owned by ${d.ownedBy}/6 ${fixtureBadge(d.nextFixture)}</div>
+        </div>
+      `).join('')}</div>`
+    : '<div class="empty-note">Nothing widely owned that you\'re missing.</div>';
+}
+function renderFplInfo() {
+  if (!fplInfo) {
+    document.getElementById('fdrWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    document.getElementById('priceWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    document.getElementById('injuryWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    return;
+  }
+  renderDeadline(fplInfo.deadline);
+  renderFdr(fplInfo.fixtureDifficulty);
+  renderPriceChanges(fplInfo.priceChanges);
+  renderInjuries(fplInfo.injuries);
+}
+
+function renderDeadline(deadline) {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  const card = document.getElementById('deadlineCard');
+  if (!deadline || !deadline.deadline_time) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  document.getElementById('deadlineGwLabel').textContent = `Gameweek ${deadline.gw}`;
+  const target = new Date(deadline.deadline_time);
+  document.getElementById('deadlineDateLabel').textContent = target.toLocaleString(undefined, {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+  });
+
+  function tick() {
+    const diff = target.getTime() - Date.now();
+    const row = document.getElementById('countdownRow');
+    if (diff <= 0) {
+      row.innerHTML = '<div class="countdown-unit"><div class="countdown-val">GW LIVE</div></div>';
+      clearInterval(countdownInterval);
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    row.innerHTML = ['DAYS', 'HRS', 'MIN', 'SEC'].map((label, i) => {
+      const val = [d, h, m, s][i];
+      return `<div class="countdown-unit"><div class="countdown-val">${String(val).padStart(2, '0')}</div><div class="countdown-label">${label}</div></div>`;
+    }).join('');
+  }
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+function renderFdr(fdr) {
+  const wrap = document.getElementById('fdrWrap');
+  if (!fdr || !fdr.teams || !fdr.teams.length) { wrap.innerHTML = '<div class="empty-note">No fixture data yet.</div>'; return; }
+  const gws = fdr.gws;
+  let html = '<div class="scroll-note">Scroll → for more gameweeks</div><div class="fdr-scroll"><table class="fdr-table"><thead><tr><th>Team</th>' +
+    gws.map(gw => `<th>GW${gw}</th>`).join('') + '</tr></thead><tbody>';
+  const teamsSorted = [...fdr.teams].sort((a, b) => a.team.localeCompare(b.team));
+  teamsSorted.forEach(t => {
+    html += `<tr><td class="team-name">${escapeHtml(t.team)}</td>`;
+    gws.forEach(gw => {
+      const f = t.fixtures.find(x => x.gw === gw);
+      if (f) {
+        html += `<td><span class="fdr-cell fdr-${f.difficulty}">${escapeHtml(f.opponent)} (${f.venue})</span></td>`;
+      } else {
+        html += `<td><span class="fdr-cell" style="background:var(--bg-elev-2);color:var(--text-faint)">—</span></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function renderPriceChanges(changes) {
+  const wrap = document.getElementById('priceWrap');
+  if (!changes || !changes.length) { wrap.innerHTML = '<div class="empty-note">No confirmed price changes today.</div>'; return; }
+  wrap.innerHTML = changes.map(p => {
+    const isUp = p.change > 0;
+    return `<div class="price-row">
+      <div>
+        <div class="price-name">${escapeHtml(p.name)}</div>
+        <div class="price-meta">${escapeHtml(p.team)} · ${p.position} · now £${p.nowCost.toFixed(1)}m</div>
+      </div>
+      <div class="price-change ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} £${Math.abs(p.change).toFixed(1)}m</div>
+    </div>`;
+  }).join('');
+}
+
+function renderInjuries(injuries) {
+  const wrap = document.getElementById('injuryWrap');
+  if (!injuries || !injuries.length) { wrap.innerHTML = '<div class="empty-note">No injury news right now.</div>'; return; }
+  wrap.innerHTML = injuries.map(p => {
+    let cls = 'chance-high', label = p.chance != null ? p.chance + '%' : p.status.toUpperCase();
+    if (p.chance != null) {
+      if (p.chance <= 25) cls = 'chance-low';
+      else if (p.chance <= 50) cls = 'chance-mid';
+      else cls = 'chance-high';
+    } else if (p.status === 'i' || p.status === 's' || p.status === 'u') {
+      cls = 'chance-low'; label = p.status === 'i' ? 'INJURED' : p.status === 's' ? 'SUSPENDED' : 'OUT';
+    }
+    return `<div class="injury-row">
+      <div class="injury-left">
+        <div class="injury-name">${escapeHtml(p.name)} <span class="injury-meta">${escapeHtml(p.team)} · ${p.position}</span></div>
+        ${p.news ? `<div class="injury-news">${escapeHtml(p.news)}</div>` : ''}
+      </div>
+      <span class="injury-status ${cls}">${label}</span>
+    </div>`;
+  }).join('');
+}
+
+function currentStandings() {
+  if (!snapshots.length) return [];
+  const latest = snapshots[snapshots.length - 1];
+  const prev = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
+  const rows = [...latest.results].sort((a, b) => b.total - a.total);
+  return rows.map((r, i) => {
+    const rank = i + 1;
+    let prevRank = null;
+    if (prev) {
+      const prevSorted = [...prev.results].sort((a, b) => b.total - a.total);
+      const idx = prevSorted.findIndex(p => p.entry === r.entry);
+      if (idx !== -1) prevRank = idx + 1;
+    }
+    return { ...r, rank, prevRank };
+  });
+}
+
+function render() {
+  const rows = currentStandings();
+  const latest = snapshots[snapshots.length - 1];
+  document.getElementById('gwLabel').textContent = latest ? `Through GW${latest.gw}` : '';
+
+  if (rows.length) {
+    document.getElementById('scoreboard').style.display = 'block';
+    const leader = rows[0];
+    document.getElementById('leaderName').textContent = leader.entry_name;
+    document.getElementById('leaderManager').textContent = leader.player_name;
+    document.getElementById('leaderPts').textContent = leader.total;
+  }
+
+  const tableWrap = document.getElementById('tableWrap');
+  if (!rows.length) {
+    tableWrap.innerHTML = '<div class="empty-note">No snapshots yet — paste your first one below.</div>';
+  } else {
+    let html = '<table><thead><tr><th>#</th><th>Team</th><th class="num">GW</th><th class="num">Total</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      const isMe = r.entry === MY_ENTRY;
+      let moveHtml = '<span class="move same">–</span>';
+      if (r.prevRank != null) {
+        if (r.prevRank > r.rank) moveHtml = `<span class="move up">▲${r.prevRank - r.rank}</span>`;
+        else if (r.prevRank < r.rank) moveHtml = `<span class="move down">▼${r.rank - r.prevRank}</span>`;
+      }
+      html += `<tr class="${isMe ? 'me' : ''}">
+        <td class="rank">${r.rank}</td>
+        <td class="team">${escapeHtml(r.entry_name)}${moveHtml}<span class="manager">${escapeHtml(r.player_name)}</span></td>
+        <td class="num">${r.event_total}</td>
+        <td class="num total">${r.total}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    tableWrap.innerHTML = html;
+  }
+
+  renderChart();
+  renderChips(rows);
+}
+
+function renderChart() {
+  const canvas = document.getElementById('chart');
+  const emptyNote = document.getElementById('chartEmpty');
+  const legend = document.getElementById('legend');
+  if (snapshots.length < 2) {
+    canvas.style.display = 'none'; emptyNote.style.display = 'block'; legend.innerHTML = ''; return;
+  }
+  canvas.style.display = 'block'; emptyNote.style.display = 'none';
+  const labels = snapshots.map(s => `GW${s.gw}`);
+  const entryMap = {};
+  snapshots.forEach(s => s.results.forEach(r => { entryMap[r.entry] = r.entry_name; }));
+  const datasets = Object.keys(entryMap).map((entry, i) => {
+    const data = snapshots.map(s => {
+      const r = s.results.find(x => x.entry == entry);
+      return r ? r.total : null;
+    });
+    const isMe = Number(entry) === MY_ENTRY;
+    const color = isMe ? '#c6ff3d' : PALETTE[i % PALETTE.length];
+    return {
+      label: entryMap[entry], data, borderColor: color, backgroundColor: color,
+      borderWidth: isMe ? 3 : 1.5, pointRadius: 3, pointHoverRadius: 5, tension: 0.25, spanGaps: true
+    };
+  });
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line', data: { labels, datasets },
+    options: {
+      responsive: true, plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } },
+        y: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } }
+      }
+    }
+  });
+  legend.innerHTML = Object.keys(entryMap).map((entry, i) => {
+    const isMe = Number(entry) === MY_ENTRY;
+    const color = isMe ? '#c6ff3d' : PALETTE[i % PALETTE.length];
+    return `<div class="legend-item"><span class="legend-dot" style="background:${color}"></span>${escapeHtml(entryMap[entry])}${isMe ? ' (you)' : ''}</div>`;
+  }).join('');
+}
+
+function renderChips(rows) {
+  const wrap = document.getElementById('chipsWrap');
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="empty-note">Add a league snapshot first, then add each manager\'s chip history below.</div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Team</th><th>Chips played</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const isMe = r.entry === MY_ENTRY;
+    const chips = chipsData[r.entry];
+    let chipsHtml;
+    if (!chips) chipsHtml = '<span class="chip-none">no data yet</span>';
+    else if (!chips.length) chipsHtml = '<span class="chip-none">none played</span>';
+    else {
+      chipsHtml = chips.slice().sort((a, b) => a.event - b.event).map(c => {
+        const meta = CHIP_LABELS[c.name] || { label: c.name, cls: 'chip-wildcard' };
+        return `<span class="chip-pill ${meta.cls}">${meta.label} · GW${c.event}</span>`;
+      }).join('');
+    }
+    html += `<tr class="${isMe ? 'me' : ''}">
+      <td class="team">${escapeHtml(r.entry_name)}<span class="manager">${escapeHtml(r.player_name)}</span></td>
+      <td>${chipsHtml}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+/* ---- Cyprus tab rendering ---- */
+function renderCyprus() {
+  const sorted = [...cyprusSnapshots].sort((a, b) => a.gw - b.gw);
+  const statsWrap = document.getElementById('cyprusStats');
+
+  if (!sorted.length) {
+    statsWrap.innerHTML = '<div class="empty-note">No snapshots yet — add your first one below.</div>';
+  } else {
+    const latest = sorted[sorted.length - 1];
+    const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
+
+    let rankDeltaHtml = '<div class="rank-stat-delta same">First snapshot</div>';
+    if (prev) {
+      const diff = prev.rank - latest.rank;
+      if (diff > 0) rankDeltaHtml = `<div class="rank-stat-delta up">▲ up ${diff.toLocaleString()} places</div>`;
+      else if (diff < 0) rankDeltaHtml = `<div class="rank-stat-delta down">▼ down ${Math.abs(diff).toLocaleString()} places</div>`;
+      else rankDeltaHtml = '<div class="rank-stat-delta same">No change</div>';
+    }
+
+    let ptsDeltaHtml = '';
+    if (prev) {
+      const diff = latest.total - prev.total;
+      ptsDeltaHtml = `<div class="rank-stat-delta ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${diff} pts this GW</div>`;
+    }
+
+    statsWrap.innerHTML = `
+      <div class="rank-stat">
+        <div class="rank-stat-label">Rank · GW${latest.gw}</div>
+        <div class="rank-stat-val gold">#${latest.rank.toLocaleString()}</div>
+        ${rankDeltaHtml}
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-label">Total points</div>
+        <div class="rank-stat-val lime">${latest.total}</div>
+        ${ptsDeltaHtml}
+      </div>
+    `;
+  }
+
+  renderCyprusChart(sorted);
+  renderCyChase();
+}
+
+function renderCyprusChart(sorted) {
+  const canvas = document.getElementById('cyprusChart');
+  const emptyNote = document.getElementById('cyprusChartEmpty');
+  if (sorted.length < 2) {
+    canvas.style.display = 'none'; emptyNote.style.display = 'block'; return;
+  }
+  canvas.style.display = 'block'; emptyNote.style.display = 'none';
+
+  const labels = sorted.map(s => `GW${s.gw}`);
+  if (cyprusChartInstance) cyprusChartInstance.destroy();
+  cyprusChartInstance = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Rank', data: sorted.map(s => s.rank),
+          borderColor: '#e8b94f', backgroundColor: '#e8b94f', yAxisID: 'yRank',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        },
+        {
+          type: 'line', label: 'Total points', data: sorted.map(s => s.total),
+          borderColor: '#c6ff3d', backgroundColor: '#c6ff3d', yAxisID: 'yPts',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, labels: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } },
+        yRank: {
+          position: 'left', reverse: true,
+          ticks: { color: '#e8b94f', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: '#1f362c' },
+          title: { display: true, text: 'Rank (lower = better)', color: '#e8b94f', font: { size: 10 } }
+        },
+        yPts: {
+          position: 'right',
+          ticks: { color: '#c6ff3d', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { display: false },
+          title: { display: true, text: 'Points', color: '#c6ff3d', font: { size: 10 } }
         }
       }
-    });
-    templateIMiss.sort((a, b) => b.ownedBy - a.ownedBy);
-
-    const playingPicks = [...me.picks].filter(p => p.multiplier > 0);
-    const sorted = [...playingPicks].sort((a, b) => b.contribution - a.contribution);
-    myTopPerformers = sorted.slice(0, 3);
-    myWorstPerformers = sorted.slice(-3).reverse();
-  }
-
-  return {
-    gw: gw,
-    me: me ? {
-      entry_name: me.entry_name, captainName: me.captainName, captainPoints: me.captainPoints,
-      chipActive: me.chipActive, gwPoints: me.gwPoints
-    } : null,
-    rivals: rivals.map(r => ({
-      entry: r.entry, entry_name: r.entry_name, player_name: r.player_name,
-      captainName: r.captainName, captainPoints: r.captainPoints,
-      chipActive: r.chipActive, gwPoints: r.gwPoints
-    })),
-    myDifferentials: myDifferentials,
-    templateIMiss: templateIMiss.slice(0, 8),
-    myTopPerformers: myTopPerformers,
-    myWorstPerformers: myWorstPerformers
-  };
-}
-
-function buildHomeData(gw, managersFull, bootstrap, acStandings, cyprus, cyprusLeaderInfo, nextGwFixtureCountByTeam, nextGw, myOverallPoints) {
-  if (!gw) return null;
-  const me = managersFull.find(m => m.entry === MY_ENTRY_ID);
-  if (!me) return null;
-
-  const currentEvent = bootstrap.events.find(e => e.id === gw);
-  const gwAverage = currentEvent ? currentEvent.average_entry_score : null;
-
-  const played = me.picks.filter(p => p.multiplier > 0 && p.contribution !== 0).length;
-  const totalInPlay = me.picks.filter(p => p.multiplier > 0).length;
-  const captainPick = me.picks.find(p => p.isCaptain);
-
-  const myTeams = [...new Set(me.picks.map(p => p.team))];
-  const blanks = [];
-  const doubles = [];
-  myTeams.forEach(team => {
-    const count = nextGwFixtureCountByTeam[team] || 0;
-    if (count === 0) blanks.push(team);
-    if (count >= 2) doubles.push(team);
+    }
   });
-
-  const acSorted = [...acStandings.standings.results].sort((a, b) => b.total - a.total);
-  const acMyIndex = acSorted.findIndex(r => r.entry === MY_ENTRY_ID);
-  const acLeader = acSorted[0];
-
-  let ftEstimate = null;
-  try {
-    ftEstimate = estimateFreeTransfers(MY_ENTRY_ID);
-  } catch (err) { ftEstimate = null; }
-
-  return {
-    gw: gw,
-    livePoints: me.gwPoints,
-    gwRank: me.gwRank,
-    overallRank: me.overallRank,
-    gwAverage: gwAverage,
-    chipActive: me.chipActive,
-    bank: me.bank,
-    teamValue: me.teamValue,
-    freeTransfersEstimate: ftEstimate,
-    playersPlayed: played,
-    playersInPlay: totalInPlay,
-    captainName: me.captainName,
-    captainPlayed: captainPick ? (captainPick.contribution !== 0) : false,
-    squad: me.picks,
-    targets: {
-      cyprus: (cyprus && cyprusLeaderInfo) ? {
-        rank: cyprus.entry_rank, leaderName: cyprusLeaderInfo.entry_name,
-        leaderTotal: cyprusLeaderInfo.total, gap: cyprusLeaderInfo.total - myOverallPoints
-      } : null,
-      almostChampions: {
-        position: acMyIndex + 1, leaderName: acLeader ? acLeader.entry_name : null,
-        leaderTotal: acLeader ? acLeader.total : null,
-        gap: (acLeader && acSorted[acMyIndex]) ? (acSorted[acMyIndex].total - acLeader.total) : null
-      }
-    },
-    upcoming: {
-      nextGw: nextGw,
-      blanks: blanks,
-      doubles: doubles
-    }
-  };
 }
 
-function estimateFreeTransfers(entryId) {
-  const hist = fetchJson(`https://fantasy.premierleague.com/api/entry/${entryId}/history/`);
-  const current = hist.current || [];
-  const chipGws = new Set((hist.chips || [])
-    .filter(c => c.name === 'wildcard' || c.name === 'freehit')
-    .map(c => c.event));
+/* ---- FPL Harry tab rendering ---- */
+function renderFH() {
+  const sorted = [...fhSnapshots].sort((a, b) => a.gw - b.gw);
+  const statsWrap = document.getElementById('fhStats');
 
-  if (!current.length) return null;
-
-  let ft = 1;
-  current.forEach((gwData, idx) => {
-    if (idx === 0) return;
-    if (!chipGws.has(gwData.event)) {
-      ft = Math.max(0, ft - gwData.event_transfers);
-    }
-    ft = Math.min(5, ft + 1);
-  });
-  return ft;
-}
-
-function fetchJson(url) {
-  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-  return JSON.parse(res.getContentText());
-}
-
-function logSnapshotToSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('History');
-  if (!sheet) {
-    sheet = ss.insertSheet('History');
-    sheet.appendRow(['Timestamp', 'Gameweek', 'Cyprus Rank', 'Cyprus Total', 'FPLHarry Rank', 'FPLHarry Total']);
-  }
-  const snap = buildSnapshot();
-  sheet.appendRow([
-    snap.generatedAt, snap.currentGameweek,
-    snap.cyprus ? snap.cyprus.rank : '', snap.cyprus ? snap.cyprus.total : '',
-    snap.fplHarry ? snap.fplHarry.rank : '', snap.fplHarry ? snap.fplHarry.total : ''
-  ]);
-
-  try {
-    if (snap.currentGameweek && snap.home && snap.home.squad && snap.home.squad.length) {
-      const captainPick = snap.home.squad.find(p => p.isCaptain);
-      const nonBench = snap.home.squad.filter(p => !p.isBench);
-      if (captainPick && nonBench.length) {
-        const bestSquad = nonBench.reduce((a, b) => (b.rawPoints > a.rawPoints ? b : a));
-        const doubled = snap.home.chipActive === '3xc';
-        upsertCaptainLogRow(snap.currentGameweek, [
-          snap.currentGameweek,
-          captainPick.name,
-          captainPick.rawPoints,
-          captainPick.contribution,
-          doubled ? 'Yes' : 'No',
-          bestSquad.name,
-          bestSquad.rawPoints,
-          bestSquad.rawPoints - captainPick.rawPoints
-        ]);
-      }
-    }
-  } catch (err) { /* non-fatal — captain log is best-effort */ }
-}
-
-function upsertCaptainLogRow(gw, rowValues) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('CaptainLog');
-  if (!sheet) {
-    sheet = ss.insertSheet('CaptainLog');
-    sheet.appendRow(['Gameweek', 'Captain', 'CaptainRawPts', 'CaptainContribution', 'Doubled', 'BestSquadName', 'BestSquadRawPts', 'Difference']);
-  }
-  const data = sheet.getDataRange().getValues();
-  let rowIndex = -1;
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === gw) { rowIndex = i + 1; break; }
-  }
-  if (rowIndex > 0) {
-    sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+  if (!sorted.length) {
+    statsWrap.innerHTML = '<div class="empty-note">No snapshots yet — add your first one below.</div>';
   } else {
-    sheet.appendRow(rowValues);
+    const latest = sorted[sorted.length - 1];
+    const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
+
+    let rankDeltaHtml = '<div class="rank-stat-delta same">First snapshot</div>';
+    if (prev) {
+      const diff = prev.rank - latest.rank;
+      if (diff > 0) rankDeltaHtml = `<div class="rank-stat-delta up">▲ up ${diff.toLocaleString()} places</div>`;
+      else if (diff < 0) rankDeltaHtml = `<div class="rank-stat-delta down">▼ down ${Math.abs(diff).toLocaleString()} places</div>`;
+      else rankDeltaHtml = '<div class="rank-stat-delta same">No change</div>';
+    }
+
+    let ptsDeltaHtml = '';
+    if (prev) {
+      const diff = latest.total - prev.total;
+      ptsDeltaHtml = `<div class="rank-stat-delta ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${diff} pts this GW</div>`;
+    }
+
+    statsWrap.innerHTML = `
+      <div class="rank-stat">
+        <div class="rank-stat-label">Rank · GW${latest.gw}</div>
+        <div class="rank-stat-val gold">#${latest.rank.toLocaleString()}</div>
+        ${rankDeltaHtml}
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-label">Total points</div>
+        <div class="rank-stat-val lime">${latest.total}</div>
+        ${ptsDeltaHtml}
+      </div>
+    `;
   }
+
+  renderFHChart(sorted);
 }
 
-function readCaptainLog() {
+function renderFHChart(sorted) {
+  const canvas = document.getElementById('fhChart');
+  const emptyNote = document.getElementById('fhChartEmpty');
+  if (sorted.length < 2) {
+    canvas.style.display = 'none'; emptyNote.style.display = 'block'; return;
+  }
+  canvas.style.display = 'block'; emptyNote.style.display = 'none';
+
+  const labels = sorted.map(s => `GW${s.gw}`);
+  if (fhChartInstance) fhChartInstance.destroy();
+  fhChartInstance = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Rank', data: sorted.map(s => s.rank),
+          borderColor: '#e8b94f', backgroundColor: '#e8b94f', yAxisID: 'yRank',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        },
+        {
+          type: 'line', label: 'Total points', data: sorted.map(s => s.total),
+          borderColor: '#c6ff3d', backgroundColor: '#c6ff3d', yAxisID: 'yPts',
+          borderWidth: 2.5, pointRadius: 3, tension: 0.25
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, labels: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#93a89c', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f362c' } },
+        yRank: {
+          position: 'left', reverse: true,
+          ticks: { color: '#e8b94f', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: '#1f362c' },
+          title: { display: true, text: 'Rank (lower = better)', color: '#e8b94f', font: { size: 10 } }
+        },
+        yPts: {
+          position: 'right',
+          ticks: { color: '#c6ff3d', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { display: false },
+          title: { display: true, text: 'Points', color: '#c6ff3d', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ---- Auto-sync from Apps Script ---- */
+function setSyncBar(status, text) {
+  syncStatus = status;
+  const bar = document.getElementById('syncBar');
+  const txt = document.getElementById('syncStatusText');
+  bar.className = 'sync-bar ' + status;
+  txt.textContent = text;
+}
+
+async function syncFromScript(manual) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_') !== -1) {
+    setSyncBar('error', 'No Apps Script URL configured.');
+    return;
+  }
+  setSyncBar('syncing', manual ? 'Syncing…' : 'Auto-syncing…');
+  document.getElementById('syncNowBtn').disabled = true;
+
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName('CaptainLog');
-    if (!sheet) return [];
-    const data = sheet.getDataRange().getValues();
-    if (data.length < 2) return [];
-    return data.slice(1)
-      .filter(r => r[0] !== '' && r[0] !== null)
-      .map(r => ({
-        gw: r[0], captain: r[1], captainRawPts: r[2], captainContribution: r[3],
-        doubled: r[4], bestSquadName: r[5], bestSquadRawPts: r[6], difference: r[7]
-      }));
-  } catch (err) {
-    return [];
+    const res = await fetch(APPS_SCRIPT_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const gw = data.currentGameweek;
+
+    // Almost Champions
+    if (data.almostChampions && Array.isArray(data.almostChampions.results)) {
+      snapshots = snapshots.filter(s => s.gw !== gw);
+      snapshots.push({ gw, savedAt: data.generatedAt, results: data.almostChampions.results });
+      snapshots.sort((a, b) => a.gw - b.gw);
+      await saveSnapshots();
+    }
+
+    // Chips
+    if (data.chips) {
+      Object.keys(data.chips).forEach(entryId => {
+        if (data.chips[entryId] !== null) chipsData[entryId] = data.chips[entryId];
+      });
+      await saveChips();
+    }
+
+    // Cyprus
+    if (data.cyprus && data.cyprus.rank) {
+      cyprusSnapshots = cyprusSnapshots.filter(s => s.gw !== gw);
+      cyprusSnapshots.push({ gw, savedAt: data.generatedAt, rank: data.cyprus.rank, total: data.cyprus.total });
+      cyprusSnapshots.sort((a, b) => a.gw - b.gw);
+      await saveCyprus();
+    }
+
+    // FPL Harry
+    if (data.fplHarry && data.fplHarry.rank) {
+      fhSnapshots = fhSnapshots.filter(s => s.gw !== gw);
+      fhSnapshots.push({ gw, savedAt: data.generatedAt, rank: data.fplHarry.rank, total: data.fplHarry.total });
+      fhSnapshots.sort((a, b) => a.gw - b.gw);
+      await saveFH();
+    }
+
+    // Nearby standings context (auto-computed page based on rank)
+    if (data.cyprusContext && Array.isArray(data.cyprusContext.results)) {
+      cyContext = { savedAt: data.generatedAt, results: data.cyprusContext.results };
+      await saveCyContext();
+    }
+    if (data.fplHarryContext && Array.isArray(data.fplHarryContext.results)) {
+      fhContext = { savedAt: data.generatedAt, results: data.fplHarryContext.results };
+      await saveFHContext();
+    }
+
+    if (data.cyprusLeader) {
+      cyprusLeader = data.cyprusLeader;
+      await saveCyprusLeader();
+    }
+
+    if (data.gwDecisionSummary) {
+      gwDecision = data.gwDecisionSummary;
+      await saveGwDecision();
+    }
+
+    if (data.home) {
+      homeData = data.home;
+      await saveHomeData();
+    }
+
+    if (data.cyprusDetail) {
+      cyprusDetail = data.cyprusDetail;
+      await saveCyprusDetail();
+    }
+
+    if (data.rivalIntel) {
+      rivalIntel = data.rivalIntel;
+      await saveRivalIntel();
+    }
+
+    if (data.playerAnalysis) {
+      playerAnalysis = data.playerAnalysis;
+      await savePlayerAnalysis();
+    }
+
+    if (data.gwPlanner) {
+      gwPlanner = data.gwPlanner;
+      await saveGwPlanner();
+    }
+
+    if (data.captaincyHistory) {
+      captaincyHistory = data.captaincyHistory;
+      await saveCaptaincyHistory();
+    }
+
+    // General FPL info (deadline, injuries, price changes, fixture difficulty)
+    if (data.deadline || data.injuries || data.priceChanges || data.fixtureDifficulty) {
+      fplInfo = {
+        deadline: data.deadline || null,
+        injuries: data.injuries || [],
+        priceChanges: data.priceChanges || [],
+        fixtureDifficulty: data.fixtureDifficulty || null
+      };
+      await saveFplInfo();
+    }
+
+    lastSyncedAt = new Date();
+    render();
+    renderCyprus();
+    renderFH();
+    renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
+    renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
+    renderFplInfo();
+    renderCyChase();
+    renderDecisions();
+    renderHome();
+    renderRivalsOverview();
+    renderRivalCompare();
+    renderPlayerAnalysis();
+    renderPlanner();
+    renderCaptainChipsTab();
+    setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
+  } catch (e) {
+    console.error('Sync failed', e);
+    setSyncBar('error', 'Auto-sync failed — using last saved data. Manual paste still works below.');
+  } finally {
+    document.getElementById('syncNowBtn').disabled = false;
   }
 }
 
-function createTrigger() {
-  ScriptApp.newTrigger('logSnapshotToSheet').timeBased().everyMinutes(30).create();
-}
+/* ---- Tabs ---- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---- Add-panel toggles ---- */
+
+/* ---- League snapshot save ---- */
+/* ---- Chip history save ---- */
+/* ---- Cyprus snapshot save ---- */
+/* ---- FPL Harry snapshot save ---- */
+(async function init() {
+  await loadSnapshots();
+  await loadChips();
+  await loadCyprus();
+  await loadFH();
+  await loadCyContext();
+  await loadFHContext();
+  await loadFplInfo();
+  await loadGwDecision();
+  await loadCyprusLeader();
+  await loadHomeData();
+  await loadCyprusDetail();
+  await loadRivalIntel();
+  await loadPlayerAnalysis();
+  await loadGwPlanner();
+  await loadCaptaincyHistory();
+  render();
+  renderCyprus();
+  renderFH();
+  renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
+  renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
+  renderFplInfo();
+  renderDecisions();
+  renderHome();
+  renderRivalsOverview();
+  renderRivalCompare();
+  renderPlayerAnalysis();
+  renderPlanner();
+  renderCaptainChipsTab();
+  noteStorageMode();
+
+  document.getElementById('syncNowBtn').addEventListener('click', () => syncFromScript(true));
+
+  document.getElementById('sandboxOut').addEventListener('change', (e) => {
+    sandboxOutElement = e.target.value ? Number(e.target.value) : null;
+    sandboxInElement = null;
+    document.getElementById('sandboxInSearch').value = '';
+    document.getElementById('sandboxSelectedIn').textContent = '';
+    document.getElementById('sandboxResult').innerHTML = '';
+  });
+  document.getElementById('sandboxInSearch').addEventListener('input', (e) => runSandboxSearch(e.target.value));
+  document.getElementById('captainAddSearch').addEventListener('input', (e) => runCaptainAddSearch(e.target.value));
+  document.getElementById('rollFtBtn').addEventListener('click', () => {
+    document.getElementById('rollFtNote').textContent = '✓ Noted — rolling your free transfer this gameweek.';
+  });
+
+  // Auto-sync on open, then every 5 minutes while the tab stays open
+  syncFromScript(false);
+  setInterval(() => syncFromScript(false), 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
