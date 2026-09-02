@@ -2346,10 +2346,12 @@ function computeScenarioMetrics(scenario) {
   if (outPlayers.length !== pairs.length || inPlayers.length !== pairs.length) return null;
 
   const transfersCount = pairs.length;
-  const outSum = outPlayers.reduce((s, p) => s + labPlayerPrice(p), 0);
-  const inSum = inPlayers.reduce((s, p) => s + labPlayerPrice(p), 0);
-  const bankAfter = gwPlanner.bank + outSum - inSum;
-  const affordable = bankAfter >= 0;
+  const sellingValues = outPlayers.map(labSellingPrice);
+  const financialsVerified = gwPlanner.bank != null && sellingValues.every(v => v != null && Number(v) > 0);
+  const outSum = financialsVerified ? sellingValues.reduce((a,b)=>a+Number(b),0) : null;
+  const inSum = inPlayers.reduce((a,p)=>a+labPlayerPrice(p),0);
+  const bankAfter = financialsVerified ? Number((Number(gwPlanner.bank)+outSum-inSum).toFixed(1)) : null;
+  const affordable = financialsVerified ? bankAfter >= 0 : null;
 
   const outIds = new Set(pairs.map(pr => pr.outId));
   const remainingSquadTeams = gwPlanner.squad.filter(p => !outIds.has(p.element)).map(p => p.team);
@@ -2358,13 +2360,11 @@ function computeScenarioMetrics(scenario) {
   afterTeams.forEach(t => { afterCounts[t] = (afterCounts[t] || 0) + 1; });
   const teamLegal = Object.values(afterCounts).every(c => c <= 3);
 
-  const legal = affordable && teamLegal;
+  const legal = !teamLegal ? false : (financialsVerified ? affordable : null);
   let illegalReason = null;
-  if (!affordable) illegalReason = `Not affordable -- £${Math.abs(bankAfter).toFixed(1)}m short`;
-  else if (!teamLegal) {
-    const overTeam = Object.keys(afterCounts).find(t => afterCounts[t] > FPL_RULES.maxPlayersPerClub);
-    illegalReason = `Would exceed 3 players from ${overTeam}`;
-  }
+  if (!teamLegal) { const overTeam=Object.keys(afterCounts).find(t=>afterCounts[t]>FPL_RULES.maxPlayersPerClub); illegalReason='Would exceed 3 players from '+overTeam; }
+  else if (!financialsVerified) illegalReason='Affordability unverified — actual selling price(s) unavailable';
+  else if (!affordable) illegalReason='Not affordable -- £'+Math.abs(bankAfter).toFixed(1)+'m short';
 
   const ftAvailable = gwPlanner.ftEstimate != null ? gwPlanner.ftEstimate : 0;
   const hitCount = Math.max(0, transfersCount - ftAvailable);
@@ -2399,7 +2399,7 @@ function computeScenarioMetrics(scenario) {
   }
 
   return {
-    pairs, outPlayers, inPlayers, transfersCount, outSum, inSum, bankAfter, affordable, teamLegal, legal, illegalReason,
+    pairs, outPlayers, inPlayers, transfersCount, outSum, inSum, bankAfter, affordable, financialsVerified, teamLegal, legal, illegalReason,
     ftAvailable, hitCount, hitCost, ftAfter, flexibility, flexClass, exposureChanges, fixtureEffect, fixtureCls
   };
 }
@@ -2429,7 +2429,7 @@ function renderWhatChanges(metrics) {
   return `
     <div class="lab-what-changes">
       <div class="lab-wc-title">What changes</div>
-      <div class="lab-wc-row"><span>Bank</span><span>£${gwPlanner.bank.toFixed(1)}m \u2192 £${metrics.bankAfter.toFixed(1)}m</span></div>
+      <div class="lab-wc-row"><span>Bank</span><span>£${gwPlanner.bank.toFixed(1)}m → ${metrics.bankAfter==null?'UNKNOWN / affordability unverified':'£'+metrics.bankAfter.toFixed(1)+'m'}</span></div>
       ${metrics.exposureChanges.length ? metrics.exposureChanges.map(c => `<div class="lab-wc-row"><span>Exposure</span><span>${escapeHtml(c)}</span></div>`).join('') : '<div class="lab-wc-row"><span>Exposure</span><span>No change</span></div>'}
       <div class="lab-wc-row"><span>FT</span><span>${metrics.ftAvailable} \u2192 ${metrics.ftAfter}</span></div>
       <div class="lab-wc-row"><span>Hit</span><span>${metrics.hitCost > 0 ? '-' + metrics.hitCost : 'None'}</span></div>
@@ -2457,8 +2457,9 @@ function renderWhatProblemSolves(metrics) {
     }
   });
 
-  const bankDrop = gwPlanner.bank - metrics.bankAfter;
-  if (bankDrop > 0.05) creates.push(`Less money in bank (-£${bankDrop.toFixed(1)}m)`);
+  const bankDrop = metrics.bankAfter==null ? null : gwPlanner.bank - metrics.bankAfter;
+  if (bankDrop != null && bankDrop > 0.05) creates.push(`Less money in bank (-£${bankDrop.toFixed(1)}m)`);
+  if (!metrics.financialsVerified) creates.push('Affordability unverified — actual selling price unavailable');
   if (metrics.hitCost > 0) creates.push(`Requires a -${metrics.hitCost} hit`);
   if (gwDecision && gwDecision.myDifferentials) {
     metrics.outPlayers.forEach(p => {
@@ -2555,13 +2556,12 @@ function labLegalReplacementCandidates(outP) {
   if(!gwPlanner||!outP) return [];
   const squadIds=new Set(gwPlanner.squad.map(p=>Number(p.element)));
   const sell=labSellingPrice(outP);
-  const saleForScreen=sell!=null?sell:labPlayerPrice(outP);
-  const budget=Number(gwPlanner.bank||0)+Number(saleForScreen||0);
+  const budget=(sell!=null&&gwPlanner.bank!=null)?Number(gwPlanner.bank)+Number(sell):null;
   const teamCounts={};
   gwPlanner.squad.forEach(p=>{teamCounts[p.team]=(teamCounts[p.team]||0)+1;});
   teamCounts[outP.team]=Math.max(0,(teamCounts[outP.team]||1)-1);
   return gwPlanner.allPlayers.filter(p=>p&&p.position===outP.position&&!squadIds.has(Number(p.id)))
-    .filter(p=>!labAvailabilityConcern(p)).filter(p=>Number(labPlayerPrice(p))<=budget+0.0001)
+    .filter(p=>!labAvailabilityConcern(p)).filter(p=>budget==null || Number(labPlayerPrice(p))<=budget+0.0001)
     .filter(p=>(teamCounts[p.team]||0)<FPL_RULES.maxPlayersPerClub)
     .map(p=>({player:p,cmp:labCandidateComparison(outP,p)})).filter(x=>x.cmp.count>=1)
     .sort((a,b)=>b.cmp.count-a.cmp.count||a.cmp.inFx-b.cmp.inFx||b.cmp.inEp-a.cmp.inEp||b.cmp.inForm-a.cmp.inForm);
@@ -2571,22 +2571,32 @@ function buildAutomaticTransferScenarios() {
   const needs=labNeedAssessment(), actionable=needs.filter(n=>n.level!=='HOLD'), scenarios=[];
   if(actionable.length){
     const firstNeed=actionable[0], first=firstNeed.player, firstCandidates=labLegalReplacementCandidates(first);
-    if(firstCandidates[0]) scenarios.push({pairs:[{outId:first.element,inId:firstCandidates[0].player.id}],name:'Priority fix',reason:firstNeed.type,autoGenerated:true,autoWhy:firstCandidates[0].cmp.improvements});
-    if(firstCandidates[1]) scenarios.push({pairs:[{outId:first.element,inId:firstCandidates[1].player.id}],name:'Alternative fix',reason:firstNeed.type,autoGenerated:true,autoWhy:firstCandidates[1].cmp.improvements});
+    if(firstCandidates[0]) scenarios.push({pairs:[{outId:first.element,inId:firstCandidates[0].player.id}],name:'SCENARIO A',reason:firstNeed.type,autoGenerated:true,autoWhy:firstCandidates[0].cmp.improvements});
+    if(firstCandidates[1]) scenarios.push({pairs:[{outId:first.element,inId:firstCandidates[1].player.id}],name:'SCENARIO B',reason:firstNeed.type,autoGenerated:true,autoWhy:firstCandidates[1].cmp.improvements});
     const ft=Number(gwPlanner.ftEstimate ?? 0);
     if(ft>=2&&actionable.length>=2){
       const secondNeed=actionable[1], c1=firstCandidates[0], c2=labLegalReplacementCandidates(secondNeed.player)[0];
       if(c1&&c2&&c1.player.id!==c2.player.id){
-        const dbl={pairs:[{outId:first.element,inId:c1.player.id},{outId:secondNeed.player.element,inId:c2.player.id}],name:'Fix two needs',reason:'Team structure',autoGenerated:true,autoWhy:[...(c1.cmp.improvements||[]),...(c2.cmp.improvements||[])]};
+        const dbl={pairs:[{outId:first.element,inId:c1.player.id},{outId:secondNeed.player.element,inId:c2.player.id}],name:'SCENARIO C',reason:'Team structure',autoGenerated:true,autoWhy:[...(c1.cmp.improvements||[]),...(c2.cmp.improvements||[])]};
         const m=computeScenarioMetrics(dbl); if(m?.legal) scenarios.push(dbl);
       }
     }
-    if(scenarios.length<3&&actionable.length>=2){const n=actionable[1],c=labLegalReplacementCandidates(n.player)[0];if(c)scenarios.push({pairs:[{outId:n.player.element,inId:c.player.id}],name:'Second priority',reason:n.type,autoGenerated:true,autoWhy:c.cmp.improvements});}
+    if(scenarios.length<3&&actionable.length>=2){const n=actionable[1],c=labLegalReplacementCandidates(n.player)[0];if(c)scenarios.push({pairs:[{outId:n.player.element,inId:c.player.id}],name:'SCENARIO C',reason:n.type,autoGenerated:true,autoWhy:c.cmp.improvements});}
   }
   while(scenarios.length<3) scenarios.push({pairs:[],name:scenarios.length===0?'HOLD / ROLL':'',reason:'',autoGenerated:true,autoWhy:[]});
   return {needs,scenarios:scenarios.slice(0,3)};
 }
-async function autoUpdateTransferLab(){const built=buildAutomaticTransferScenarios();if(!built)return;transferScenarios=built.scenarios;await saveTransferLab();}
+async function autoUpdateTransferLab(){
+  const built=buildAutomaticTransferScenarios(); if(!built)return;
+  transferScenarios=built.scenarios.map(sc=>{
+    if(!(sc?.pairs||[]).some(p=>p.outId||p.inId)) return sc;
+    try { const m=computeScenarioMetrics(sc); if(m?.legal===false) return {pairs:[],name:'HOLD / ROLL',reason:'Auto scenario rejected by legality check',autoGenerated:true,autoWhy:[]}; }
+    catch(e){ return {pairs:[],name:'HOLD / ROLL',reason:'Auto scenario could not be validated',autoGenerated:true,autoWhy:[]}; }
+    return sc;
+  });
+  while(transferScenarios.length<3) transferScenarios.push({pairs:[],name:'',reason:'',autoGenerated:true,autoWhy:[]});
+  await saveTransferLab();
+}
 function renderLabNeeds(){
   const wrap=document.getElementById('labNeedsWrap'); if(!wrap)return;
   if(!gwPlanner){wrap.innerHTML='<div class="empty-note">Waiting for first sync…</div>';return;}
@@ -2774,8 +2784,8 @@ function renderLabComparison(allMetrics) {
   const rows = [
     { label: 'Transfers', get: m => m ? m.transfersCount : 0 },
     { label: 'Hit', get: m => m ? (m.hitCost > 0 ? '-' + m.hitCost : '0') : '0' },
-    { label: 'Bank after', get: m => m ? `£${m.bankAfter.toFixed(1)}m` : `£${gwPlanner.bank.toFixed(1)}m` },
-    { label: 'Legal', get: m => m ? (m.legal ? '\u2713' : '\u2717 ' + m.illegalReason) : '\u2713' },
+    { label: 'Bank after', get: m => m ? (m.bankAfter==null?'UNKNOWN':`£${m.bankAfter.toFixed(1)}m`) : `£${gwPlanner.bank.toFixed(1)}m` },
+    { label: 'Legal', get: m => m ? (m.legal===true?'YES':m.legal===false?'NO '+(m.illegalReason||''):'UNKNOWN — affordability unverified') : 'HOLD / ROLL' },
     { label: 'Team exposure change', get: m => m ? (m.exposureChanges.length ? m.exposureChanges.join(', ') : 'None') : 'None' },
     { label: 'Fixture effect', get: m => m ? m.fixtureEffect : '\u2014' },
     { label: 'Flexibility (FT after)', get: m => m ? `${m.flexibility} (${m.ftAfter})` : `High (${gwPlanner.ftEstimate})` }
@@ -2786,7 +2796,7 @@ function renderLabComparison(allMetrics) {
     cols.forEach(c => {
       const val = r.get(c.metrics);
       let cls = '';
-      if (r.label === 'Legal' && c.metrics && !c.metrics.legal) cls = 'lab-illegal';
+      if (r.label === 'Legal' && c.metrics && c.metrics.legal===false) cls = 'lab-illegal';
       if (r.label === 'Fixture effect' && c.metrics) cls = c.metrics.fixtureCls;
       if (r.label === 'Flexibility (FT after)' && c.metrics) cls = c.metrics.flexClass;
       html += `<td class="${cls}">${val}</td>`;
@@ -2998,7 +3008,7 @@ function renderLabVerdict(allMetrics) {
       const strengths = [];
       if (r.metrics.fixtureEffect === 'Better') strengths.push('better fixtures');
       strengths.push(...r.tally.reasons.filter(x => x.startsWith('Incoming')).map(x => x.replace('Incoming combination has ', '')));
-      if (r.metrics.bankAfter > bankBefore - (top === r ? 0 : 0)) strengths.push(`£${r.metrics.bankAfter.toFixed(1)}m bank after`);
+      if (r.metrics.bankAfter!=null && r.metrics.bankAfter > bankBefore) strengths.push(`£${r.metrics.bankAfter.toFixed(1)}m bank after`);
       whyLines.push(`Scenario ${r.label}: ${strengths.length ? strengths.join(', ') : 'no standout advantage detected'}`);
     });
     tradeoffLines.push('No sufficiently strong evidence to prefer one yet — check the comparison table for the factor that matters most to you');
@@ -3010,7 +3020,7 @@ function renderLabVerdict(allMetrics) {
     else whyLines.push('No hit required');
     whyLines.push(`Fixture effect: incoming combination has ${top.metrics.fixtureEffect.toLowerCase()} upcoming fixtures`);
     top.tally.reasons.forEach(r => whyLines.push(r));
-    whyLines.push(`Bank after transfer: £${top.metrics.bankAfter.toFixed(1)}m`);
+    whyLines.push('Bank after transfer: '+(top.metrics.bankAfter==null?'UNKNOWN — affordability unverified':'£'+top.metrics.bankAfter.toFixed(1)+'m'));
     whyLines.push(top.metrics.exposureChanges.length ? `Team structure change: ${top.metrics.exposureChanges.join(', ')}` : 'Squad remains structurally balanced — no club exposure change');
 
     if (top.metrics.transfersCount > 0) tradeoffLines.push(`Uses ${top.metrics.transfersCount} FT instead of rolling`);
@@ -4185,7 +4195,7 @@ function renderPlayerAnalysis() {
           </div>
           <div class="pa-bucket ${bucketCls}">${effectiveBucket === 'FIXTURE CONCERN / HOLD' ? '⚠️' : h.emoji} ${effectiveBucket}</div>
         </div>
-        ${(h.bucket === 'Possible Sell' || h.bucket === 'Sell') ? `<button class="lab-compare-btn" data-send-to-lab="${p.element}" style="margin:8px 0 0">\ud83e\uddea Send to Transfer Lab</button>` : ''}
+        ${(effectiveBucket === 'Possible Sell' || effectiveBucket === 'Sell') ? `<button class="lab-compare-btn" data-send-to-lab="${p.element}" style="margin:8px 0 0">\ud83e\uddea Send to Transfer Lab</button>` : ''}
 
         <div class="pa-section-tag official">Official data — this gameweek</div>
         <div class="pa-stat-grid">
@@ -4644,96 +4654,16 @@ function chipHalfStatus(chipKey, chipsUsed, currentGw) {
 function renderChipCentre() {
   const wrap = document.getElementById('chipCentreWrap');
   if (!gwPlanner || !chipsData[MY_ENTRY]) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
-
-  const myChips = chipsData[MY_ENTRY] || [];
-  const currentGw = gwPlanner.nextGw ? gwPlanner.nextGw - 1 : 1; // last completed/active gw for half calc
-  const activeChip = gwPlanner.chipActive;
-
-  const myTeams = playerAnalysis ? [...new Set(playerAnalysis.map(p => p.team))] : [];
-  const affectedBlank = gwPlanner.futureWatch.blanksAhead.find(b => myTeams.includes(b.team));
-  const affectedDouble = gwPlanner.futureWatch.doublesAhead.find(d => myTeams.includes(d.team));
-  const concernCount = (playerAnalysis || []).filter(p => p.heuristic && (p.heuristic.bucket === 'Possible Sell' || p.heuristic.bucket === 'Sell')).length;
-
-  wrap.innerHTML = CHIP_TYPES.map(ct => {
-    const status = chipHalfStatus(ct.key, myChips, currentGw);
-    let statusCls, statusLabel, detail;
-
-    if (activeChip === ct.key) {
-      statusCls = 'active'; statusLabel = 'ACTIVE THIS GW'; detail = '';
-    } else if (!status.availableNow) {
-      statusCls = 'used';
-      const lastUse = status.usedRecord[status.usedRecord.length - 1];
-      statusLabel = 'USED';
-      detail = lastUse ? `Used GW${lastUse.event}` : '';
-    } else if (ct.key === 'freehit' && affectedBlank) {
-      statusCls = 'watch'; statusLabel = `WATCH GW${affectedBlank.gws[0]}`;
-      detail = `Blank detected for ${escapeHtml(affectedBlank.team)} — check how many of your players it affects.`;
-    } else if (ct.key === 'bboost' && affectedDouble) {
-      statusCls = 'watch'; statusLabel = `WATCH GW${affectedDouble.gws[0]}`;
-      detail = `Double detected for ${escapeHtml(affectedDouble.team)} — could strengthen a bench boost week.`;
-    } else if (ct.key === '3xc' && affectedDouble) {
-      statusCls = 'watch'; statusLabel = `WATCH GW${affectedDouble.gws[0]}`;
-      detail = `Double detected for ${escapeHtml(affectedDouble.team)} — worth checking if your captain candidate plays twice.`;
-    } else if (ct.key === 'wildcard' && concernCount >= 4) {
-      statusCls = 'watch'; statusLabel = 'CONSIDER';
-      detail = `${concernCount} squad players flagged Concern/Sell candidate in Analysis — may be worth a structural reset.`;
-    } else if (ct.key === 'wildcard') {
-      statusCls = 'available'; statusLabel = 'AVAILABLE';
-      detail = 'No urgent structural trigger.';
-    } else {
-      statusCls = 'hold'; statusLabel = 'HOLD';
-      detail = ct.key === 'bboost' ? "Current bench/fixtures don't justify consideration." : 'No exceptional opportunity detected.';
-    }
-
-    return `
-      <div class="chip-centre-row">
-        <div class="chip-centre-name">${ct.label}</div>
-        <div class="chip-centre-status ${statusCls}">${statusLabel}</div>
-        ${detail ? `<div class="chip-centre-detail">${detail}</div>` : ''}
-      </div>
-    `;
+  const myChips=chipsData[MY_ENTRY]||[];
+  const currentGw=gwPlanner.nextGw?gwPlanner.nextGw-1:1;
+  const activeChip=gwPlanner.chipActive;
+  wrap.innerHTML=CHIP_TYPES.map(ct=>{
+    const status=chipHalfStatus(ct.key,myChips,currentGw); let statusCls,statusLabel,detail;
+    if(activeChip===ct.key){statusCls='active';statusLabel='ACTIVE THIS GW';detail='Official/current tracker state.';}
+    else if(!status.availableNow){statusCls='used';const u=status.usedRecord[status.usedRecord.length-1];statusLabel='USED';detail=u?'Used GW'+u.event:'';}
+    else {statusCls='watch';statusLabel='UNASSESSED';detail='Requires evidence-based comparison using fixtures, expected minutes, squad strength, blanks/doubles, hits avoided and fresh research. UNASSESSED is not HOLD.';}
+    return '<div class="chip-card"><div class="chip-card-top"><div class="chip-name">'+escapeHtml(ct.label)+'</div><div class="chip-status '+statusCls+'">'+statusLabel+'</div></div><div class="chip-detail">'+escapeHtml(detail)+'</div></div>';
   }).join('');
-}
-
-function renderRivalChipIntel() {
-  const wrap = document.getElementById('rivalChipWrap');
-  if (!rivalIntel || !rivalIntel.managers.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
-
-  const currentGw = gwPlanner ? (gwPlanner.nextGw ? gwPlanner.nextGw - 1 : 1) : 1;
-  const totalManagers = rivalIntel.managers.length;
-
-  const remainingCounts = {};
-  CHIP_TYPES.forEach(ct => {
-    remainingCounts[ct.key] = rivalIntel.managers.filter(m => chipHalfStatus(ct.key, m.seasonChips, currentGw).availableNow).length;
-  });
-
-  let html = '<div class="rival-chip-summary">' + CHIP_TYPES.map(ct => `
-    <div class="rcs-item">
-      <div class="rcs-label">${ct.label}</div>
-      <div class="rcs-val">${remainingCounts[ct.key]}/${totalManagers}</div>
-    </div>
-  `).join('') + '</div>';
-
-  const usedFlags = [];
-  rivalIntel.managers.forEach(m => {
-    (m.seasonChips || []).forEach(c => {
-      const label = (CHIP_TYPES.find(ct => ct.key === c.name) || { label: c.name }).label;
-      usedFlags.push(`${escapeHtml(m.entry_name)} — ${label} used GW${c.event}`);
-    });
-  });
-  html += usedFlags.length
-    ? '<div class="planner-squad-row">' + usedFlags.map(f => `<div class="pm-candidate-row"><span>${f}</span></div>`).join('') + '</div>'
-    : '<div class="empty-note">No chips used yet this season.</div>';
-
-  if (cyprusDetail && cyprusDetail.chips && cyprusDetail.chips.length) {
-    html += `<div class="pm-position-label" style="margin-top:12px">Cyprus leader (${escapeHtml(cyprusDetail.entry_name)}) chips</div>`;
-    html += cyprusDetail.chips.map(c => {
-      const label = (CHIP_TYPES.find(ct => ct.key === c.name) || { label: c.name }).label;
-      return `<div class="pm-candidate-row"><span>${label} used GW${c.event}</span></div>`;
-    }).join('');
-  }
-
-  wrap.innerHTML = html;
 }
 
 /* ---- Captaincy history ---- */
@@ -4791,7 +4721,7 @@ function phase5Snapshot(){const players={};((gwPlanner&&gwPlanner.allPlayers)||[
 function phase5Compare(prev,cur){if(!prev||!cur)return[];const out=[];if(prev.gw!==cur.gw)out.push({tag:'GW',text:`Gameweek changed: GW${prev.gw??'—'} → GW${cur.gw??'—'}`});if(prev.overallRank!=null&&cur.overallRank!=null&&prev.overallRank!==cur.overallRank)out.push({tag:'RANK',text:`Overall rank ${Number(prev.overallRank).toLocaleString()} → ${Number(cur.overallRank).toLocaleString()}`});if(prev.bank!=null&&cur.bank!=null&&prev.bank!==cur.bank)out.push({tag:'BANK',text:`Bank £${Number(prev.bank).toFixed(1)}m → £${Number(cur.bank).toFixed(1)}m`});if(prev.ft!=null&&cur.ft!=null&&prev.ft!==cur.ft)out.push({tag:'FT',text:`Free transfers ${prev.ft} → ${cur.ft}`});const aSet=new Set(prev.squad||[]),bSet=new Set(cur.squad||[]),removed=[...aSet].filter(x=>!bSet.has(x)).map(x=>prev.players?.[x]?.name||x),added=[...bSet].filter(x=>!aSet.has(x)).map(x=>cur.players?.[x]?.name||x);if(removed.length||added.length)out.push({tag:'SQUAD',text:`OUT ${removed.join(', ')||'—'} | IN ${added.join(', ')||'—'}`});Object.keys(cur.players||{}).forEach(id=>{const a=prev.players?.[id],b=cur.players[id];if(!a||!b)return;if(a.price!=null&&b.price!=null&&a.price!==b.price)out.push({tag:'PRICE',text:`${b.name}: £${Number(a.price).toFixed(1)}m → £${Number(b.price).toFixed(1)}m`});if((a.status||'')!==(b.status||'')||(a.chance??null)!==(b.chance??null))out.push({tag:'STATUS',text:`${b.name}: availability changed${b.chance!=null?` to ${b.chance}%`:''}${b.news?` — ${b.news}`:''}`});else if((a.news||'')!==(b.news||'')&&b.news)out.push({tag:'NEWS',text:`${b.name}: ${b.news}`});});Object.keys(cur.managers||{}).forEach(id=>{const a=prev.managers?.[id],b=cur.managers[id];if(!a||!b)return;if(a.captain!==b.captain)out.push({tag:'RIVAL',text:`${b.name}: captain ${a.captain||'—'} → ${b.captain||'—'}`});if(a.chip!==b.chip&&b.chip)out.push({tag:'RIVAL',text:`${b.name}: chip now ${b.chip}`});if(a.transfers!==b.transfers||a.hits!==b.hits)out.push({tag:'RIVAL',text:`${b.name}: transfer activity changed (${b.transfers} transfer${b.transfers===1?'':'s'}, ${b.hits?`-${b.hits*FPL_RULES.hitCost}`:'no hit'})`});});return out.slice(0,30);}
 function phase5DeadlineText(){const d=fplInfo?.deadline;if(!d)return'Deadline data unavailable — sync FPL Info.';const when=d.deadline_time||d.time||d.date||d.deadline||null;if(!when)return`GW${d.gw??d.event??homeData?.gw??'—'} deadline loaded.`;const dt=new Date(when);return isNaN(dt)?String(when):`${dt.toLocaleString()} · ${lastSyncedAt?`synced ${lastSyncedAt.toLocaleTimeString()}`:'saved data'}`;}
 function phase5AutomatedDecision(){const squad=(gwPlanner?.squad||[]);const liveC=squad.find(p=>p.isCaptain)?.name||'';const liveV=squad.find(p=>p.isVice)?.name||'';const plan=typeof plannerActivePlan==='function'?plannerActivePlan():null;const sim=plan&&typeof computePlanSimulation==='function'?computePlanSimulation(plan):[];const first=sim[0]||null;let transfer='HOLD',chip='HOLD',hit=0;if(first){if(first.action==='wildcard'){transfer='WILDCARD';chip='Wildcard';}else if(first.incoming?.length||first.outgoing?.length){const outs=(first.outgoing||[]).map(id=>plannerGetPlayer(id)?.name||'?');const ins=(first.incoming||[]).map(id=>plannerGetPlayer(id)?.name||'?');transfer=outs.map((o,i)=>`${o} → ${ins[i]||'?'}`).join(' · ')||'HOLD';hit=first.hitCost||0;}}const activeChip=gwPlanner?.chipActive||homeData?.activeChip||null;if(activeChip&&!chip.includes('Wildcard'))chip=String(activeChip);const capCandidate=(captainCandidates||[]).filter(c=>c.status==='a').sort((a,b)=>(b.epNext??0)-(a.epNext??0))[0];const viceCandidate=(captainCandidates||[]).filter(c=>c.status==='a'&&c.element!==capCandidate?.element).sort((a,b)=>(b.epNext??0)-(a.epNext??0))[0];const captain=capCandidate?.name||liveC||'';const vice=viceCandidate?.name||liveV||'';return{transfer,captain,vice,chip,hit};}
-function phase5AutoResearch(){const squad=gwPlanner?.squad||[];const officialReady=!!lastSyncedAt&&squad.length===FPL_RULES.squadSize;const hasAvailability=officialReady&&squad.every(p=>p.status!=null);return{pressers:'web',europe:'web',injuries:hasAvailability?'done':'wait',prices:officialReady?'done':'wait',experts:'web',lateNews:'web'};}
+function phase5AutoResearch(){const squad=gwPlanner?.squad||[];const officialReady=!!lastSyncedAt&&squad.length===FPL_RULES.squadSize;const hasAvailability=officialReady&&squad.every(p=>p.status!=null);return{pressers:'web',europe:'web',injuries:hasAvailability?'web':'wait',prices:officialReady?'done':'wait',experts:'web',lateNews:'web'};}
 function phase5AutoStatus(){const flagged=(playerAnalysis||[]).some(p=>['Injury/Availability Risk','Sell'].includes(p.heuristic?.bucket));const research=phase5AutoResearch();const officialPending=['injuries','prices'].some(k=>research[k]!=='done');if(flagged)return'action';if(officialPending)return'wait';return'wait';}
 function phase5AutomatedNote(){const research=phase5AutoResearch();const pendingWeb=PHASE5_RESEARCH_ITEMS.filter(([k])=>research[k]==='web').map(([,l])=>l);const flagged=(playerAnalysis||[]).filter(p=>['Injury/Availability Risk','Sell'].includes(p.heuristic?.bucket)).map(p=>p.name);let parts=[];if(flagged.length)parts.push('Tracker action flags: '+flagged.join(', ')+'.');if(pendingWeb.length)parts.push('AI/web verification still required: '+pendingWeb.join('; ')+'.');if(!parts.length)parts.push('Internal tracker checks are clear.');return parts.join(' ');}
 function renderPhase5(){const label=document.getElementById('p5GwLabel');if(!label)return;const auto=phase5AutomatedDecision();phase5State.transfer=auto.transfer;phase5State.captain=auto.captain;phase5State.vice=auto.vice;phase5State.chip=auto.chip;phase5State.hit=auto.hit;phase5State.note=phase5AutomatedNote();phase5State.research=phase5AutoResearch();label.textContent=`GW${homeData?.gw??gwDecision?.gw??'—'}`;const meta=document.getElementById('p5DeadlineMeta');if(meta)meta.textContent=phase5DeadlineText();const status=phase5AutoStatus(),el=document.getElementById('p5DecisionStatus');if(el){el.className=`p5-status ${status}`;el.textContent=status==='ready'?'READY TO LOCK':status==='action'?'ACTION REQUIRED':'WAIT FOR WEB CHECK';}const values={p5Transfer:auto.transfer,p5Captain:auto.captain||'—',p5Vice:auto.vice||'—',p5DecisionNote:phase5State.note,p5ChipAuto:auto.chip||'HOLD',p5StatusAuto:status==='action'?'ACTION REQUIRED':status==='ready'?'READY TO LOCK':'WAIT FOR WEB CHECK',p5HitAuto:auto.hit?'-'+auto.hit:'0'};Object.entries(values).forEach(([id,val])=>{const x=document.getElementById(id);if(x)x.value=val;});renderPhase5Changes();renderPhase5Research();renderPhase5Experts();renderPhase5History();}
@@ -5378,6 +5308,34 @@ function renderAllViews() {
   renderRivalWatchHome(); renderPlayerAnalysis(); renderPlanner(); renderCaptainChipsTab(); renderComparison();
   renderTransferLab(); renderSixGwPlanner(); renderSystemHealth();
 }
+function phase7Audit() {
+  const out=[]; const add=(level,label,detail='')=>out.push({level,label,detail});
+  const squad=gwPlanner?.squad||[], all=gwPlanner?.allPlayers||[];
+  const canonical=x=>Number(x?.element ?? x?.id);
+  const ids=squad.map(canonical).filter(Number.isFinite);
+  add(squad.length===FPL_RULES.squadSize?'ok':'err','15-man squad',squad.length+'/'+FPL_RULES.squadSize);
+  add(new Set(ids).size===ids.length?'ok':'err','No duplicate squad players',new Set(ids).size===ids.length?'Unique element IDs':'Duplicate element IDs detected');
+  const clubs={}; squad.forEach(x=>{if(x?.team)clubs[x.team]=(clubs[x.team]||0)+1});
+  const over=Object.entries(clubs).filter(([,n])=>n>FPL_RULES.maxPlayersPerClub);
+  add(over.length?'err':'ok','Club limits',over.length?over.map(([t,n])=>t+' '+n).join(', '):'All club exposures legal');
+  const cap=squad.filter(x=>x.isCaptain||x.is_captain||x.captain), vice=squad.filter(x=>x.isViceCaptain||x.is_vice_captain||x.viceCaptain);
+  add(cap.length===1?'ok':'warn','Captain integrity',cap.length===1?(cap[0].name||'Captain found'):'Captain not uniquely resolved from current squad payload');
+  add(vice.length===1?'ok':'warn','Vice-captain integrity',vice.length===1?(vice[0].name||'Vice found'):'Vice-captain not uniquely resolved from current squad payload');
+  const missingPool=squad.filter(x=>!all.some(a=>String(a.id)===String(canonical(x))));
+  add(missingPool.length?'err':'ok','Player-pool mapping',missingPool.length?missingPool.length+' unresolved':'Every squad player resolves');
+  const sellKnown=squad.filter(x=>labSellingPrice(x)!=null).length;
+  add(sellKnown===squad.length&&squad.length?'ok':'warn','Actual selling prices',sellKnown+'/'+squad.length+' available'+(sellKnown!==squad.length?' — affordability must not assume missing sell prices':''));
+  const fixtureCoverage=squad.map(x=>(getPlanningFixtures(x)||[]).length);
+  const minFx=fixtureCoverage.length?Math.min(...fixtureCoverage):0;
+  add(minFx>=PLANNING_HORIZON?'ok':'warn','Native fixture coverage',minFx+' minimum fixtures/player; planner target '+PLANNING_HORIZON);
+  const scenarios=Array.isArray(transferScenarios)?transferScenarios:[]; let illegal=0, unresolved=0;
+  scenarios.forEach(sc=>{if(!(sc?.pairs||[]).some(q=>q.outId||q.inId))return; try{const m=computeScenarioMetrics(sc); if(!m)unresolved++; else if(m.legal===false)illegal++;}catch(e){unresolved++;}});
+  add(illegal?'err':unresolved?'warn':'ok','Transfer Lab legality',illegal?illegal+' illegal scenario(s)':unresolved?unresolved+' unresolved scenario(s)':'All populated scenarios legal');
+  const auto=scenarios.filter(x=>x?.autoGenerated).length; add(auto?'ok':'warn','Transfer Lab automation',auto+'/3 scenario slots auto-generated');
+  const syncAge=lastSyncedAt?Date.now()-lastSyncedAt.getTime():null;
+  add(lastSyncedAt?(syncAge<6*60*60*1000?'ok':'warn'):'warn','Data freshness',lastSyncedAt?('Last sync '+lastSyncedAt.toLocaleString()+(syncAge>=6*60*60*1000?' — stale >6h':'')):'No successful sync this session');
+  return out;
+}
 function runSystemDiagnostics() {
   const checks=[]; const add=(level,label,detail='')=>checks.push({level,label,detail});
   add(PLANNING_HORIZON===6?'ok':'err','Planning horizon',`Configured for ${PLANNING_HORIZON} GWs`);
@@ -5404,6 +5362,7 @@ function runSystemDiagnostics() {
   const exportCheck=typeof aiValidateExport==='function'?aiValidateExport():{ok:false,missing:['AI export validator unavailable']};
   add(exportCheck.ok?'ok':'warn','AI handoff export',exportCheck.ok?'Ready to export':`Needs: ${exportCheck.missing.join(', ')}`);
   add(lastSyncedAt?'ok':'warn','Sync state',lastSyncedAt?`Last successful sync ${lastSyncedAt.toLocaleString()}`:'No successful sync in this browser session');
+  phase7Audit().forEach(c=>checks.push(c));
   return checks;
 }
 function renderSystemHealth(){
@@ -5564,7 +5523,7 @@ async function syncFromScript(manual) {
    Generates a portable context report from the LIVE tracker state.
    PDF/TXT are context snapshots, not substitutes for fresh web research.
    ============================================================ */
-const AI_HANDOFF_VERSION = '3.1 / Phase 6 Export Session';
+const AI_HANDOFF_VERSION = '3.3 / Phase 7 Integrity Fixes';
 const AI_REPORT_HORIZON = 8;
 
 function aiText(id) {
@@ -5606,8 +5565,9 @@ function aiSquadFinancials(sp) {
   const current = aiFirst(p,['price','nowCost','currentPrice'],aiFirst(sp,['price','nowCost'],null));
   const purchase = aiFirst(sp,['purchasePrice','purchase_price','purchaseCost','purchase_cost'],aiFirst(p,['purchasePrice','purchase_price'],null));
   const selling = aiFirst(sp,['sellingPrice','selling_price','sellPrice','sell_price'],aiFirst(p,['sellingPrice','selling_price','sellPrice','sell_price'],null));
-  const c=Number(current), b=Number(purchase), sv=Number(selling);
-  return {current:Number.isFinite(c)?c:null,purchase:Number.isFinite(b)?b:null,selling:Number.isFinite(sv)?sv:null,profit:(Number.isFinite(c)&&Number.isFinite(b))?Number((c-b).toFixed(1)):null,cashReleased:Number.isFinite(sv)?sv:null};
+  const validMoney=v=>{ if(v===null||v===undefined||v==='') return null; const n=Number(v); return Number.isFinite(n)&&n>0?Number(n.toFixed(1)):null; };
+  const c=validMoney(current), b=validMoney(purchase), sv=validMoney(selling);
+  return {current:c,purchase:b,selling:sv,profit:(c!=null&&b!=null)?Number((c-b).toFixed(1)):null,cashReleased:sv,purchasePriceVerified:b!=null,sellingPriceVerified:sv!=null};
 }
 
 function aiProjectionRecord(p) {
@@ -5647,9 +5607,9 @@ function aiDetailedConsistencyCheck() {
   if(gwPlanner?.bank==null) warnings.push('Money ITB unavailable');
   if(gwPlanner?.teamValue==null) warnings.push('Team value unavailable');
   if(gwPlanner?.ftEstimate==null && h.freeTransfersEstimate==null) warnings.push('Free-transfer count unavailable');
-  const missingSelling=squad.filter(x=>aiSquadFinancials(x).selling==null); if(missingSelling.length) warnings.push('Actual selling prices missing for '+missingSelling.length+'/15 players');
+  const invalidFinancials=squad.filter(x=>{const f=aiSquadFinancials(x);return f.purchase==null||f.selling==null||f.purchase<=0||f.selling<=0;}); if(invalidFinancials.length) warnings.push('CRITICAL DATA WARNING: purchase and/or selling prices unavailable for '+invalidFinancials.length+'/15 players — transfer affordability cannot be confirmed');
   const missingPrice=squad.filter(x=>aiSquadFinancials(x).current==null); if(missingPrice.length) warnings.push('Current prices missing for '+missingPrice.length+'/15 players');
-  const fixtureMissing=squad.filter(x=>{const p=aiPlayerById(x.element)||x; return getPlanningFixtures(p).length<Math.min(8,AI_REPORT_HORIZON);}); if(fixtureMissing.length) warnings.push('Full 8-GW fixture horizon missing for '+fixtureMissing.length+'/15 players');
+  const fixtureCounts=squad.map(x=>getPlanningFixtures(aiPlayerById(x.element)||x).length); const minFixtures=fixtureCounts.length?Math.min(...fixtureCounts):0; if(minFixtures<8) warnings.push(minFixtures+' FUTURE GWs AVAILABLE at minimum — true Next 8 requires eight future GWs; '+(8-minFixtures)+' future GW(s) missing for at least one squad player');
   if(!lastSyncedAt) issues.push('No fresh sync timestamp');
   else if(Date.now()-lastSyncedAt.getTime()>12*60*60*1000) warnings.push('Tracker sync is older than 12 hours');
   try{(transferScenarios||[]).forEach(sc=>{if((sc.pairs||[]).some(p=>p.outId||p.inId)){const m=computeScenarioMetrics(sc);if(m && m.legal===false) warnings.push('At least one Transfer Lab scenario is illegal/impossible');}});}catch(e){warnings.push('Transfer-path legality could not be fully validated');}
@@ -5658,19 +5618,23 @@ function aiDetailedConsistencyCheck() {
 
 function aiMissingDataSummary() {
   const squad=gwPlanner?.squad||[];
-  const sellingMissing=squad.some(x=>aiSquadFinancials(x).selling==null);
+  const purchaseMissing=squad.some(x=>{const f=aiSquadFinancials(x);return f.purchase==null||f.purchase<=0;});
+  const sellingMissing=squad.some(x=>{const f=aiSquadFinancials(x);return f.selling==null||f.selling<=0;});
   const xpMissing=squad.some(x=>aiProjectionRecord(aiPlayerById(x.element)||x).xpNext3==null);
   const minsMissing=squad.some(x=>aiFirst(aiPlayerById(x.element)||x,['expectedMinutes','expected_minutes'],null)==null);
   const research=phase5State?.research||{};
   return {
-    sellingPrices:sellingMissing, multiGwXp:xpMissing, expectedMinutes:minsMissing,
+    purchasePrices:purchaseMissing, sellingPrices:sellingMissing, multiGwXp:xpMissing, expectedMinutes:minsMissing,
     pressConferenceData:research.pressers!=='done', eliteManagerResearch:!(phase5State?.experts||[]).some(e=>e.manager),
     pricePredictor:true, topManagerOwnership:true
   };
 }
 
 function aiValidateExport() {
+  const phase7 = phase7Audit();
+
   const missing = [];
+  phase7.filter(c=>c.level==='err').forEach(c=>missing.push('Phase 7 audit failed: '+c.label));
   if (!lastSyncedAt) missing.push('fresh sync timestamp');
   if (!homeData) missing.push('Home/current team data');
   if (!gwPlanner || !gwPlanner.squad || gwPlanner.squad.length !== FPL_RULES.squadSize) missing.push('15-player squad');
@@ -5817,13 +5781,13 @@ function aiStrategy(lines) {
     });
     try {
       const m = computeScenarioMetrics(sc);
-      lines.push(`  Transfers ${m.transfersCount}; Hit -${m.hitCost}; Bank after ${aiMoney(m.bankAfter)}; Legal ${m.legal ? 'YES' : 'NO'}${m.illegalReason ? ` (${m.illegalReason})` : ''}; Fixture effect ${m.fixtureEffect}; Flexibility ${m.flexibility}`);
+      lines.push(`  Transfers ${m.transfersCount}; Hit -${m.hitCost}; Bank after ${m.bankAfter==null?'UNKNOWN':aiMoney(m.bankAfter)}; Legal ${m.legal===true?'YES':m.legal===false?'NO':'UNKNOWN'}${m.illegalReason ? ` (${m.illegalReason})` : ''}; Fixture effect ${m.fixtureEffect}; Flexibility ${m.flexibility}`);
     } catch(e) { lines.push('  Scenario metrics unavailable.'); }
   });
   lines.push('', 'TRANSFER LAB VERDICT');
   lines.push(aiText('labVerdictWrap') || '—');
 
-  lines.push('', '6-GW ACTIVE PLAN');
+  lines.push('', '6-GW SAVED SCENARIO — NOT RECOMMENDATION');
   const plan = plannerActivePlan ? plannerActivePlan() : null;
   lines.push(`Plan: ${plan?.name || '—'}`);
   if (plan && gwPlanner) {
@@ -5932,7 +5896,7 @@ function aiNextResearch(lines) {
   lines.push('', 'PHASE 5 DEADLINE CENTRE');
   const p5Status = phase5AutoStatus();
   lines.push(`Decision state: ${p5Status==='ready'?'READY TO LOCK':p5Status==='action'?'ACTION REQUIRED':'WAIT FOR NEWS'}`);
-  lines.push(`Planned transfer: ${phase5State.transfer || 'HOLD'} | Captain: ${phase5State.captain || '—'} | Vice: ${phase5State.vice || '—'} | Chip: ${phase5State.chip || 'HOLD'} | Hit: ${phase5State.hit ? '-'+phase5State.hit : '0'}`);
+  lines.push(`Saved scenario (NOT CURRENT RECOMMENDATION): ${phase5State.transfer || 'HOLD'} | Captain: ${phase5State.captain || '—'} | Vice: ${phase5State.vice || '—'} | Chip: ${phase5State.chip || 'HOLD'} | Hit: ${phase5State.hit ? '-'+phase5State.hit : '0'} | Source: SAVED OLD PLAN / TRACKER STATE`);
   lines.push('External research checklist: ' + PHASE5_RESEARCH_ITEMS.map(([k,l]) => `${l}=${(phase5State.research||{})[k]||'todo'}`).join(' | '));
   const p5Experts = (phase5State.experts||[]).filter(e => e.manager);
   if (p5Experts.length) {
@@ -6103,7 +6067,9 @@ function aiRoleMinutes(lines) {
 
 function aiFixtures8(lines) {
   aiSection(lines, '5. FIXTURES — NEXT 8 GAMEWEEKS / DATA LIMITS');
-  lines.push('AI report horizon: '+AI_REPORT_HORIZON+' GWs. Known fixtures are exported through GW+8 whenever the synced payload contains them. Missing GW7/GW8 are explicitly marked rather than researched or invented by the tracker.');
+  const currentGw=Number(homeData?.gw??gwDecision?.gw??0);
+  lines.push('Horizon convention: Next 1 = GW'+(currentGw+1)+'; Next 3 = GW'+(currentGw+1)+'-GW'+(currentGw+3)+'; Next 5 = GW'+(currentGw+1)+'-GW'+(currentGw+5)+'; Next 8 = GW'+(currentGw+1)+'-GW'+(currentGw+8)+'.');
+  lines.push('Known fixtures are exported only when present. Six future fixtures are SIX, not eight; later missing GWs are labelled missing.');
   const all=gwPlanner?.allPlayers||[];
   const teams=[...new Set(all.map(p=>p.team).filter(Boolean))].sort();
   teams.forEach(team=>{
@@ -6146,7 +6112,7 @@ function aiTransferMarket(lines) {
   const posOrder=['GKP','DEF','MID','FWD'];
   posOrder.forEach(pos=>{
     lines.push(pos+' CANDIDATES (top available by ep_next, factual shortlist only)');
-    all.filter(p=>p.position===pos).sort((a,b)=>(Number(b.epNext)||0)-(Number(a.epNext)||0)).slice(0,15).forEach(p=>{
+    all.filter(p=>p.position===pos && !(gwPlanner?.squad||[]).some(x=>String(x.element)===String(p.id))).sort((a,b)=>(Number(b.epNext)||0)-(Number(a.epNext)||0)).slice(0,15).forEach(p=>{
       const mins=Number(p.seasonMinutes)||0, xgi=Number(p.seasonXGI);
       const xgi90=mins>0&&Number.isFinite(xgi)?(xgi/(mins/90)).toFixed(2):'—';
       lines.push('- '+p.name+' | '+p.team+' | '+aiMoney(p.price)+' | Own '+aiOwnershipText(p)+' | Form '+aiFmt(p.form)+' | Mins '+aiFmt(p.seasonMinutes)+' | xG '+aiFmt(p.seasonXG)+' | xA '+aiFmt(p.seasonXA)+' | xGI/90 '+xgi90+' | ep_next '+aiFmt(p.epNext)+' | Fixtures '+(getPlanningFixtures(p).map(aiFixtureText).join(' ; ')||'—')+' | Rotation '+aiFirst(p,['rotationRisk'],'NOT STORED'));
@@ -6183,7 +6149,7 @@ function aiTransferCombinations(lines) {
     try{
       const m=computeScenarioMetrics(sc);
       const nextFt=Math.min(FPL_RULES.maxFreeTransfers,Math.max(0,ft-m.transfersCount)+1);
-      lines.push('Transfers '+m.transfersCount+' | Hit -'+m.hitCost+' | Bank after '+aiMoney(m.bankAfter)+' | FT next GW '+nextFt+' | Legal '+(m.legal?'YES':'NO')+' | Fixture effect '+m.fixtureEffect+' | Flexibility '+m.flexibility);
+      lines.push('Transfers '+m.transfersCount+' | Hit -'+m.hitCost+' | Bank after '+(m.bankAfter==null?'UNKNOWN':aiMoney(m.bankAfter))+' | FT next GW '+nextFt+' | Legal '+(m.legal===true?'YES':m.legal===false?'NO':'UNKNOWN')+' | Affordability '+(m.financialsVerified?'VERIFIED':'UNVERIFIED')+' | Fixture effect '+m.fixtureEffect+' | Flexibility '+m.flexibility+(m.illegalReason?' | '+m.illegalReason:''));
       lines.push('Club concentration BEFORE: '+Object.entries(beforeCounts).filter(([,n])=>n).map(([t,n])=>t+' '+n).join(' | '));
       lines.push('Club concentration AFTER: '+Object.entries(afterCounts).filter(([,n])=>n).map(([t,n])=>t+' '+n).join(' | '));
       lines.push('Wildcard compatibility: '+(sc.wildcardCompatible??sc.wcCompatible??'NOT STORED — receiving AI must judge against active transfer path.'));
@@ -6222,13 +6188,16 @@ function aiCaptaincySection(lines) {
 
 function aiChipStatus(lines) {
   aiSection(lines, '13. CHIP STATUS');
-  lines.push(aiText('chipCentreWrap')||aiText('chipCentre')||'—');
-  lines.push('Chip-opportunity scores are intentionally NOT generated. Explain opportunity using fixtures, squad structure, doubles/blanks if any, and verified rules.');
+  lines.push('Wildcard: UNASSESSED / REQUIRES COMPARISON — requires genuine weak-player count, multi-GW projections, transfers required, hits avoided and fixture swings.');
+  lines.push('Triple Captain: UNASSESSED — requires fresh expected-minutes, captaincy, team-strength and press-conference research.');
+  lines.push('Bench Boost: UNASSESSED — requires verified bench expected minutes/xP and fixture context.');
+  lines.push('Free Hit: UNASSESSED — requires blank/double and squad-impact comparison.');
+  lines.push('UNASSESSED is not HOLD. No arbitrary chip score is generated.');
 }
 
 function aiWildcardPlanner(lines) {
   aiSection(lines, '14. WILDCARD PLANNER');
-  lines.push('Active 6-GW plan / existing WC intent:');
+  lines.push('SAVED SCENARIO — NOT RECOMMENDATION. Existing planner state is historical/user-saved context unless explicitly confirmed current.');
   const plan=typeof plannerActivePlan==='function'?plannerActivePlan():null;
   if(plan&&gwPlanner){computePlanSimulation(plan).forEach(r=>lines.push('GW'+r.gw+': '+String(r.action).toUpperCase()+' | FT in '+r.ftIn+' | transfers '+r.transfersUsed+' | hit -'+r.hitCost+' | bank '+aiMoney(r.bank)+(r.illegal?' | WARNING '+r.illegal:'')));} else lines.push('—');
   lines.push('Receiving AI must explicitly compare multiple WC windows (at least current+1 through current+4 and later where relevant) using verified fixtures, number of required transfers, hits avoided, structure, captaincy access, international breaks and team-value implications. Do not simply accept a preselected WC week.');
@@ -6309,13 +6278,15 @@ function aiBenchQuality(lines) {
   aiSection(lines, '22A. BENCH QUALITY / BENCH BOOST READINESS');
   const bench=(gwPlanner?.squad||[]).filter(x=>x.isBench);
   bench.forEach(sp=>{const p=aiPlayerById(sp.element)||sp, pr=aiProjectionRecord(p); lines.push(sp.name+' | Fixture '+aiFixtureText(getNextPlanningFixture(p))+' | Expected mins '+aiFirst(p,['expectedMinutes','expected_minutes'],'NOT AVAILABLE')+' | xP '+aiFmt(pr.xpNext1,'NOT AVAILABLE')+' | Playing probability '+aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],'NOT AVAILABLE'));});
-  lines.push('Bench xP total: NOT CALCULATED unless every bench player has a compatible sourced xP value.');
+  const vals=bench.map(sp=>aiProjectionRecord(aiPlayerById(sp.element)||sp).xpNext1);
+  lines.push('Official FPL ep_next bench total: '+(vals.length&&vals.every(v=>v!=null)?Number(vals.reduce((a,b)=>a+Number(b),0).toFixed(2)):'NOT CALCULABLE')+' — official ep_next only, NOT a multi-GW external projection model.');
 }
 
 function aiMissingDataImpact(lines) {
   aiSection(lines, '22B. MISSING DATA IMPACT');
   const m=aiMissingDataSummary();
   const row=(name,missing,impact,why)=>lines.push(name+': '+(missing?'MISSING':'AVAILABLE')+' | '+impact+' | '+why);
+  row('Purchase prices',m.purchasePrices,'HIGH IMPACT','Missing purchase values prevent profit/loss and verified financial history.');
   row('Selling prices',m.sellingPrices,'HIGH IMPACT','Missing selling values prevent confirmed affordability/budget maths.');
   row('Multi-GW xP',m.multiGwXp,'HIGH IMPACT','Do not claim 3/5/8-GW projection gains without a sourced model.');
   row('Expected minutes',m.expectedMinutes,'HIGH IMPACT','Rotation-sensitive moves should wait for fresh minutes/team-news evidence.');
@@ -6337,14 +6308,14 @@ function aiMachineState(lines) {
   const state={
     season:'2026/27',reportVersion:AI_HANDOFF_VERSION,gw:h.gw??gwDecision?.gw??null,deadline:aiDeadlineValue(),generated:new Date().toISOString(),synced:lastSyncedAt?lastSyncedAt.toISOString():null,
     managerId:MY_ENTRY,team:'BYFARTHEGREATESTEAM',points:ml.me?.total??h.totalPoints??null,overallRank:h.overallRank??null,cyprusRank:aiCurrentCyprusRank(),miniLeagueRank:ml.me?.rank??null,
-    freeTransfers:gwPlanner?.ftEstimate??h.freeTransfersEstimate??null,bank:gwPlanner?.bank??h.bank??null,teamValue:gwPlanner?.teamValue??null,
-    squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp,fin=aiSquadFinancials(sp),pr=aiProjectionRecord(p);return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:fin.current,purchasePrice:fin.purchase,sellingPrice:fin.selling,profitLoss:fin.profit,cashReleased:fin.cashReleased,xpNext1:pr.xpNext1,xpNext3:pr.xpNext3,xpNext5:pr.xpNext5,xpNext8:pr.xpNext8,xpByGw:pr.xpByGw,projectionSource:pr.source,projectionUpdated:pr.updated,expectedMinutesNext:aiFirst(p,['expectedMinutes','expected_minutes'],null),expectedMinutesNext3:aiFirst(p,['expectedMinutesNext3','expected_minutes_next3'],null),rotationRisk:aiFirst(p,['rotationRisk'],null),fitnessRisk:aiFirst(p,['fitnessRisk','injuryRisk'],null),tacticalRole:aiFirst(p,['tacticalRole'],null),penaltyRole:aiFirst(p,['penaltyRole'],null),setPieceRole:aiFirst(p,['setPieceRole','cornerRole','freeKickRole'],null),priceRiseRisk:aiFirst(p,['priceRiseRisk'],null),priceFallRisk:aiFirst(p,['priceFallRisk'],null),captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
+    freeTransfers:gwPlanner?.ftEstimate??h.freeTransfersEstimate??null,bank:gwPlanner?.bank??h.bank??null,officialTeamValue:h.teamValue??null,currentMarketSquadValue:Number(((gwPlanner?.squad||[]).reduce((a,x)=>a+(aiSquadFinancials(x).current||0),0)).toFixed(1)),sellingSquadValue:(()=>{const v=(gwPlanner?.squad||[]).map(x=>aiSquadFinancials(x).selling);return v.length===FPL_RULES.squadSize&&v.every(x=>x!=null&&x>0)?Number(v.reduce((a,b)=>a+b,0).toFixed(1)):null;})(),spendingPower:null,
+    squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp,fin=aiSquadFinancials(sp),pr=aiProjectionRecord(p);return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:fin.current,currentPriceSource:'Official FPL API',purchasePrice:fin.purchase,purchasePriceSource:fin.purchase!=null?'Synced authenticated financial data':null,purchasePriceVerified:fin.purchasePriceVerified,sellingPrice:fin.selling,sellingPriceSource:fin.selling!=null?'Synced authenticated financial data':null,sellingPriceVerified:fin.sellingPriceVerified,profitLoss:fin.profit,cashReleased:fin.cashReleased,xpNext1:pr.xpNext1,xpNext3:pr.xpNext3,xpNext5:pr.xpNext5,xpNext8:pr.xpNext8,xpByGw:pr.xpByGw,projectionSource:pr.source,projectionUpdated:pr.updated,expectedMinutesNext:aiFirst(p,['expectedMinutes','expected_minutes'],null),expectedMinutesNext3:aiFirst(p,['expectedMinutesNext3','expected_minutes_next3'],null),rotationRisk:aiFirst(p,['rotationRisk'],null),fitnessRisk:aiFirst(p,['fitnessRisk','injuryRisk'],null),tacticalRole:aiFirst(p,['tacticalRole'],null),penaltyRole:aiFirst(p,['penaltyRole'],null),setPieceRole:aiFirst(p,['setPieceRole','cornerRole','freeKickRole'],null),priceRiseRisk:aiFirst(p,['priceRiseRisk'],null),priceFallRisk:aiFirst(p,['priceFallRisk'],null),captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
     captain:squad.find(p=>p.isCaptain)?.name||null,vice:squad.find(p=>p.isVice)?.name||null,
     currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,chanceOfPlaying:aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],null),news:p.news,source:'Official FPL/tracker sync',updated:lastSyncedAt?lastSyncedAt.toISOString():null}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
-    phase5:{status:typeof phase5AutoStatus==='function'?phase5AutoStatus():null,transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0},
+    savedScenario:{transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0,source:'SAVED OLD PLAN / TRACKER STATE',isCurrentRecommendation:false},
     transferScenarios:(transferScenarios||[]).map(sc=>({name:sc.name||null,pairs:(sc.pairs||[]).filter(p=>p.outId||p.inId).map(pr=>({outId:pr.outId||null,out:labGetSquadPlayer?.(pr.outId)?.name||null,inId:pr.inId||null,in:aiPlayerById(pr.inId)?.name||null}))})),
-    transferPaths:plan?computePlanSimulation(plan):[], wildcardScenarios:'REQUIRES COMPARATIVE MODEL / NOT PRESELECTED', missingData:aiMissingDataSummary(), consistency:aiDetailedConsistencyCheck()
+    transferPaths:plan?computePlanSimulation(plan):[], wildcardScenarios:'REQUIRES COMPARATIVE MODEL / NOT PRESELECTED', dataAvailability:Object.fromEntries(Object.entries(aiMissingDataSummary()).map(([k,v])=>[k,!v])), consistency:aiDetailedConsistencyCheck()
   };
   lines.push(JSON.stringify(state,null,2));
 }
@@ -6380,11 +6351,24 @@ function buildAiHandoffReport() {
   if (!validation.ok) throw new Error('SYNC REQUIRED BEFORE EXPORT. Missing: ' + validation.missing.join(', '));
   const lines=[];
   lines.push('FPL AI DECISION REPORT');
+  const health=aiMissingDataSummary(), cc=aiDetailedConsistencyCheck();
+  lines.push('DATA HEALTH');
+  lines.push('Squad: '+((gwPlanner?.squad||[]).length===FPL_RULES.squadSize?'PASS':'FAIL'));
+  lines.push('Current prices: '+((gwPlanner?.squad||[]).every(x=>aiSquadFinancials(x).current!=null)?'PASS':'FAIL'));
+  lines.push('Purchase prices: '+(!health.purchasePrices?'PASS':'FAIL'));
+  lines.push('Selling prices: '+(!health.sellingPrices?'PASS':'FAIL'));
+  lines.push('Multi-GW xP: '+(!health.multiGwXp?'PASS':'MISSING'));
+  lines.push('Expected minutes: '+(!health.expectedMinutes?'PASS':'MISSING'));
+  lines.push('Press conferences: EXTERNAL REQUIRED');
+  lines.push('Elite research: EXTERNAL REQUIRED');
+  lines.push('Price predictor: MISSING');
+  lines.push('OVERALL: '+((health.purchasePrices||health.sellingPrices)?'PARTIAL — DO NOT TRUST AFFORDABILITY CALCULATIONS':(cc.ok?'PASS':'PARTIAL / WARNING')));
   lines.push('Season: 2026/27 | Report version: '+AI_HANDOFF_VERSION);
   lines.push('PURPOSE: give a fresh AI/FPL analyst enough factual context to reconstruct the current FPL situation, evaluate decisions independently, compare rivals and elite similar managers, and plan beyond the immediate GW.');
   lines.push('DATA PRINCIPLE: raw facts first. Recommendations/heuristics must never hide the underlying data. Unsupported fields are explicitly marked NOT AVAILABLE rather than fabricated.');
   const consistency=aiDetailedConsistencyCheck();
   if(!consistency.ok || consistency.warnings.length){ lines.push('DATA WARNING: '+[...consistency.issues,...consistency.warnings].join(' | ')); } else { lines.push('CONSISTENCY CHECK: PASS'); }
+  if(aiMissingDataSummary().purchasePrices||aiMissingDataSummary().sellingPrices) lines.push('CRITICAL DATA WARNING: Purchase and selling prices unavailable. Transfer affordability cannot be confirmed.');
   lines.push('');
   aiReportMetadata(lines);
   aiExactSquad(lines);
@@ -6463,7 +6447,7 @@ function downloadAiPdfReport() {
     const maxW = pageW - marginX * 2;
     let y = top;
     pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(20,30,25);
-    const safePdfText=(line)=>String(line??'').replace(/→/g,'->').replace(/—|–/g,'-').replace(/•/g,'-').replace(/✅/g,'PASS').replace(/⚠️|⚠/g,'WARNING').replace(/❌/g,'ERROR');
+    const safePdfText=(line)=>String(line??'').replace(/→/g,'->').replace(/—|–/g,'-').replace(/•/g,'-').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/✅/g,'PASS').replace(/⚠️|⚠/g,'WARNING').replace(/❌/g,'ERROR');
     const rawLines = report.split('\n').map(safePdfText);
     rawLines.forEach(raw => {
       const isMajor = /^PART [A-F] -/.test(raw) || raw === 'FPL AI DECISION REPORT' || /^\d+\. [A-Z]/.test(raw);
