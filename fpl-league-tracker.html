@@ -6519,6 +6519,20 @@ function downloadAiPdfReport() {
     const maxW = pageW - marginX * 2;
     let y = top;
     pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(20,30,25);
+    // PDF-safe text normalizer. Keep export dependency-free and avoid unsupported glyphs in jsPDF core fonts.
+    function aiSanitizePdfText(value) {
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[→⇒]/g, '->')
+        .replace(/[←⇐]/g, '<-')
+        .replace(/[–—]/g, '-')
+        .replace(/[•·]/g, '-')
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/[^\x20-\x7E£]/g, '');
+    }
     const safePdfText=(line)=>aiSanitizePdfText(line);
     const rawLines = report.split('\n').map(safePdfText);
     rawLines.forEach(raw => {
