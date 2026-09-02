@@ -937,6 +937,23 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .captaincy-history-table td:nth-child(2) { text-align: left; font-family: var(--font-body); font-weight: 600; }
 .captaincy-history-table td.diff-zero { color: var(--lime); }
 .captaincy-history-table td.diff-gap { color: var(--gold); }
+
+/* ---- AI Handoff Export ---- */
+.ai-export-card {
+  background: linear-gradient(135deg, rgba(198,255,61,0.08), var(--bg-elev));
+  border: 1px solid var(--lime-dim); border-radius: 4px; padding: 16px 18px; margin-bottom: 14px;
+}
+.ai-export-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.ai-export-title { font-family:var(--font-display); font-size:17px; font-weight:700; text-transform:uppercase; }
+.ai-export-sub { font-size:12px; color:var(--text-dim); margin-top:4px; line-height:1.5; }
+.ai-export-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.ai-export-btn { padding:9px 12px; font-size:12px; }
+.ai-export-btn.secondary { background:var(--bg-elev-2); color:var(--text); border:1px solid var(--border); }
+.ai-export-btn.secondary:hover { border-color:var(--lime); color:var(--lime); background:var(--bg-elev-2); }
+.ai-export-status { font-family:var(--font-mono); font-size:10px; color:var(--text-faint); margin-top:10px; }
+.ai-export-status.ok { color:var(--lime); }
+.ai-export-status.err { color:var(--red); }
+
 </style>
 </head>
 <body>
@@ -973,6 +990,21 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
     <div class="home-strip" id="homeStrip">
       <div class="empty-note">Waiting for first sync…</div>
+    </div>
+
+    <div class="ai-export-card" id="aiExportCard">
+      <div class="ai-export-head">
+        <div>
+          <div class="ai-export-title">AI FPL Handoff</div>
+          <div class="ai-export-sub">Portable memory of the project: permanent manager instructions + current squad, strategy, rivals, plans and research requirements.</div>
+        </div>
+        <div class="ai-export-actions">
+          <button class="ai-export-btn" id="downloadAiPdfBtn">Download AI FPL Report</button>
+          <button class="ai-export-btn secondary" id="downloadAiTxtBtn">Download TXT</button>
+          <button class="ai-export-btn secondary" id="copyAiContextBtn">Copy AI Context</button>
+        </div>
+      </div>
+      <div class="ai-export-status" id="aiExportStatus">Sync the tracker before exporting so another AI receives the freshest possible state.</div>
     </div>
 
     <div class="section-label">Manager verdict <span style="font-weight:400">— heuristic, not a prediction</span></div>
@@ -1360,6 +1392,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const STORAGE_KEY = 'league-1209674-snapshots';
 const CHIPS_KEY = 'league-1209674-chips';
@@ -5304,6 +5337,403 @@ async function syncFromScript(manual) {
     document.getElementById('syncNowBtn').disabled = false;
   }
 }
+
+
+/* ============================================================
+   AI FPL HANDOFF EXPORT
+   Generates a portable context report from the LIVE tracker state.
+   PDF/TXT are context snapshots, not substitutes for fresh web research.
+   ============================================================ */
+const AI_HANDOFF_VERSION = '1.0';
+
+function aiText(id) {
+  const el = document.getElementById(id);
+  return el ? el.innerText.replace(/\n{3,}/g, '\n\n').trim() : '';
+}
+
+function aiFmt(v, fallback='—') {
+  return v == null || v === '' ? fallback : String(v);
+}
+
+function aiMoney(v) {
+  return v == null ? '—' : `£${Number(v).toFixed(1)}m`;
+}
+
+function aiFixtureText(f) {
+  if (!f) return '—';
+  const gw = f.gw != null ? `GW${f.gw} ` : '';
+  const opp = f.opponent || f.opponentName || '—';
+  const venue = f.venue ? ` ${f.venue}` : '';
+  const diff = f.difficulty != null ? ` [FDR ${f.difficulty}]` : '';
+  return `${gw}${opp}${venue}${diff}`.trim();
+}
+
+function aiPlayerById(id) {
+  return gwPlanner && gwPlanner.allPlayers ? gwPlanner.allPlayers.find(p => p.id === id) : null;
+}
+
+function aiValidateExport() {
+  const missing = [];
+  if (!lastSyncedAt) missing.push('fresh sync timestamp');
+  if (!homeData) missing.push('Home/current team data');
+  if (!gwPlanner || !gwPlanner.squad || gwPlanner.squad.length !== 15) missing.push('15-player squad');
+  if (!playerAnalysis || !playerAnalysis.length) missing.push('player analysis');
+  if (!rivalIntel || !rivalIntel.managers || !rivalIntel.managers.length) missing.push('rival intelligence');
+  return { ok: missing.length === 0, missing };
+}
+
+function aiSection(lines, title) {
+  lines.push('', '============================================================', title, '============================================================');
+}
+
+function aiPermanentInstructions(lines) {
+  aiSection(lines, 'PART A - PERMANENT AI OPERATING INSTRUCTIONS');
+  lines.push(
+    'ROLE',
+    'You are my personal Fantasy Premier League Manager and Data Analyst for the full 2026/27 season. Treat this FPL team as a shared long-term project.',
+    '',
+    'OBJECTIVES',
+    '- Maximize season-long FPL performance.',
+    '- Compete for the Cyprus ranking.',
+    '- Win the Almost Champions mini-league.',
+    '- Make independent evidence-based decisions rather than automatically agreeing with my suggestions.',
+    '',
+    'CORE DECISION PHILOSOPHY',
+    'REAL DATA -> TRANSPARENT CALCULATION -> INDEPENDENT ANALYSIS -> TRADE-OFFS -> CLEAR VERDICT',
+    '- No fake predicted points.',
+    '- No invented confidence percentages.',
+    '- No arbitrary/proprietary-looking scores.',
+    '- No fake price-rise probabilities or mini-league win probabilities.',
+    '- No fabricated expert consensus.',
+    '- If a number cannot be calculated honestly, do not display it.',
+    '- HOLD / ROLL must always be compared against making a transfer.',
+    '',
+    'CURRENT-INFO RULE',
+    'Whenever I ask for an update, transfer, captaincy, chip, Wildcard or deadline decision, search current information first. Check official FPL data/rules, fixtures, prices, injuries, suspensions, press conferences, manager quotes, expected minutes, rotation, recent starts/minutes, form, goals/assists, legitimate xG/xA/xGI, team strength, ownership, transfers in/out, verified price movement, cup/European minutes and deadline information.',
+    '',
+    'ELITE MANAGER SIMILARITY RESEARCH - MANDATORY BEFORE IMPORTANT DEADLINES',
+    'Search current public team reveals, deadline streams, YouTube, reputable FPL analyst posts/blogs, X/Twitter where accessible, and reputable FPL communities for proven/high-quality managers whose CURRENT squads closely match mine.',
+    '- Tier A: 15/15 or 14/15 squad overlap. 14/15 = 93.3% and is the practical >=90% squad-match threshold.',
+    '- Starting XI priority: 10/11 = 90.9%.',
+    '- Tier B fallback: 13/15 = 86.7% only when no verified Tier-A match is found.',
+    '- Tier C: structural similarity (same premium/core structure) for context only.',
+    '- Never claim a 90%+ match without showing the actual overlap.',
+    '- If no verified 14/15+ manager exists, explicitly say: No verified 90%+ squad match found.',
+    '',
+    'FOR EACH SIMILAR MANAGER REPORT',
+    '- Manager/source and current update date.',
+    '- Squad overlap X/15 and starting-XI overlap X/11 when available.',
+    '- Their transfers, captain, vice, chip, FT/bank when public.',
+    '- Key differences from our squad and their stated reasoning.',
+    '- Consensus vs disagreement across similar elite managers.',
+    '- Whether their plan genuinely applies to OUR squad.',
+    '',
+    'IMPORTANT: EXPERTS AND RIVALS ARE CONTEXT, NOT AUTHORITY',
+    'Expert/rival action -> understand why -> check whether it applies to our squad -> compare against HOLD -> make our own decision. Never buy a player simply because an expert or rival owns him.',
+    '',
+    'REQUIRED FINAL DECISION FORMAT',
+    '1. Current GW status',
+    '2. Primary verdict: HOLD / ROLL / WAIT / ACTION',
+    '3. Exact transfer(s) + HOLD baseline + alternatives',
+    '4. Hit verdict',
+    '5. Starting XI',
+    '6. Bench order',
+    '7. Captain / vice',
+    '8. Chip decision',
+    '9. 3-6 GW structural outlook',
+    '10. Rival context',
+    '11. Similar elite-manager comparison',
+    '12. Watchlist / what still needs checking',
+    '13. Final action list: DO NOW / WAIT / RECHECK'
+  );
+}
+
+function aiCurrentState(lines) {
+  aiSection(lines, 'PART B - CURRENT LIVE FPL STATE');
+  const h = homeData || {};
+  const move = computeRankMovement();
+  lines.push(
+    `Team: BYFARTHEGREATESTEAM`,
+    `Season: 2026/27`,
+    `Current/active GW: ${aiFmt(h.gw, gwDecision?.gw)}`,
+    `Tracker synced: ${lastSyncedAt ? lastSyncedAt.toLocaleString() : 'NOT FRESHLY SYNCED'}`,
+    `Overall rank: ${aiFmt(h.overallRank)}`,
+    `Rank movement: ${move ? (move.diff > 0 ? `up ${move.diff}` : move.diff < 0 ? `down ${Math.abs(move.diff)}` : 'no change') + ` since GW${move.fromGw}` : '—'}`,
+    `GW points: ${aiFmt(h.livePoints)}`,
+    `GW rank: ${aiFmt(h.gwRank)}`,
+    `Team value: ${aiMoney(gwPlanner?.teamValue)}`,
+    `Bank: ${aiMoney(gwPlanner?.bank ?? h.bank)}`,
+    `Free transfers (tracker estimate): ${aiFmt(gwPlanner?.ftEstimate ?? h.freeTransfersEstimate)}`,
+    `Active chip: ${aiFmt(gwPlanner?.chipActive ?? h.chipActive, 'None')}`
+  );
+
+  lines.push('', 'CURRENT 15-PLAYER SQUAD');
+  const squad = (gwPlanner?.squad || []).slice();
+  const order = { GKP:1, DEF:2, MID:3, FWD:4 };
+  squad.sort((a,b) => (a.isBench !== b.isBench ? (a.isBench ? 1 : -1) : (order[a.position]||9)-(order[b.position]||9)));
+  squad.forEach((p, idx) => {
+    const full = aiPlayerById(p.element) || p;
+    const run = getPlanningFixtures(full);
+    const flags = [p.isCaptain ? 'CAPTAIN' : '', p.isVice ? 'VICE' : '', p.isBench ? 'BENCH' : 'START'].filter(Boolean).join(', ');
+    lines.push(`${idx+1}. ${p.name} | ${p.team} | ${p.position} | ${flags} | Price ${aiMoney(full.price ?? p.price)} | Form ${aiFmt(full.form)} | ep_next ${aiFmt(full.epNext)} | Minutes ${aiFmt(full.seasonMinutes)} | xGI ${aiFmt(full.seasonXGI)} | Next 6: ${run.map(aiFixtureText).join(' ; ') || '—'}`);
+  });
+
+  const starters = (h.squad || []).filter(p => !p.isBench);
+  const bench = (h.squad || []).filter(p => p.isBench);
+  lines.push('', 'CURRENT XI / BENCH');
+  lines.push(`Starting XI: ${starters.map(p => `${p.name}${p.isCaptain?' (C)':''}${p.isVice?' (V)':''}`).join(', ') || '—'}`);
+  lines.push(`Bench: ${bench.map(p => p.name).join(', ') || '—'}`);
+
+  lines.push('', 'PLAYER ANALYSIS');
+  (playerAnalysis || []).forEach(p => {
+    const o = p.official || {}, hh = p.heuristic || {};
+    lines.push(`${p.name} (${p.team}, ${p.position}) -> ${hh.bucket || '—'} | Form ${aiFmt(o.form)} | Season mins ${aiFmt(o.seasonMinutes)} | xG ${aiFmt(o.seasonXG)} | xA ${aiFmt(o.seasonXA)} | xGI ${aiFmt(o.seasonXGI)} | ep_next ${aiFmt(o.epNext)} | Reasons: ${(hh.reasons || []).join('; ') || '—'}${o.news ? ` | News: ${o.news}` : ''}`);
+  });
+
+  lines.push('', 'TEAM STRUCTURE / EXPOSURE');
+  if (teamStructure) {
+    (teamStructure.exposures || []).slice().sort((a,b)=>b.count-a.count).forEach(x => {
+      lines.push(`${x.team}: ${x.count} | Players: ${(x.players || []).join(', ') || '—'}${x.fixtureRun?.avgDifficulty != null ? ` | Avg FDR ${x.fixtureRun.avgDifficulty.toFixed(1)}` : ''}`);
+      if (x.count >= 3) lines.push(`WARNING: Heavy ${x.team} exposure - ${x.count} players. ${teamStructure.rule || ''}`.trim());
+    });
+    (teamStructure.zeroExposureStrongRun || []).forEach(x => lines.push(`WATCH: No ${x.team} exposure despite strong run${x.fixtureRun?.avgDifficulty != null ? `, avg FDR ${x.fixtureRun.avgDifficulty.toFixed(1)}` : ''}. Context only, not an automatic buy.`));
+  } else lines.push('—');
+}
+
+function aiStrategy(lines) {
+  aiSection(lines, 'PART C - CURRENT STRATEGY');
+
+  lines.push('MANAGER VERDICT');
+  lines.push(aiText('verdictCard') || '—');
+
+  lines.push('', 'TRANSFER LAB');
+  lines.push(aiText('labHoldHeroWrap') || 'HOLD baseline available in tracker.');
+  transferScenarios.forEach((sc, i) => {
+    const label = String.fromCharCode(65+i);
+    const pairs = (sc.pairs || []).filter(pr => pr.outId || pr.inId);
+    if (!pairs.length) return;
+    lines.push(`Scenario ${label}${sc.name ? ` - ${sc.name}` : ''}${sc.reason ? ` | Reason tag: ${sc.reason}` : ''}`);
+    pairs.forEach(pr => {
+      const outP = labGetSquadPlayer ? labGetSquadPlayer(pr.outId) : null;
+      const inP = aiPlayerById(pr.inId);
+      lines.push(`  ${outP?.name || pr.outId || '—'} -> ${inP?.name || pr.inId || '—'}`);
+    });
+    try {
+      const m = computeScenarioMetrics(sc);
+      lines.push(`  Transfers ${m.transfersCount}; Hit -${m.hitCost}; Bank after ${aiMoney(m.bankAfter)}; Legal ${m.legal ? 'YES' : 'NO'}${m.illegalReason ? ` (${m.illegalReason})` : ''}; Fixture effect ${m.fixtureEffect}; Flexibility ${m.flexibility}`);
+    } catch(e) { lines.push('  Scenario metrics unavailable.'); }
+  });
+  lines.push('', 'TRANSFER LAB VERDICT');
+  lines.push(aiText('labVerdictWrap') || '—');
+
+  lines.push('', '6-GW ACTIVE PLAN');
+  const plan = plannerActivePlan ? plannerActivePlan() : null;
+  lines.push(`Plan: ${plan?.name || '—'}`);
+  if (plan && gwPlanner) {
+    const sim = computePlanSimulation(plan);
+    sim.forEach(r => {
+      const outs = r.outgoing.map(id => aiPlayerById(id)?.name || id).join(', ');
+      const ins = r.incoming.map(id => aiPlayerById(id)?.name || id).join(', ');
+      lines.push(`GW${r.gw}: ${String(r.action).toUpperCase()}${outs||ins ? ` | OUT ${outs||'—'} | IN ${ins||'—'}` : ''} | FT in ${r.ftIn} | Transfers ${r.transfersUsed} | Hit -${r.hitCost} | Bank ${aiMoney(r.bank)} | Team value (current-price simulation) ${aiMoney(r.teamValue)}${r.illegal ? ` | WARNING ${r.illegal}` : ''}`);
+    });
+  }
+  lines.push('Planner note: future player prices are not predicted; calculations use available/current price data.');
+  lines.push('', 'PLAN HEALTH / VERDICT');
+  lines.push(aiText('sixgwHealthWrap') || '—');
+  lines.push(aiText('sixgwVerdictWrap') || '—');
+
+  lines.push('', 'CAPTAINCY / CHIPS');
+  lines.push(aiText('captainPicksWrap') || 'See current squad captain above.');
+  lines.push(aiText('chipCentreWrap') || aiText('chipCentre') || '—');
+}
+
+function aiRivals(lines) {
+  aiSection(lines, 'PART D - RIVAL INTELLIGENCE');
+  const standings = currentStandings ? currentStandings() : [];
+  const meIdx = standings.findIndex(r => r.entry === MY_ENTRY);
+  const me = meIdx >= 0 ? standings[meIdx] : null;
+  const leader = standings[0] || null;
+  lines.push(`Almost Champions position: ${me ? `${me.rank}/${standings.length}` : '—'}`);
+  lines.push(`Leader: ${leader ? `${leader.entry_name || leader.player_name || '—'} - ${leader.total} pts` : '—'}`);
+  lines.push(`Gap to leader: ${me && leader ? me.total - leader.total : '—'}`);
+  lines.push('', 'RIVAL VERDICT');
+  lines.push(aiText('rivalVerdictWrap') || '—');
+
+  lines.push('', 'TRACKED RIVALS');
+  (rivalIntel?.managers || []).forEach(r => {
+    if (r.entry === MY_ENTRY) return;
+    const myR = rivalIntel.managers.find(x => x.entry === MY_ENTRY);
+    const myIds = new Set((myR?.picks || []).map(p => p.element));
+    const theirIds = new Set((r.picks || []).map(p => p.element));
+    const overlap = [...theirIds].filter(id => myIds.has(id)).length;
+    const myXI = new Set((myR?.picks || []).filter(p=>p.multiplier>0).map(p=>p.element));
+    const theirXI = new Set((r.picks || []).filter(p=>p.multiplier>0).map(p=>p.element));
+    const xiOverlap = [...theirXI].filter(id => myXI.has(id)).length;
+    lines.push(`${r.entry_name} | Total ${aiFmt(r.total)} | GW ${aiFmt(r.gwPoints)} | Transfers ${aiFmt(r.transfersMade,0)} | Hit ${r.hitsTaken ? '-' + (r.hitsTaken*4) : '0'} | Captain ${aiFmt(r.captainName)} | Chip ${aiFmt(r.chipActive,'None')} | Squad overlap ${overlap}/15 | XI overlap ${xiOverlap}/${theirXI.size || 11}`);
+  });
+
+  lines.push('', 'MINI-LEAGUE OWNERSHIP / RELATIONSHIPS');
+  const own = computeLeagueOwnership ? computeLeagueOwnership() : [];
+  own.slice(0, 30).forEach(e => {
+    const rel = classifyRelationship ? classifyRelationship(e) : null;
+    const threat = classifyOwnershipThreat ? classifyOwnershipThreat(e) : null;
+    const diff = classifyDifferential ? classifyDifferential(e) : null;
+    if (rel || threat || diff || e.captained > 0) {
+      lines.push(`${e.name} (${e.team}) | Owned ${e.owned}/${e.totalManagers} | Started ${e.started}/${e.totalManagers} | Captained ${e.captained}/${e.totalManagers} | Our relationship ${rel || (threat ? 'EXPOSURE' : 'NEUTRAL')}`);
+    }
+  });
+  lines.push('', 'CAPTAINCY BATTLE');
+  lines.push(aiText('captainOwnershipWrap') || '—');
+}
+
+function aiHistory(lines) {
+  aiSection(lines, 'PART E - HISTORICAL CONTEXT');
+  lines.push('OVERALL RANK HISTORY');
+  [...(homeRankHistory || [])].sort((a,b)=>a.gw-b.gw).forEach(x => lines.push(`GW${x.gw}: overall rank ${aiFmt(x.overallRank)} | total ${aiFmt(x.total)} | GW points ${aiFmt(x.gwPoints)}`));
+  lines.push('', 'ALMOST CHAMPIONS SNAPSHOTS');
+  [...(snapshots || [])].sort((a,b)=>a.gw-b.gw).forEach(x => lines.push(`GW${x.gw}: ${JSON.stringify(x)}`));
+  lines.push('', 'CAPTAINCY HISTORY');
+  (captaincyHistory || []).forEach(x => lines.push(`GW${x.gw}: Captain ${aiFmt(x.captainName)} | Captain pts ${aiFmt(x.captainPoints)} | Best squad captain ${aiFmt(x.bestSquadName)} | Difference ${aiFmt(x.difference)}`));
+}
+
+function aiNextResearch(lines) {
+  aiSection(lines, 'PART F - REQUIRED NEXT RESEARCH / RECEIVING AI INSTRUCTIONS');
+  lines.push(
+    'This report is a context snapshot. Anything that may have changed since the sync timestamp MUST be freshly researched before a final FPL decision.',
+    '',
+    'When this PDF/TXT is uploaded into a new ChatGPT conversation, do NOT ask the user to explain the project again.',
+    'Before recommending action:',
+    '1. Identify the current date, GW and deadline.',
+    '2. Determine whether this report is still current.',
+    '3. Search for news since the report timestamp.',
+    '4. Research injuries, suspensions, press conferences, team news and expected minutes.',
+    '5. Research elite FPL managers and find the highest VERIFIED squad similarity to the squad in this report.',
+    '6. Prioritize 15/15 or 14/15; show actual overlap. If no 14/15+ exists, say so and use 13/15/structural matches as fallback.',
+    '7. Compare their transfers/captains/chips and reasoning with OUR current plan.',
+    '8. Re-evaluate HOLD versus transfers, including hits and 3-6 GW implications.',
+    '9. Re-evaluate captaincy and chips.',
+    '10. Check mini-league/rival context without allowing it to override normal FPL fundamentals.',
+    '11. Give an independent final recommendation.',
+    '',
+    'IF NEW INFORMATION CONTRADICTS THIS REPORT: use the newer verified information and explain exactly what changed.',
+    '',
+    'WHEN THE USER ASKS "ANY UPDATES?" RETURN:',
+    '- WHAT CHANGED SINCE THIS REPORT',
+    '- TEAM NEWS',
+    '- ELITE MANAGERS WITH SIMILAR TEAMS (with X/15 and X/11 overlap)',
+    '- WHAT THEY ARE DOING',
+    '- OUR PLAN VS THEIRS',
+    '- TRANSFER VERDICT',
+    '- CAPTAIN / VICE',
+    '- CHIP',
+    '- STARTING XI',
+    '- BENCH',
+    '- RIVAL IMPACT',
+    '- FINAL ACTION: DO NOW / WAIT / RECHECK'
+  );
+
+  lines.push('', 'CURRENT WATCHLIST / UNRESOLVED SIGNALS');
+  const flagged = (playerAnalysis || []).filter(p => ['Monitor','Possible Sell','Sell','Injury/Availability Risk'].includes(p.heuristic?.bucket));
+  if (flagged.length) flagged.forEach(p => lines.push(`- ${p.name}: ${p.heuristic?.bucket} - ${(p.heuristic?.reasons || []).join('; ')}${p.official?.news ? ` | News: ${p.official.news}` : ''}`));
+  else lines.push('- No unresolved player-analysis warnings currently recorded.');
+}
+
+function buildAiHandoffReport() {
+  const validation = aiValidateExport();
+  if (!validation.ok) throw new Error('SYNC REQUIRED BEFORE EXPORT. Missing: ' + validation.missing.join(', '));
+  const lines = [];
+  lines.push('FPL PERSONAL MANAGER - AI HANDOFF REPORT');
+  lines.push('Team: BYFARTHEGREATESTEAM | Season: 2026/27');
+  lines.push(`Report version: ${AI_HANDOFF_VERSION}`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push(`Tracker data synced: ${lastSyncedAt.toLocaleString()}`);
+  lines.push(`Gameweek: GW${homeData?.gw ?? gwDecision?.gw ?? '—'}`);
+  lines.push('Purpose: portable memory of the FPL project for another AI conversation.');
+  aiPermanentInstructions(lines);
+  aiCurrentState(lines);
+  aiStrategy(lines);
+  aiRivals(lines);
+  aiHistory(lines);
+  aiNextResearch(lines);
+  lines.push('', 'END OF REPORT', `Tracker data synced: ${lastSyncedAt.toLocaleString()} | GW${homeData?.gw ?? gwDecision?.gw ?? '—'}`);
+  return lines.join('\n');
+}
+
+function aiExportFilename(ext) {
+  const gw = homeData?.gw ?? gwDecision?.gw ?? 'X';
+  return `FPL-AI-Handoff-GW${gw}-2026-27.${ext}`;
+}
+
+function setAiExportStatus(text, cls='') {
+  const el = document.getElementById('aiExportStatus');
+  if (!el) return;
+  el.className = 'ai-export-status' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+}
+
+function downloadAiTxtReport() {
+  try {
+    const report = buildAiHandoffReport();
+    const blob = new Blob([report], { type:'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = aiExportFilename('txt'); document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    setAiExportStatus('AI handoff TXT generated from the current synced tracker state.', 'ok');
+  } catch(e) { setAiExportStatus(e.message, 'err'); alert(e.message); }
+}
+
+async function copyAiContext() {
+  try {
+    const report = buildAiHandoffReport();
+    await navigator.clipboard.writeText(report);
+    setAiExportStatus('AI context copied to clipboard.', 'ok');
+  } catch(e) { setAiExportStatus(e.message, 'err'); alert(e.message); }
+}
+
+function downloadAiPdfReport() {
+  try {
+    const report = buildAiHandoffReport();
+    if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library did not load. Refresh the page and try again, or use Download TXT.');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const marginX = 14, top = 16, bottom = 15, pageW = 210, pageH = 297;
+    const maxW = pageW - marginX * 2;
+    let y = top;
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(20,30,25);
+
+    const rawLines = report.split('\n');
+    rawLines.forEach(raw => {
+      const isMajor = /^PART [A-F] -/.test(raw) || raw === 'FPL PERSONAL MANAGER - AI HANDOFF REPORT';
+      const isDivider = /^=+$/.test(raw);
+      if (isDivider) return;
+      const wrapped = pdf.splitTextToSize(raw || ' ', maxW);
+      const lineH = isMajor ? 5.2 : 3.9;
+      const needed = wrapped.length * lineH + (isMajor ? 2 : 0);
+      if (y + needed > pageH - bottom) { pdf.addPage(); y = top; }
+      if (isMajor) { pdf.setFont('helvetica','bold'); pdf.setFontSize(raw.startsWith('FPL PERSONAL') ? 15 : 11); pdf.setTextColor(22,35,28); }
+      else { pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(35,45,40); }
+      pdf.text(wrapped, marginX, y);
+      y += needed;
+    });
+
+    const pages = pdf.internal.getNumberOfPages();
+    for (let i=1; i<=pages; i++) {
+      pdf.setPage(i); pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(120,130,125);
+      pdf.text(`BYFARTHEGREATESTEAM | AI Handoff | GW${homeData?.gw ?? '—'}`, marginX, pageH-7);
+      pdf.text(`Page ${i}/${pages}`, pageW-marginX, pageH-7, { align:'right' });
+    }
+    pdf.save(aiExportFilename('pdf'));
+    setAiExportStatus('AI handoff PDF generated from the current synced tracker state.', 'ok');
+  } catch(e) { setAiExportStatus(e.message, 'err'); alert(e.message); }
+}
+
+function wireAiExportButtons() {
+  document.getElementById('downloadAiPdfBtn')?.addEventListener('click', downloadAiPdfReport);
+  document.getElementById('downloadAiTxtBtn')?.addEventListener('click', downloadAiTxtReport);
+  document.getElementById('copyAiContextBtn')?.addEventListener('click', copyAiContext);
+}
+wireAiExportButtons();
 
 /* ---- Tabs ---- */
 document.querySelectorAll('.tab-btn').forEach(btn => {
