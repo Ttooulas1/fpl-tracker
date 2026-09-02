@@ -4666,6 +4666,44 @@ function renderChipCentre() {
   }).join('');
 }
 
+/* ---- Rival chip intelligence ---- */
+function renderRivalChipIntel() {
+  const wrap = document.getElementById('rivalChipWrap');
+  if (!wrap) return;
+  if (!rivalIntel || !Array.isArray(rivalIntel.managers) || !rivalIntel.managers.length) {
+    wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    return;
+  }
+
+  const rivals = rivalIntel.managers.filter(m => Number(m.entry) !== Number(MY_ENTRY));
+  if (!rivals.length) {
+    wrap.innerHTML = '<div class="empty-note">No rival chip data available yet.</div>';
+    return;
+  }
+
+  const currentGw = Number(rivalIntel.gw || (homeData && homeData.gw) || (gwDecision && gwDecision.gw) || 0);
+  const chipLabel = key => ({ wildcard: 'Wildcard', freehit: 'Free Hit', bboost: 'Bench Boost', '3xc': 'Triple Captain' }[key] || key || 'None');
+
+  wrap.innerHTML = rivals.map(r => {
+    const history = (chipsData && (chipsData[r.entry] || chipsData[String(r.entry)])) || [];
+    const active = r.chipActive || r.activeChip || '';
+    const used = Array.isArray(history) ? history
+      .slice()
+      .sort((a,b) => Number(a.event || 0) - Number(b.event || 0))
+      .map(c => chipLabel(c.name) + ' GW' + (c.event != null ? c.event : '—'))
+      .join(' · ') : '';
+    const current = active ? 'ACTIVE: ' + chipLabel(active) : 'No active chip detected';
+    const currentCls = active ? 'active' : 'watch';
+    return '<div class="chip-card">' +
+      '<div class="chip-card-top">' +
+        '<div class="chip-name">' + escapeHtml(r.entry_name || r.player_name || ('Entry ' + r.entry)) + '</div>' +
+        '<div class="chip-status ' + currentCls + '">' + escapeHtml(current) + '</div>' +
+      '</div>' +
+      '<div class="chip-detail">' + (used ? 'Used: ' + escapeHtml(used) : 'No chip history available yet.') + (currentGw ? ' · GW' + currentGw : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
 /* ---- Captaincy history ---- */
 function renderCaptaincyHistory() {
   const wrap = document.getElementById('captaincyHistoryWrap');
