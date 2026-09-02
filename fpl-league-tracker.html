@@ -1381,6 +1381,27 @@ const TEAM_STRUCTURE_KEY = 'team-structure';
 const CMP_SELECTED_KEY = 'compare-selected';
 const TRANSFER_LAB_KEY = 'transfer-lab-scenarios';
 const PLANNER_PLANS_KEY = 'sixgw-planner-plans';
+const PLANNING_HORIZON = 6;
+
+// One source of truth for the forward fixture window.
+// Backwards-compatible with legacy field names still returned by the data layer.
+function getPlanningFixtures(player) {
+  if (!player) return [];
+  const run = player.fixtureRun6 || player.next6 || player.fixtureRun5 || player.next5 || [];
+  return Array.isArray(run) ? run.slice(0, PLANNING_HORIZON) : [];
+}
+
+function getPlanningAvgDifficulty(player) {
+  const run = getPlanningFixtures(player);
+  if (run.length) return run.reduce((sum, f) => sum + (Number(f.difficulty) || 0), 0) / run.length;
+  if (player && player.avgDifficultyNext6 != null) return player.avgDifficultyNext6;
+  if (player && player.avgDifficultyNext5 != null) return player.avgDifficultyNext5; // legacy fallback only
+  return null;
+}
+
+function getNextPlanningFixture(player) {
+  return getPlanningFixtures(player)[0] || (player ? player.nextFixture : null) || null;
+}
 const MY_ENTRY = 5580812;
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMDnOjV441p8yKzc_yAs4u35-4TQYA72CF85dnGoOx8qZq9yM2vUhizb9AhBkl6T50/exec';
 let lastSyncedAt = null;
@@ -2052,7 +2073,7 @@ function renderCmpTable(players) {
     { label: 'xA (season)', get: p => p.seasonXA.toFixed(2), raw: p => p.seasonXA, higher: true },
     { label: 'xGI (season)', get: p => p.seasonXGI.toFixed(2), raw: p => p.seasonXGI, higher: true },
     { label: 'Next fixture', get: p => p.nextFixture ? escapeHtml(p.nextFixture.opponent) + ' (' + p.nextFixture.venue + ')' : '—', higher: null },
-    { label: 'Avg diff. (6 GW)', get: p => p.avgDifficultyNext5 != null ? p.avgDifficultyNext5.toFixed(1) : '—', raw: p => p.avgDifficultyNext5, higher: false },
+    { label: 'Avg diff. (6 GW)', get: p => getPlanningAvgDifficulty(p) != null ? getPlanningAvgDifficulty(p).toFixed(1) : '—', raw: p => getPlanningAvgDifficulty(p), higher: false },
     { label: 'Net transfers', get: p => (p.netTransfers >= 0 ? '+' : '') + p.netTransfers.toLocaleString(), raw: p => p.netTransfers, higher: null },
     { label: 'Status', get: p => p.news ? '⚠️ ' + escapeHtml(p.news) : (p.status === 'a' ? 'Available' : p.status.toUpperCase()), higher: null }
   ];
@@ -2084,7 +2105,7 @@ function fdrCellClass(diff) {
 
 function renderCmpFixtures(players) {
   const wrap = document.getElementById('cmpFixtureWrap');
-  const allGws = [...new Set(players.flatMap(p => (p.fixtureRun5 || []).map(f => f.gw)))].sort((a, b) => a - b);
+  const allGws = [...new Set(players.flatMap(p => getPlanningFixtures(p).map(f => f.gw)))].sort((a, b) => a - b);
   if (!allGws.length) { wrap.innerHTML = '<div class="empty-note">No fixture data yet.</div>'; return; }
 
   let html = '<div class="cmp-fx-scroll"><table class="cmp-fx-table"><thead><tr><th style="text-align:left">Player</th>' +
@@ -2093,7 +2114,7 @@ function renderCmpFixtures(players) {
   players.forEach(p => {
     html += `<tr><td class="cmp-fx-name">${escapeHtml(p.name)}</td>`;
     allGws.forEach(gw => {
-      const f = (p.fixtureRun5 || []).find(x => x.gw === gw);
+      const f = getPlanningFixtures(p).find(x => x.gw === gw);
       if (f) html += `<td><span class="cmp-fx-cell ${fdrCellClass(f.difficulty)}">${escapeHtml(f.opponent)} ${f.venue}</span></td>`;
       else html += `<td><span class="cmp-fx-cell" style="background:var(--bg-elev-2);color:var(--text-faint)">—</span></td>`;
     });
@@ -2110,7 +2131,7 @@ function renderCmpFixtures(players) {
 // every category counts equally ("1 clear category win = 1 tally") — but the
 // field exists so future re-weighting is a registry edit, not a rewrite.
 const COMPARISON_CATEGORIES = [
-  { key: 'fixtureRun', label: 'better upcoming fixture run', get: p => p.avgDifficultyNext5, higher: false, weight: 1 },
+  { key: 'fixtureRun', label: 'better upcoming fixture run', get: p => getPlanningAvgDifficulty(p), higher: false, weight: 1 },
   { key: 'form', label: 'stronger current form', get: p => p.form, higher: true, weight: 1 },
   { key: 'value', label: 'better value (ep_next per £m)', get: p => p.price > 0 ? p.epNext / p.price : 0, higher: true, weight: 1 },
   { key: 'minutes', label: 'safer minutes profile', get: p => p.seasonMinutes, higher: true, weight: 1 },
@@ -2203,8 +2224,7 @@ function labPlayerPrice(p) {
   return p.price != null ? p.price : 0;
 }
 function labPlayerFixtureAvg(p) {
-  if (p.next5) return p.next5.length ? (p.next5.reduce((s, f) => s + f.difficulty, 0) / p.next5.length) : null;
-  return p.avgDifficultyNext5 != null ? p.avgDifficultyNext5 : null;
+  return getPlanningAvgDifficulty(p);
 }
 function labPlayerForm(p) {
   return p.form != null ? p.form : 0;
@@ -2284,8 +2304,8 @@ function computeScenarioMetrics(scenario) {
 const REASON_TAGS = ['Fixture swing', 'Injury', 'Upgrade', 'Downgrade / release funds', 'Team structure', 'Captaincy', 'Price pressure', 'Rival protection', 'Differential', 'Other'];
 
 function renderPairLiveComparison(outP, inP) {
-  const outFx = outP.next5 && outP.next5[0];
-  const inFx = inP.nextFixture;
+  const outFx = getNextPlanningFixture(outP);
+  const inFx = getNextPlanningFixture(inP);
   const rows = [
     ['Price', `£${labPlayerPrice(outP).toFixed(1)}m`, `£${labPlayerPrice(inP).toFixed(1)}m`],
     ['Form', (outP.form ?? 0).toFixed(1), (inP.form ?? 0).toFixed(1)],
@@ -2584,14 +2604,14 @@ function renderLabFixtures(allMetrics) {
   let html = '';
   built.forEach(b => {
     const allPlayersInScenario = [...b.metrics.outPlayers, ...b.metrics.inPlayers];
-    const allGws = [...new Set(allPlayersInScenario.flatMap(p => (p.next5 || p.fixtureRun5 || []).map(f => f.gw)))].sort((a, b2) => a - b2);
+    const allGws = [...new Set(allPlayersInScenario.flatMap(p => getPlanningFixtures(p).map(f => f.gw)))].sort((a, b2) => a - b2);
     if (!allGws.length) return;
     html += `<div class="pm-position-label" style="margin-top:10px">Scenario ${b.label}</div>`;
     html += '<div class="cmp-fx-scroll"><table class="cmp-fx-table"><thead><tr><th style="text-align:left">Player</th>' +
       allGws.map(gw => `<th>GW${gw}</th>`).join('') + '</tr></thead><tbody>';
     allPlayersInScenario.forEach(p => {
       const isOut = b.metrics.outPlayers.includes(p);
-      const fx = p.next5 || p.fixtureRun5 || [];
+      const fx = getPlanningFixtures(p);
       html += `<tr><td class="cmp-fx-name">${isOut ? 'OUT: ' : 'IN: '}${escapeHtml(p.name)}</td>`;
       allGws.forEach(gw => {
         const f = fx.find(x => x.gw === gw);
@@ -2855,7 +2875,7 @@ function plannerGetPlayer(id) {
 function plannerGwList() {
   if (!gwPlanner || !gwPlanner.nextGw) return [];
   const start = gwPlanner.nextGw;
-  return [0, 1, 2, 3, 4, 5].map(o => start + o);
+  return Array.from({ length: PLANNING_HORIZON }, (_, o) => start + o);
 }
 
 function plannerActivePlan() {
@@ -2902,7 +2922,11 @@ function computePlanSimulation(plan) {
     }
 
     const ftOut = (action.type === 'wildcard') ? Math.min(5, ftIn) : Math.max(0, ftIn - transfersUsed);
-    const ftForNext = Math.min(5, ftOut + 1);
+    // Wildcard preserves the FT balance you entered the GW with; it does not grant
+    // an extra +1 on top of that balance for the following GW.
+    const ftForNext = (action.type === 'wildcard')
+      ? Math.min(5, ftIn)
+      : Math.min(5, ftOut + 1);
 
     const squadFull = squadIds.map(plannerGetPlayer).filter(Boolean);
     const teamValue = squadFull.reduce((s, p) => s + p.price, 0) + bank;
@@ -3235,7 +3259,7 @@ function renderSixGwSquad(results) {
   const gw = r.gw;
 
   const squadHtml = sorted.map(p => {
-    const fx = (p.fixtureRun5 || []).find(f => f.gw === gw);
+    const fx = getPlanningFixtures(p).find(f => f.gw === gw);
     return `
       <div class="planner-squad-row">
         <div class="planner-squad-head">
@@ -3262,7 +3286,7 @@ function renderSixGwWarnings(results) {
     const count = r.exposures[team];
     if (count >= 3) {
       const teamPlayers = r.squadFull.filter(p => p.team === team);
-      const fx = teamPlayers.map(p => (p.fixtureRun5 || []).find(f => f.gw === r.gw)).filter(Boolean);
+      const fx = teamPlayers.map(p => getPlanningFixtures(p).find(f => f.gw === r.gw)).filter(Boolean);
       const avgDiff = fx.length ? fx.reduce((s, f) => s + f.difficulty, 0) / fx.length : null;
       if (avgDiff != null && avgDiff >= 3.2) {
         warnings.push(`\u26a0\ufe0f HEAVY ${team} EXPOSURE — ${count} players entering a difficult GW${r.gw} fixture`);
@@ -3342,7 +3366,7 @@ function renderSixGwVerdict(results) {
     return Object.keys(r.exposures).some(team => {
       if (r.exposures[team] < 3) return false;
       const teamPlayers = r.squadFull.filter(p => p.team === team);
-      const fx = teamPlayers.map(p => (p.fixtureRun5 || []).find(f => f.gw === r.gw)).filter(Boolean);
+      const fx = teamPlayers.map(p => getPlanningFixtures(p).find(f => f.gw === r.gw)).filter(Boolean);
       const avgDiff = fx.length ? fx.reduce((s, f) => s + f.difficulty, 0) / fx.length : null;
       return avgDiff != null && avgDiff >= 3.2;
     });
@@ -3406,11 +3430,38 @@ function renderSixGwPlanner() {
 
 
 /* ---- Rival Intelligence rendering ---- */
-function computeThreat(myPts, rivalPts, rivalPlayersRemaining) {
-  const score = (rivalPts - myPts) + (rivalPlayersRemaining * 2);
-  if (score <= -5) return { label: 'LOW', cls: 'threat-low' };
-  if (score <= 5) return { label: 'MED', cls: 'threat-med' };
-  return { label: 'HIGH', cls: 'threat-high' };
+function computeThreat(myPts, rivalPts, myPlayersRemaining, rivalPlayersRemaining, myCaptainName, rivalCaptainName) {
+  const gap = rivalPts - myPts;
+  const remainingDiff = rivalPlayersRemaining - myPlayersRemaining;
+  const captainDiff = !!(myCaptainName && rivalCaptainName && myCaptainName !== rivalCaptainName);
+
+  // Direct, inspectable rules only — no hidden arithmetic threat score.
+  if (gap >= 8 || (gap > 0 && remainingDiff > 0) || (gap >= -3 && remainingDiff >= 2)) {
+    return {
+      label: 'HIGH', cls: 'threat-high',
+      reason: gap >= 8
+        ? `Rival is ${gap} GW points ahead`
+        : remainingDiff >= 2
+          ? `Rival has ${remainingDiff} more active player(s) remaining in a close GW battle`
+          : 'Rival is ahead and also has more active players remaining'
+    };
+  }
+
+  if (gap <= -8 && remainingDiff <= 0 && !captainDiff) {
+    return {
+      label: 'LOW', cls: 'threat-low',
+      reason: `Rival is ${Math.abs(gap)} GW points behind with no remaining-player or captaincy advantage`
+    };
+  }
+
+  return {
+    label: 'MED', cls: 'threat-med',
+    reason: captainDiff
+      ? 'Current-GW position is still live and captaincy differs'
+      : remainingDiff > 0
+        ? 'Rival has more active players remaining'
+        : 'Current-GW gap remains within a meaningful range'
+  };
 }
 
 function playersRemainingCount(picks) {
@@ -3428,6 +3479,7 @@ function renderRivalsOverview() {
   gwLabel.textContent = `GW${rivalIntel.gw}`;
 
   const me = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const myRemaining = me ? playersRemainingCount(me.picks) : 0;
   const sorted = [...rivalIntel.managers].sort((a, b) => (b.gwPoints ?? -1) - (a.gwPoints ?? -1));
 
   wrap.innerHTML = sorted.map(m => {
@@ -3436,8 +3488,8 @@ function renderRivalsOverview() {
     const remaining = playersRemainingCount(m.picks);
     let threatHtml = '';
     if (!isMe && me) {
-      const threat = computeThreat(me.gwPoints ?? 0, m.gwPoints ?? 0, remaining);
-      threatHtml = `<span class="threat-badge ${threat.cls}">${threat.label}</span>`;
+      const threat = computeThreat(me.gwPoints ?? 0, m.gwPoints ?? 0, myRemaining, remaining, me.captainName, m.captainName);
+      threatHtml = `<span class="threat-badge ${threat.cls}" title="${escapeHtml(threat.reason)}">${threat.label}</span>`;
     }
     return `
       <div class="rival-ov-row ${isMe ? 'me' : ''} ${selectedRivalEntry === m.entry ? 'selected' : ''}" data-entry="${m.entry}">
@@ -4038,7 +4090,7 @@ function renderPlannerSquad() {
         </div>
         ${pl.news ? `<div class="pa-news">⚠️ ${escapeHtml(pl.news)}</div>` : ''}
         <div class="planner-fx-row">
-          ${(pl.next5 || []).map(f => `<div class="planner-fx-cell fdr-${f.difficulty}">GW${f.gw}: ${escapeHtml(f.opponent)} (${f.venue})</div>`).join('') || '<span class="chip-none">no fixtures in window</span>'}
+          ${getPlanningFixtures(pl).map(f => `<div class="planner-fx-cell fdr-${f.difficulty}">GW${f.gw}: ${escapeHtml(f.opponent)} (${f.venue})</div>`).join('') || '<span class="chip-none">no fixtures in window</span>'}
         </div>
       </div>
     `;
@@ -4168,8 +4220,8 @@ function renderSandboxResult() {
   const outXgiPer90 = out.seasonMinutes > 0 ? (out.seasonXGI / (out.seasonMinutes / 90)) : 0;
   const inXgiPer90 = inP.seasonMinutes > 0 ? (inP.seasonXGI / (inP.seasonMinutes / 90)) : 0;
 
-  const outAvg5 = out.next5 && out.next5.length ? (out.next5.reduce((s, f) => s + f.difficulty, 0) / out.next5.length) : null;
-  const inAvg5 = inP.avgDifficultyNext5;
+  const outAvg6 = getPlanningAvgDifficulty(out);
+  const inAvg6 = getPlanningAvgDifficulty(inP);
 
   let verdictHtml = '';
   if (!affordable) verdictHtml = `<div class="sandbox-verdict bad">❌ Not affordable — £${Math.abs(bankAfter).toFixed(1)}m short</div>`;
@@ -4184,8 +4236,8 @@ function renderSandboxResult() {
         <thead><tr><th></th><th>OUT: ${escapeHtml(out.name)}</th><th>IN: ${escapeHtml(inP.name)}</th></tr></thead>
         <tbody>
           <tr><td>Price</td><td>£${out.price.toFixed(1)}m</td><td>£${inP.price.toFixed(1)}m</td></tr>
-          <tr><td>Next fixture (1-GW)</td><td>${out.next5 && out.next5[0] ? escapeHtml(out.next5[0].opponent) + ' (' + out.next5[0].venue + ')' : '—'}</td><td>${inP.nextFixture ? escapeHtml(inP.nextFixture.opponent) + ' (' + inP.nextFixture.venue + ')' : '—'}</td></tr>
-          <tr><td>Avg difficulty (6-GW)</td><td>${outAvg5 != null ? outAvg5.toFixed(1) : '—'}</td><td>${inAvg5 != null ? inAvg5.toFixed(1) : '—'}</td></tr>
+          <tr><td>Next fixture (1-GW)</td><td>${getNextPlanningFixture(out) ? escapeHtml(getNextPlanningFixture(out).opponent) + ' (' + getNextPlanningFixture(out).venue + ')' : '—'}</td><td>${getNextPlanningFixture(inP) ? escapeHtml(getNextPlanningFixture(inP).opponent) + ' (' + getNextPlanningFixture(inP).venue + ')' : '—'}</td></tr>
+          <tr><td>Avg difficulty (6-GW)</td><td>${outAvg6 != null ? outAvg6.toFixed(1) : '—'}</td><td>${inAvg6 != null ? inAvg6.toFixed(1) : '—'}</td></tr>
           <tr><td>ep_next</td><td>${out.epNext != null ? out.epNext.toFixed(1) : '—'}</td><td>${inP.epNext.toFixed(1)}</td></tr>
           <tr><td>Form</td><td>${out.form != null ? out.form.toFixed(1) : '—'}</td><td>${inP.form.toFixed(1)}</td></tr>
           <tr><td>Season xGI/90</td><td>${outXgiPer90.toFixed(2)}</td><td>${inXgiPer90.toFixed(2)}</td></tr>
