@@ -981,6 +981,9 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .health-row.warn::before { content:'!'; color:var(--gold); font-family:var(--font-mono); }
 .health-row.err::before { content:'×'; color:var(--red); font-family:var(--font-mono); }
 
+/* ================= PHASE 5 — LIVE GW INTELLIGENCE ================= */
+.p5-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}.p5-card{background:var(--bg-elev);border:1px solid var(--border);border-radius:5px;padding:14px}.p5-card.full{grid-column:1/-1}.p5-card-title{font-family:var(--font-display);font-size:15px;font-weight:700;text-transform:uppercase;margin-bottom:4px}.p5-card-sub{font-size:11px;color:var(--text-faint);line-height:1.5;margin-bottom:10px}.p5-status{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:3px;padding:5px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase}.p5-status.ready{border-color:var(--lime);color:var(--lime)}.p5-status.wait{border-color:var(--gold);color:var(--gold)}.p5-status.action{border-color:var(--red);color:var(--red)}.p5-change{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.45}.p5-change:last-child{border-bottom:0}.p5-change-tag{font-family:var(--font-mono);font-size:9px;min-width:68px;text-transform:uppercase;color:var(--gold)}.p5-check-row{display:grid;grid-template-columns:22px 1fr 112px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}.p5-check-row:last-child{border-bottom:0}.p5-check-row input[type=checkbox]{accent-color:#c6ff3d}.p5-check-row select,.p5-field input,.p5-field select,.p5-field textarea,.p5-expert-row input{width:100%;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:8px;font-family:var(--font-body);font-size:12px}.p5-field textarea{min-height:68px;resize:vertical}.p5-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:9px}.p5-field label,.p5-expert-head{display:block;font-family:var(--font-mono);font-size:9px;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px}.p5-expert-row{display:grid;grid-template-columns:1.15fr .55fr .55fr 1fr 1fr .7fr 40px;gap:6px;align-items:end;margin-bottom:7px}.p5-remove{border:1px solid var(--border);background:transparent;color:var(--red);border-radius:3px;padding:7px;cursor:pointer}.p5-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.p5-btn{border:1px solid var(--border);background:var(--bg-elev-2);color:var(--text);border-radius:3px;padding:8px 11px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer}.p5-btn.primary{border-color:var(--lime);color:var(--lime)}.p5-btn.gold{border-color:var(--gold);color:var(--gold)}.p5-history-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:11px;line-height:1.5}.p5-history-item:last-child{border-bottom:0}.p5-note{font-size:10px;color:var(--text-faint);line-height:1.5;margin-top:7px}@media(max-width:800px){.p5-grid{grid-template-columns:1fr}.p5-card.full{grid-column:auto}.p5-form-grid{grid-template-columns:1fr 1fr}.p5-expert-row{grid-template-columns:1fr 1fr}.p5-expert-row .p5-wide{grid-column:1/-1}.p5-check-row{grid-template-columns:22px 1fr}.p5-check-row select{grid-column:2}}@media(max-width:480px){.p5-form-grid,.p5-expert-row{grid-template-columns:1fr}.p5-expert-row .p5-wide{grid-column:auto}}
+
 </style>
 </head>
 <body>
@@ -1177,6 +1180,22 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
   <!-- ================= DECISIONS TAB ================= -->
   <div class="tab-panel" id="tab-decisions">
+    <!-- ================= PHASE 5 — LIVE GW INTELLIGENCE ================= -->
+    <div class="section-label"><span>Phase 5 — Deadline Centre</span><span id="p5GwLabel"></span></div>
+    <div class="p5-grid" id="p5DeadlineGrid">
+      <div class="p5-card full">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div><div class="p5-card-title">Live GW decision status</div><div class="p5-card-sub" id="p5DeadlineMeta">Sync to build the deadline view.</div></div><span class="p5-status wait" id="p5DecisionStatus">WAIT FOR DATA</span></div>
+        <div class="p5-form-grid">
+          <div class="p5-field"><label>Planned transfer</label><input id="p5Transfer" placeholder="e.g. Gabriel → Gvardiol"></div><div class="p5-field"><label>Captain</label><input id="p5Captain" placeholder="Captain"></div><div class="p5-field"><label>Vice captain</label><input id="p5Vice" placeholder="Vice"></div>
+          <div class="p5-field"><label>Chip</label><select id="p5Chip"><option>HOLD</option><option>Wildcard</option><option>Free Hit</option><option>Triple Captain</option><option>Bench Boost</option></select></div><div class="p5-field"><label>Decision state</label><select id="p5ManualStatus"><option value="auto">AUTO</option><option value="wait">WAIT FOR NEWS</option><option value="action">ACTION REQUIRED</option><option value="ready">READY TO LOCK</option></select></div><div class="p5-field"><label>Hit</label><select id="p5Hit"><option value="0">No hit</option><option value="4">-4</option><option value="8">-8</option></select></div>
+        </div>
+        <div class="p5-field"><label>Final decision / unresolved note</label><textarea id="p5DecisionNote" placeholder="What are we waiting for, or why are we ready?"></textarea></div><div class="p5-actions"><button class="p5-btn primary" id="p5SaveDecision">Save Deadline State</button><button class="p5-btn gold" id="p5LockGw">Lock GW Decision</button></div>
+      </div>
+      <div class="p5-card"><div class="p5-card-title">What changed since last sync</div><div class="p5-card-sub">Only material tracker changes — no invented news.</div><div id="p5ChangesWrap"><div class="empty-note">A second successful sync is needed to compare changes.</div></div></div>
+      <div class="p5-card"><div class="p5-card-title">External research checklist</div><div class="p5-card-sub">The tracker cannot search the web itself. Mark these after we verify them externally.</div><div id="p5ResearchWrap"></div></div>
+      <div class="p5-card full"><div class="p5-card-title">Elite manager / similar squad intelligence</div><div class="p5-card-sub">Record only verified current team reveals. 14/15 = 93.3% squad match; 10/11 = 90.9% XI match. Expert action is evidence, not authority.</div><div id="p5ExpertsWrap"></div><div class="p5-actions"><button class="p5-btn" id="p5AddExpert">+ Add verified manager</button><button class="p5-btn primary" id="p5SaveExperts">Save manager research</button></div><div id="p5ExpertVerdict" class="p5-note"></div></div>
+      <div class="p5-card full"><div class="p5-card-title">Locked GW decisions / post-GW review</div><div class="p5-card-sub">Stores what we actually decided before the deadline so results do not rewrite the reasoning later.</div><div id="p5HistoryWrap"><div class="empty-note">No locked GW decisions yet.</div></div></div>
+    </div>
 
     <div class="section-label"><span>This gameweek</span><span id="decGwLabel"></span></div>
     <div class="gw-hero" id="decHero">
@@ -1449,6 +1468,8 @@ const TEAM_STRUCTURE_KEY = 'team-structure';
 const CMP_SELECTED_KEY = 'compare-selected';
 const TRANSFER_LAB_KEY = 'transfer-lab-scenarios';
 const PLANNER_PLANS_KEY = 'sixgw-planner-plans';
+const PHASE5_KEY = 'phase5-live-intelligence';
+const PHASE5_SYNC_BASELINE_KEY = 'phase5-sync-baseline';
 // Phase 4 shared FPL mechanics — one source of truth for front-end simulations.
 const FPL_RULES = Object.freeze({ planningHorizon: 6, maxFreeTransfers: 5, hitCost: 4, maxPlayersPerClub: 3, squadSize: 15 });
 const PLANNING_HORIZON = FPL_RULES.planningHorizon;
@@ -1555,6 +1576,8 @@ let plannerActivePlanId = 'plan-default';
 let plannerSelectedGwIdx = 0;
 let plannerWildcardDraft = null; // { ids: [...] } while editing a wildcard squad, before confirming
 let captainCandidates = [];
+let phase5State={transfer:'',captain:'',vice:'',chip:'HOLD',hit:0,manualStatus:'auto',note:'',research:{pressers:'todo',europe:'todo',injuries:'todo',prices:'todo',experts:'todo',lateNews:'todo'},experts:[],locked:[],changes:[]};
+let phase5SyncBaseline=null;
 let countdownInterval = null;
 let chartInstance = null;
 let cyprusChartInstance = null;
@@ -1573,6 +1596,11 @@ const SEED_GW1 = {
 };
 
 const SEED_CYPRUS_GW1 = { gw: 1, savedAt: '2026-08-22T23:18:00Z', rank: 785, total: 41 };
+
+async function loadPhase5State(){const val=await storageGet(PHASE5_KEY);if(val){try{phase5State={...phase5State,...JSON.parse(val)}}catch(e){}}phase5State.research={pressers:'todo',europe:'todo',injuries:'todo',prices:'todo',experts:'todo',lateNews:'todo',...(phase5State.research||{})};phase5State.experts=Array.isArray(phase5State.experts)?phase5State.experts:[];phase5State.locked=Array.isArray(phase5State.locked)?phase5State.locked:[];phase5State.changes=Array.isArray(phase5State.changes)?phase5State.changes:[];}
+async function savePhase5State(){await storageSet(PHASE5_KEY,JSON.stringify(phase5State));}
+async function loadPhase5Baseline(){const val=await storageGet(PHASE5_SYNC_BASELINE_KEY);if(val){try{phase5SyncBaseline=JSON.parse(val)}catch(e){phase5SyncBaseline=null}}}
+async function savePhase5Baseline(){if(phase5SyncBaseline)await storageSet(PHASE5_SYNC_BASELINE_KEY,JSON.stringify(phase5SyncBaseline));}
 
 async function loadSnapshots() {
   try {
@@ -4646,6 +4674,25 @@ function renderCyChase() {
   document.getElementById('cyGapVal').textContent = gap <= 0 ? '🥇 You lead!' : gap;
 }
 
+/* ============================================================
+   PHASE 5 — LIVE GW INTELLIGENCE + DEADLINE CENTRE
+   ============================================================ */
+const PHASE5_RESEARCH_ITEMS=[['pressers','Press conferences / manager quotes'],['europe','European / cup minutes & rotation'],['injuries','Injuries, suspensions & availability'],['prices','Price / transfer pressure check'],['experts','Elite managers with similar squads'],['lateNews','Late team news before deadline']];
+function phase5Snapshot(){const players={};((gwPlanner&&gwPlanner.allPlayers)||[]).forEach(p=>{players[String(p.id)]={name:p.name,price:p.price,status:p.status,chance:p.chanceOfPlaying,news:p.news||'',selectedBy:p.selectedBy,transfersInEvent:p.transfersInEvent,transfersOutEvent:p.transfersOutEvent};});const managers={};((rivalIntel&&rivalIntel.managers)||[]).forEach(m=>{managers[String(m.entry)]={name:m.entry_name,captain:m.captainName||'',chip:m.chipActive||'',gwPoints:m.gwPoints,transfers:m.transfersMade??m.eventTransfers??0,hits:m.hitsTaken??0};});return{at:new Date().toISOString(),gw:homeData?.gw??gwDecision?.gw??null,overallRank:homeData?.overallRank??null,bank:gwPlanner?.bank??homeData?.bank??null,ft:gwPlanner?.ftEstimate??homeData?.freeTransfersEstimate??null,squad:((gwPlanner&&gwPlanner.squad)||[]).map(p=>String(p.element)).sort(),players,managers};}
+function phase5Compare(prev,cur){if(!prev||!cur)return[];const out=[];if(prev.gw!==cur.gw)out.push({tag:'GW',text:`Gameweek changed: GW${prev.gw??'—'} → GW${cur.gw??'—'}`});if(prev.overallRank!=null&&cur.overallRank!=null&&prev.overallRank!==cur.overallRank)out.push({tag:'RANK',text:`Overall rank ${Number(prev.overallRank).toLocaleString()} → ${Number(cur.overallRank).toLocaleString()}`});if(prev.bank!=null&&cur.bank!=null&&prev.bank!==cur.bank)out.push({tag:'BANK',text:`Bank £${Number(prev.bank).toFixed(1)}m → £${Number(cur.bank).toFixed(1)}m`});if(prev.ft!=null&&cur.ft!=null&&prev.ft!==cur.ft)out.push({tag:'FT',text:`Free transfers ${prev.ft} → ${cur.ft}`});const aSet=new Set(prev.squad||[]),bSet=new Set(cur.squad||[]),removed=[...aSet].filter(x=>!bSet.has(x)).map(x=>prev.players?.[x]?.name||x),added=[...bSet].filter(x=>!aSet.has(x)).map(x=>cur.players?.[x]?.name||x);if(removed.length||added.length)out.push({tag:'SQUAD',text:`OUT ${removed.join(', ')||'—'} | IN ${added.join(', ')||'—'}`});Object.keys(cur.players||{}).forEach(id=>{const a=prev.players?.[id],b=cur.players[id];if(!a||!b)return;if(a.price!=null&&b.price!=null&&a.price!==b.price)out.push({tag:'PRICE',text:`${b.name}: £${Number(a.price).toFixed(1)}m → £${Number(b.price).toFixed(1)}m`});if((a.status||'')!==(b.status||'')||(a.chance??null)!==(b.chance??null))out.push({tag:'STATUS',text:`${b.name}: availability changed${b.chance!=null?` to ${b.chance}%`:''}${b.news?` — ${b.news}`:''}`});else if((a.news||'')!==(b.news||'')&&b.news)out.push({tag:'NEWS',text:`${b.name}: ${b.news}`});});Object.keys(cur.managers||{}).forEach(id=>{const a=prev.managers?.[id],b=cur.managers[id];if(!a||!b)return;if(a.captain!==b.captain)out.push({tag:'RIVAL',text:`${b.name}: captain ${a.captain||'—'} → ${b.captain||'—'}`});if(a.chip!==b.chip&&b.chip)out.push({tag:'RIVAL',text:`${b.name}: chip now ${b.chip}`});if(a.transfers!==b.transfers||a.hits!==b.hits)out.push({tag:'RIVAL',text:`${b.name}: transfer activity changed (${b.transfers} transfer${b.transfers===1?'':'s'}, ${b.hits?`-${b.hits*4}`:'no hit'})`});});return out.slice(0,30);}
+function phase5DeadlineText(){const d=fplInfo?.deadline;if(!d)return'Deadline data unavailable — sync FPL Info.';const when=d.deadline_time||d.time||d.date||d.deadline||null;if(!when)return`GW${d.gw??d.event??homeData?.gw??'—'} deadline loaded.`;const dt=new Date(when);return isNaN(dt)?String(when):`${dt.toLocaleString()} · ${lastSyncedAt?`synced ${lastSyncedAt.toLocaleTimeString()}`:'saved data'}`;}
+function phase5AutoStatus(){if(phase5State.manualStatus&&phase5State.manualStatus!=='auto')return phase5State.manualStatus;const flagged=(playerAnalysis||[]).some(p=>['Injury/Availability Risk','Sell'].includes(p.heuristic?.bucket));const pending=Object.values(phase5State.research||{}).some(v=>v!=='done'&&v!=='na');if(flagged)return'action';if(pending)return'wait';return'ready';}
+function renderPhase5(){const label=document.getElementById('p5GwLabel');if(!label)return;label.textContent=`GW${homeData?.gw??gwDecision?.gw??'—'}`;const meta=document.getElementById('p5DeadlineMeta');if(meta)meta.textContent=phase5DeadlineText();const status=phase5AutoStatus(),el=document.getElementById('p5DecisionStatus');if(el){el.className=`p5-status ${status}`;el.textContent=status==='ready'?'READY TO LOCK':status==='action'?'ACTION REQUIRED':'WAIT FOR NEWS';}for(const[id,key]of Object.entries({p5Transfer:'transfer',p5Captain:'captain',p5Vice:'vice',p5DecisionNote:'note',p5ManualStatus:'manualStatus'})){const x=document.getElementById(id);if(x&&document.activeElement!==x)x.value=phase5State[key]??'';}const chip=document.getElementById('p5Chip');if(chip&&document.activeElement!==chip)chip.value=phase5State.chip||'HOLD';const hit=document.getElementById('p5Hit');if(hit&&document.activeElement!==hit)hit.value=String(phase5State.hit||0);renderPhase5Changes();renderPhase5Research();renderPhase5Experts();renderPhase5History();}
+function renderPhase5Changes(){const w=document.getElementById('p5ChangesWrap');if(!w)return;const c=phase5State.changes||[];w.innerHTML=c.length?c.map(x=>`<div class="p5-change"><span class="p5-change-tag">${escapeHtml(x.tag)}</span><span>${escapeHtml(x.text)}</span></div>`).join(''):'<div class="empty-note">No material tracker changes detected since the previous successful sync.</div>';}
+function renderPhase5Research(){const w=document.getElementById('p5ResearchWrap');if(!w)return;w.innerHTML=PHASE5_RESEARCH_ITEMS.map(([k,l])=>{const v=phase5State.research?.[k]||'todo';return`<div class="p5-check-row"><input type="checkbox" data-p5-research-check="${k}" ${v==='done'?'checked':''}><div>${escapeHtml(l)}</div><select data-p5-research="${k}"><option value="todo" ${v==='todo'?'selected':''}>TO CHECK</option><option value="wait" ${v==='wait'?'selected':''}>WAITING</option><option value="done" ${v==='done'?'selected':''}>VERIFIED</option><option value="na" ${v==='na'?'selected':''}>N/A</option></select></div>`}).join('');}
+function phase5ExpertRow(e={},i=0){return`<div class="p5-expert-row" data-p5-expert-row="${i}"><div class="p5-wide"><div class="p5-expert-head">Manager / source</div><input data-k="manager" value="${escapeHtml(e.manager||'')}" placeholder="Name — source"></div><div><div class="p5-expert-head">Squad /15</div><input data-k="squad" type="number" min="0" max="15" value="${e.squad??''}"></div><div><div class="p5-expert-head">XI /11</div><input data-k="xi" type="number" min="0" max="11" value="${e.xi??''}"></div><div class="p5-wide"><div class="p5-expert-head">Transfer(s)</div><input data-k="transfer" value="${escapeHtml(e.transfer||'')}" placeholder="OUT → IN"></div><div><div class="p5-expert-head">Captain</div><input data-k="captain" value="${escapeHtml(e.captain||'')}"></div><div><div class="p5-expert-head">Chip</div><input data-k="chip" value="${escapeHtml(e.chip||'')}"></div><button class="p5-remove" data-p5-remove="${i}">×</button></div>`;}
+function renderPhase5Experts(){const w=document.getElementById('p5ExpertsWrap');if(!w)return;if(!phase5State.experts.length)phase5State.experts=[{manager:'',squad:'',xi:'',transfer:'',captain:'',chip:''}];w.innerHTML=phase5State.experts.map(phase5ExpertRow).join('');const verified=phase5State.experts.filter(e=>e.manager&&Number(e.squad)>=13),tierA=verified.filter(e=>Number(e.squad)>=14),v=document.getElementById('p5ExpertVerdict');if(v)v.textContent=tierA.length?`${tierA.length} verified 90%+ squad match${tierA.length===1?'':'es'} recorded. Compare their reasoning with our plan — do not copy automatically.`:verified.length?'No verified 14/15+ match recorded yet. 13/15 managers are fallback context only.':'No verified similar-manager research recorded yet.';}
+function renderPhase5History(){const w=document.getElementById('p5HistoryWrap');if(!w)return;const rows=[...(phase5State.locked||[])].slice(-6).reverse();w.innerHTML=rows.length?rows.map(x=>`<div class="p5-history-item"><strong>GW${escapeHtml(String(x.gw??'—'))} · ${escapeHtml(x.status||'LOCKED')}</strong> · ${escapeHtml(new Date(x.lockedAt).toLocaleString())}<br>Transfer: ${escapeHtml(x.transfer||'HOLD')} · C: ${escapeHtml(x.captain||'—')} · VC: ${escapeHtml(x.vice||'—')} · Chip: ${escapeHtml(x.chip||'HOLD')} · Hit: ${x.hit?'-'+x.hit:'0'}${x.note?`<br>${escapeHtml(x.note)}`:''}</div>`).join(''):'<div class="empty-note">No locked GW decisions yet.</div>';}
+function collectPhase5Experts(){return[...document.querySelectorAll('[data-p5-expert-row]')].map(row=>{const e={};row.querySelectorAll('[data-k]').forEach(x=>e[x.dataset.k]=x.value.trim());return e;}).filter(e=>Object.values(e).some(Boolean));}
+async function savePhase5Form(){phase5State.transfer=document.getElementById('p5Transfer')?.value.trim()||'';phase5State.captain=document.getElementById('p5Captain')?.value.trim()||'';phase5State.vice=document.getElementById('p5Vice')?.value.trim()||'';phase5State.chip=document.getElementById('p5Chip')?.value||'HOLD';phase5State.hit=Number(document.getElementById('p5Hit')?.value||0);phase5State.manualStatus=document.getElementById('p5ManualStatus')?.value||'auto';phase5State.note=document.getElementById('p5DecisionNote')?.value.trim()||'';phase5State.experts=collectPhase5Experts();await savePhase5State();renderPhase5();}
+async function lockPhase5Decision(){await savePhase5Form();const status=phase5AutoStatus();if(status!=='ready'&&phase5State.manualStatus!=='ready'&&!confirm('This GW is not marked READY TO LOCK. Lock the current decision anyway?'))return;phase5State.locked.push({gw:homeData?.gw??gwDecision?.gw??null,lockedAt:new Date().toISOString(),status:'LOCKED',transfer:phase5State.transfer||'HOLD',captain:phase5State.captain,vice:phase5State.vice,chip:phase5State.chip,hit:phase5State.hit,note:phase5State.note,research:{...phase5State.research},experts:phase5State.experts.map(x=>({...x}))});phase5State.locked=phase5State.locked.slice(-30);await savePhase5State();renderPhase5History();}
+function wirePhase5(){document.getElementById('p5SaveDecision')?.addEventListener('click',savePhase5Form);document.getElementById('p5LockGw')?.addEventListener('click',lockPhase5Decision);document.getElementById('p5AddExpert')?.addEventListener('click',()=>{phase5State.experts=collectPhase5Experts();phase5State.experts.push({manager:'',squad:'',xi:'',transfer:'',captain:'',chip:''});renderPhase5Experts();});document.getElementById('p5SaveExperts')?.addEventListener('click',savePhase5Form);document.getElementById('p5ResearchWrap')?.addEventListener('change',async e=>{const k=e.target.dataset.p5Research;if(k){phase5State.research[k]=e.target.value;await savePhase5State();renderPhase5();}const ck=e.target.dataset.p5ResearchCheck;if(ck){phase5State.research[ck]=e.target.checked?'done':'todo';await savePhase5State();renderPhase5();}});document.getElementById('p5ExpertsWrap')?.addEventListener('click',e=>{const i=e.target.dataset.p5Remove;if(i!=null){phase5State.experts=collectPhase5Experts();phase5State.experts.splice(Number(i),1);renderPhase5Experts();}});}
+
 /* ---- Decisions tab rendering ---- */
 function fixtureBadge(f) {
   if (!f) return '';
@@ -5217,7 +5264,7 @@ function renderAllViews() {
   render(); renderCyprus(); renderFH();
   renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
   renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
-  renderFplInfo(); renderCyChase(); renderDecisions(); renderHome(); renderRivalVerdict();
+  renderFplInfo(); renderCyChase(); renderDecisions(); renderPhase5(); renderHome(); renderRivalVerdict();
   renderLeaguePositionContext(); renderLeagueMovement(); renderGwBattle(); renderRivalsOverview();
   renderRivalCompare(); renderCaptainOwnership(); renderMiniLeagueOwnership(); renderThreatAnalysis();
   renderRivalWatchHome(); renderPlayerAnalysis(); renderPlanner(); renderCaptainChipsTab(); renderComparison();
@@ -5388,6 +5435,10 @@ async function syncFromScript(manual) {
     }
 
     lastSyncedAt = new Date();
+    const phase5CurrentSnapshot=phase5Snapshot();
+    phase5State.changes=phase5Compare(phase5SyncBaseline,phase5CurrentSnapshot);
+    phase5SyncBaseline=phase5CurrentSnapshot;
+    await savePhase5State(); await savePhase5Baseline();
     renderAllViews();
     setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
   } catch (e) {
@@ -5692,6 +5743,17 @@ function aiNextResearch(lines) {
     '- FINAL ACTION: DO NOW / WAIT / RECHECK'
   );
 
+  lines.push('', 'PHASE 5 DEADLINE CENTRE');
+  const p5Status = phase5AutoStatus();
+  lines.push(`Decision state: ${p5Status==='ready'?'READY TO LOCK':p5Status==='action'?'ACTION REQUIRED':'WAIT FOR NEWS'}`);
+  lines.push(`Planned transfer: ${phase5State.transfer || 'HOLD'} | Captain: ${phase5State.captain || '—'} | Vice: ${phase5State.vice || '—'} | Chip: ${phase5State.chip || 'HOLD'} | Hit: ${phase5State.hit ? '-'+phase5State.hit : '0'}`);
+  lines.push('External research checklist: ' + PHASE5_RESEARCH_ITEMS.map(([k,l]) => `${l}=${(phase5State.research||{})[k]||'todo'}`).join(' | '));
+  const p5Experts = (phase5State.experts||[]).filter(e => e.manager);
+  if (p5Experts.length) {
+    lines.push('Verified similar-manager research recorded in tracker:');
+    p5Experts.forEach(e => lines.push(`- ${e.manager}: squad ${e.squad||'—'}/15 | XI ${e.xi||'—'}/11 | transfer ${e.transfer||'—'} | captain ${e.captain||'—'} | chip ${e.chip||'—'}`));
+  } else lines.push('Verified similar-manager research: none recorded yet — research fresh before the deadline.');
+
   lines.push('', 'CURRENT WATCHLIST / UNRESOLVED SIGNALS');
   const flagged = (playerAnalysis || []).filter(p => ['Monitor','Possible Sell','Sell','Injury/Availability Risk'].includes(p.heuristic?.bucket));
   if (flagged.length) flagged.forEach(p => lines.push(`- ${p.name}: ${p.heuristic?.bucket} - ${(p.heuristic?.reasons || []).join('; ')}${p.official?.news ? ` | News: ${p.official.news}` : ''}`));
@@ -5832,11 +5894,14 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   await loadCmpSelected();
   await loadTransferLab();
   await loadPlannerPlans();
+  await loadPhase5State();
+  await loadPhase5Baseline();
   renderAllViews();
   noteStorageMode();
 
   document.getElementById('syncNowBtn').addEventListener('click', () => syncFromScript(true));
   document.getElementById('runDiagnosticsBtn').addEventListener('click', renderSystemHealth);
+  wirePhase5();
 
   document.getElementById('sandboxOut').addEventListener('change', (e) => {
     sandboxOutElement = e.target.value ? Number(e.target.value) : null;
