@@ -1471,18 +1471,18 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <!-- ================= GLOBAL TOP TAB ================= -->
   <div class="tab-panel" id="tab-globaltop">
 
-    <div class="heuristic-note">🌍 Real data from FPL's public "Overall" global league (ID 314) — verified, not a third-party estimate. Full squads are fetched for only the top 10 managers, deliberately bounded to keep sync cost sane. This is context for your own decisions, never a copy-them signal.</div>
+    <div class="heuristic-note">🌍 <b>Global Top-10 Snapshot</b> — real data from FPL's public "Overall" global league (ID 314), verified, not a third-party estimate. 10 managers is a snapshot for ideas, not a statistically meaningful "elite consensus" — treat it as a source of captain patterns, differentials and structural ideas, not something to copy. Full squads fetched for only these 10, deliberately bounded to keep sync cost sane.</div>
 
     <div class="section-label">Where you stand</div>
     <div id="globalTopMeWrap"></div>
 
-    <div class="section-label">Global top 50</div>
+    <div class="section-label">Global top 50 — standings only</div>
     <div id="globalTopStandingsWrap"></div>
 
-    <div class="section-label">Squad overlap with the top 10</div>
+    <div class="section-label">Global Top-10 Snapshot — squad overlap</div>
     <div id="globalTopOverlapWrap"></div>
 
-    <div class="section-label">What the top 10 are captaining</div>
+    <div class="section-label">Global Top-10 Snapshot — captain patterns</div>
     <div id="globalTopCaptainWrap"></div>
 
   </div>
@@ -2981,8 +2981,11 @@ function tallyGroupComparison(outPlayers, inPlayers) {
   const cats = [
     { label: 'better fixture run', outV: avg(outPlayers, labPlayerFixtureAvg), inV: avg(inPlayers, labPlayerFixtureAvg), higherBetter: false },
     { label: 'stronger form', outV: avg(outPlayers, labPlayerForm), inV: avg(inPlayers, labPlayerForm), higherBetter: true },
-    { label: 'higher underlying threat (xGI/90)', outV: avg(outPlayers, labPlayerXgiPer90), inV: avg(inPlayers, labPlayerXgiPer90), higherBetter: true },
-    { label: 'improving fixture swing ahead', outV: avg(outPlayers, labPlayerSwingValue), inV: avg(inPlayers, labPlayerSwingValue), higherBetter: true }
+    { label: 'higher underlying threat (xGI/90)', outV: avg(outPlayers, labPlayerXgiPer90), inV: avg(inPlayers, labPlayerXgiPer90), higherBetter: true }
+    // Fixture swing is deliberately excluded from this tally on purpose — it's shown
+    // as evidence (What Changes, live pair comparison) but never counts toward a
+    // verdict or win-tally on its own. A worsening run doesn't make a sell; an
+    // improving run doesn't win a comparison by itself.
   ];
   const reasons = [];
   let inWins = 0, decided = 0;
@@ -6572,7 +6575,7 @@ function aiRivalStrategy(lines) {
 }
 
 function aiEliteManagers(lines) {
-  aiSection(lines, '17. ELITE MANAGER COMPARISON');
+  aiSection(lines, '17. GLOBAL TOP-10 SNAPSHOT');
   const gt = globalTop;
   if (gt && gt.squads && gt.squads.length && gwPlanner) {
     const myIds = new Set((gwPlanner.squad||[]).map(p=>p.element));
@@ -6589,7 +6592,7 @@ function aiEliteManagers(lines) {
   }
   const experts=(phase5State?.experts||[]).filter(e=>e.manager);
   if(experts.length){lines.push('Manually recorded research (supplements the automated data above):');experts.forEach(e=>lines.push(e.manager+' | Source '+(e.source||'—')+' | Squad '+(e.squad||'—')+'/15 | XI '+(e.xi||'—')+'/11 | Transfer '+(e.transfer||'—')+' | Captain '+(e.captain||'—')+' | Chip '+(e.chip||'—')+' | Notes '+(e.notes||'—')));}
-  lines.push('This is real ownership/overlap data, not a proprietary similarity score. Supporting evidence only — never automatic authority. Following what elite managers own is never sufficient reason alone to make a transfer.');
+  lines.push('This is a Global Top-10 Snapshot, not an "elite consensus" — 10 managers is too small a sample to call representative. Real ownership/overlap data, not a proprietary similarity score. Use it for ideas (captain patterns, differentials, structural approaches), never as automatic authority. Following what these managers own is never sufficient reason alone to make a transfer.');
 }
 
 function aiTemplateOwnership(lines) {
