@@ -70,8 +70,14 @@ h1 {
 .tabs {
   display: flex; gap: 4px; margin-bottom: 22px;
   border-bottom: 1px solid var(--border);
+  overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  -webkit-overflow-scrolling: touch;
 }
+.tabs::-webkit-scrollbar { height: 5px; }
+.tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 .tab-btn {
+  flex: 0 0 auto;
   background: none; border: none; color: var(--text-faint);
   font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: 0.03em;
   padding: 10px 16px; cursor: pointer; position: relative; top: 1px;
@@ -954,6 +960,27 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .ai-export-status.ok { color:var(--lime); }
 .ai-export-status.err { color:var(--red); }
 
+@media (max-width: 600px) {
+  body { padding: 18px 10px 48px; }
+  .tabs { position: sticky; top: 0; z-index: 30; background: rgba(10,20,16,0.96); backdrop-filter: blur(8px); margin-left: -10px; margin-right: -10px; padding: 0 10px; }
+  .tab-btn { padding: 9px 11px; font-size: 12px; }
+  .sync-bar { gap: 8px; }
+}
+.system-health-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; margin: 14px 0 6px; }
+.system-health-head { display:flex; gap:12px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; }
+.system-health-title { font-family:var(--font-display); font-size:15px; text-transform:uppercase; }
+.system-health-sub { color:var(--text-dim); font-size:11px; margin-top:3px; max-width:520px; }
+.system-health-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.health-badge { font-family:var(--font-mono); font-size:10px; padding:5px 8px; border:1px solid var(--border); border-radius:3px; color:var(--text-dim); }
+.health-badge.ok { border-color:var(--lime-dim); color:var(--lime); }
+.health-badge.warn { border-color:var(--gold); color:var(--gold); }
+.health-badge.err { border-color:var(--red); color:var(--red); }
+.system-health-list { margin-top:10px; border-top:1px solid var(--border-soft); padding-top:8px; }
+.health-row { display:flex; gap:8px; align-items:flex-start; font-size:11px; padding:3px 0; color:var(--text-dim); }
+.health-row.ok::before { content:'✓'; color:var(--lime); font-family:var(--font-mono); }
+.health-row.warn::before { content:'!'; color:var(--gold); font-family:var(--font-mono); }
+.health-row.err::before { content:'×'; color:var(--red); font-family:var(--font-mono); }
+
 </style>
 </head>
 <body>
@@ -972,7 +999,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="decisions">Decisions</button>
     <button class="tab-btn" data-tab="rivals">⚔️ Rivals</button>
     <button class="tab-btn" data-tab="analysis">📊 Analysis</button>
-    <button class="tab-btn" data-tab="planner">🧠 Planner</button>
+    <button class="tab-btn" data-tab="planner">🧠 Squad Outlook</button>
     <button class="tab-btn" data-tab="captain">👑 Captain &amp; Chips</button>
     <button class="tab-btn" data-tab="compare">🔀 Compare</button>
     <button class="tab-btn" data-tab="translab">🧪 Transfer Lab</button>
@@ -982,6 +1009,14 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <div id="syncBar" class="sync-bar">
     <span id="syncStatusText">Not synced yet</span>
     <button id="syncNowBtn" class="sync-btn">↻ Sync now</button>
+  </div>
+
+  <div class="system-health-card" id="systemHealthCard">
+    <div class="system-health-head">
+      <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
+      <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
+    </div>
+    <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
   </div>
 
   <!-- ================= ALMOST CHAMPIONS TAB ================= -->
@@ -1414,7 +1449,9 @@ const TEAM_STRUCTURE_KEY = 'team-structure';
 const CMP_SELECTED_KEY = 'compare-selected';
 const TRANSFER_LAB_KEY = 'transfer-lab-scenarios';
 const PLANNER_PLANS_KEY = 'sixgw-planner-plans';
-const PLANNING_HORIZON = 6;
+// Phase 4 shared FPL mechanics — one source of truth for front-end simulations.
+const FPL_RULES = Object.freeze({ planningHorizon: 6, maxFreeTransfers: 5, hitCost: 4, maxPlayersPerClub: 3, squadSize: 15 });
+const PLANNING_HORIZON = FPL_RULES.planningHorizon;
 
 // One source of truth for the forward fixture window.
 // Backwards-compatible with legacy field names still returned by the data layer.
@@ -1878,7 +1915,7 @@ function renderHome() {
     <div class="gw-status-item"><div class="gw-status-label">Bank</div><div class="gw-status-val">£${h.bank != null ? h.bank.toFixed(1) : '—'}m</div></div>
     <div class="gw-status-item"><div class="gw-status-label">Team value</div><div class="gw-status-val">£${h.teamValue != null ? h.teamValue.toFixed(1) : '—'}m</div></div>
     <div class="gw-status-item"><div class="gw-status-label">Transfers made</div><div class="gw-status-val">${h.transfersMade ?? '—'}</div></div>
-    <div class="gw-status-item"><div class="gw-status-label">Hits taken</div><div class="gw-status-val ${h.hitsTaken > 0 ? 'warn' : ''}">${h.hitsTaken != null ? (h.hitsTaken > 0 ? '-' + (h.hitsTaken * 4) : '0') : '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Hits taken</div><div class="gw-status-val ${h.hitsTaken > 0 ? 'warn' : ''}">${h.hitsTaken != null ? (h.hitsTaken > 0 ? '-' + (h.hitsTaken * FPL_RULES.hitCost) : '0') : '—'}</div></div>
     <div class="gw-status-item" style="min-width:200px"><div class="gw-status-label">Blanks next GW</div><div style="margin-top:4px">${blanksHtml}</div></div>
     <div class="gw-status-item" style="min-width:200px"><div class="gw-status-label">Doubles next GW</div><div style="margin-top:4px">${doublesHtml}</div></div>
   `;
@@ -1964,7 +2001,7 @@ function renderHomeRivals() {
       <div class="home-rival-row">
         <div>
           <div class="hr-name">${escapeHtml(r.entry_name)}</div>
-          <div class="hr-meta">C: ${r.captainName ? escapeHtml(r.captainName) : '—'}${r.chipActive ? ' · ' + r.chipActive.toUpperCase() : ''} · ${r.transfersMade ?? 0} transfer(s)${r.hitsTaken ? ' · -' + (r.hitsTaken * 4) + ' hit' : ''}</div>
+          <div class="hr-meta">C: ${r.captainName ? escapeHtml(r.captainName) : '—'}${r.chipActive ? ' · ' + r.chipActive.toUpperCase() : ''} · ${r.transfersMade ?? 0} transfer(s)${r.hitsTaken ? ' · -' + (r.hitsTaken * FPL_RULES.hitCost) + ' hit' : ''}</div>
         </div>
         ${gap != null ? `<div class="hr-gap ${gap > 0 ? 'ahead' : 'behind'}">${gap > 0 ? '+' + gap : gap}</div>` : ''}
       </div>
@@ -2292,13 +2329,13 @@ function computeScenarioMetrics(scenario) {
   let illegalReason = null;
   if (!affordable) illegalReason = `Not affordable -- £${Math.abs(bankAfter).toFixed(1)}m short`;
   else if (!teamLegal) {
-    const overTeam = Object.keys(afterCounts).find(t => afterCounts[t] > 3);
+    const overTeam = Object.keys(afterCounts).find(t => afterCounts[t] > FPL_RULES.maxPlayersPerClub);
     illegalReason = `Would exceed 3 players from ${overTeam}`;
   }
 
   const ftAvailable = gwPlanner.ftEstimate != null ? gwPlanner.ftEstimate : 0;
   const hitCount = Math.max(0, transfersCount - ftAvailable);
-  const hitCost = hitCount * 4;
+  const hitCost = hitCount * FPL_RULES.hitCost;
   const ftAfter = Math.max(0, ftAvailable - transfersCount);
   let flexibility, flexClass;
   if (ftAfter >= 2) { flexibility = 'High'; flexClass = 'lab-flex-high'; }
@@ -2931,7 +2968,7 @@ function computePlanSimulation(plan) {
     let transfersUsed = 0, hitCost = 0, incoming = [], outgoing = [];
     let illegal = null;
 
-    if (action.type === 'wildcard' && action.wildcardSquad && action.wildcardSquad.length === 15) {
+    if (action.type === 'wildcard' && action.wildcardSquad && action.wildcardSquad.length === FPL_RULES.squadSize) {
       const beforeValue = squadIds.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
       const afterValue = action.wildcardSquad.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
       outgoing = squadIds.filter(id => !action.wildcardSquad.includes(id));
@@ -2951,15 +2988,15 @@ function computePlanSimulation(plan) {
       bank = bank + outSum - inSum;
       if (bank < 0) illegal = 'Insufficient bank for this transfer';
       const hitCount = Math.max(0, transfersUsed - ftIn);
-      hitCost = hitCount * 4;
+      hitCost = hitCount * FPL_RULES.hitCost;
     }
 
-    const ftOut = (action.type === 'wildcard') ? Math.min(5, ftIn) : Math.max(0, ftIn - transfersUsed);
+    const ftOut = (action.type === 'wildcard') ? Math.min(FPL_RULES.maxFreeTransfers, ftIn) : Math.max(0, ftIn - transfersUsed);
     // Wildcard preserves the FT balance you entered the GW with; it does not grant
     // an extra +1 on top of that balance for the following GW.
     const ftForNext = (action.type === 'wildcard')
-      ? Math.min(5, ftIn)
-      : Math.min(5, ftOut + 1);
+      ? Math.min(FPL_RULES.maxFreeTransfers, ftIn)
+      : Math.min(FPL_RULES.maxFreeTransfers, ftOut + 1);
 
     const squadFull = squadIds.map(plannerGetPlayer).filter(Boolean);
     const teamValue = squadFull.reduce((s, p) => s + p.price, 0) + bank;
@@ -3176,11 +3213,11 @@ function renderWildcardEditor(enteringSquadIds, currentAction, results) {
   draftPlayers.forEach(p => { teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
   const teamLegal = Object.values(teamCounts).every(c => c <= 3);
   const positionsOk = Object.keys(WILDCARD_TARGETS).every(pos => (counts[pos] || 0) === WILDCARD_TARGETS[pos]);
-  const complete = draftPlayers.length === 15 && positionsOk && teamLegal && remaining >= 0;
+  const complete = draftPlayers.length === FPL_RULES.squadSize && positionsOk && teamLegal && remaining >= 0;
 
   const summaryHtml = `
     <div class="sixgw-wc-summary">
-      <div class="sixgw-wc-stat ${draftPlayers.length === 15 ? 'ok' : ''}">Squad: ${draftPlayers.length}/15</div>
+      <div class="sixgw-wc-stat ${draftPlayers.length === FPL_RULES.squadSize ? 'ok' : ''}">Squad: ${draftPlayers.length}/${FPL_RULES.squadSize}</div>
       ${Object.keys(WILDCARD_TARGETS).map(pos => `<div class="sixgw-wc-stat ${(counts[pos]||0) === WILDCARD_TARGETS[pos] ? 'ok' : ''}">${pos}: ${counts[pos] || 0}/${WILDCARD_TARGETS[pos]}</div>`).join('')}
       <div class="sixgw-wc-stat ${remaining >= 0 ? 'ok' : 'bad'}">Budget: £${remaining.toFixed(1)}m left</div>
       <div class="sixgw-wc-stat ${teamLegal ? 'ok' : 'bad'}">Team limit: ${teamLegal ? 'OK' : 'exceeded'}</div>
@@ -3235,7 +3272,7 @@ function wireWildcardEditorEvents(gw) {
       results.querySelectorAll('[data-id]').forEach(el => {
         el.addEventListener('click', () => {
           const id = Number(el.dataset.id);
-          if (plannerWildcardDraft.ids.length < 15 && !plannerWildcardDraft.ids.includes(id)) {
+          if (plannerWildcardDraft.ids.length < FPL_RULES.squadSize && !plannerWildcardDraft.ids.includes(id)) {
             plannerWildcardDraft.ids.push(id);
           }
           searchInput.value = ''; results.innerHTML = '';
@@ -3734,7 +3771,7 @@ function renderLeagueMovement() {
 function formatTransferActivity(manager) {
   const transfers = Number(manager?.transfersMade ?? manager?.eventTransfers ?? 0) || 0;
   const hits = Number(manager?.hitsTaken ?? 0) || 0;
-  const hitCost = hits * 4;
+  const hitCost = hits * FPL_RULES.hitCost;
 
   let line;
   if (transfers === 0) line = '0 transfers — rolled';
@@ -5175,6 +5212,51 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+/* ---- Phase 4 reliability + consolidated rendering ---- */
+function renderAllViews() {
+  render(); renderCyprus(); renderFH();
+  renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
+  renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
+  renderFplInfo(); renderCyChase(); renderDecisions(); renderHome(); renderRivalVerdict();
+  renderLeaguePositionContext(); renderLeagueMovement(); renderGwBattle(); renderRivalsOverview();
+  renderRivalCompare(); renderCaptainOwnership(); renderMiniLeagueOwnership(); renderThreatAnalysis();
+  renderRivalWatchHome(); renderPlayerAnalysis(); renderPlanner(); renderCaptainChipsTab(); renderComparison();
+  renderTransferLab(); renderSixGwPlanner(); renderSystemHealth();
+}
+function runSystemDiagnostics() {
+  const checks=[]; const add=(level,label,detail='')=>checks.push({level,label,detail});
+  add(PLANNING_HORIZON===6?'ok':'err','Planning horizon',`Configured for ${PLANNING_HORIZON} GWs`);
+  add(FPL_RULES.maxFreeTransfers===5?'ok':'err','Free-transfer cap',`Front-end rule: ${FPL_RULES.maxFreeTransfers}`);
+  add(FPL_RULES.hitCost===4?'ok':'err','Hit cost',`Front-end rule: ${FPL_RULES.hitCost} points`);
+  add(FPL_RULES.maxPlayersPerClub===3?'ok':'err','Club limit',`Front-end rule: ${FPL_RULES.maxPlayersPerClub}`);
+  const ids=[...document.querySelectorAll('[id]')].map(el=>el.id); const dupes=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
+  add(dupes.length?'err':'ok','DOM id integrity',dupes.length?`Duplicates: ${dupes.join(', ')}`:'No duplicate ids detected');
+  if(!gwPlanner||!Array.isArray(gwPlanner.squad)){ add('warn','Current squad','Not loaded yet — sync required'); }
+  else {
+    add(gwPlanner.squad.length===FPL_RULES.squadSize?'ok':'err','Current squad',`${gwPlanner.squad.length}/${FPL_RULES.squadSize} players`);
+    const all=Array.isArray(gwPlanner.allPlayers)?gwPlanner.allPlayers:[];
+    const missing=gwPlanner.squad.filter(p=>!p||!all.some(a=>a.id===p.id));
+    add(missing.length?'err':'ok','Squad/player source consistency',missing.length?`${missing.length} squad player(s) missing from allPlayers`:'Every squad player resolves to the shared player pool');
+    const counts={}; gwPlanner.squad.forEach(p=>{if(p&&p.team) counts[p.team]=(counts[p.team]||0)+1;});
+    const over=Object.entries(counts).filter(([,n])=>n>FPL_RULES.maxPlayersPerClub);
+    add(over.length?'err':'ok','Club exposure legality',over.length?over.map(([t,n])=>`${t} ${n}`).join(', '):'No club exceeds the 3-player limit');
+  }
+  const activePlan=typeof plannerActivePlan==='function'?plannerActivePlan():null;
+  add(activePlan?'ok':(gwPlanner?'err':'warn'),'6-GW active plan',activePlan?(activePlan.name||activePlan.id):'No active plan resolved');
+  add(Array.isArray(transferScenarios)&&transferScenarios.length===3?'ok':'err','Transfer Lab scenarios',`${Array.isArray(transferScenarios)?transferScenarios.length:0}/3 slots available`);
+  const exportCheck=typeof aiValidateExport==='function'?aiValidateExport():{ok:false,missing:['AI export validator unavailable']};
+  add(exportCheck.ok?'ok':'warn','AI handoff export',exportCheck.ok?'Ready to export':`Needs: ${exportCheck.missing.join(', ')}`);
+  add(lastSyncedAt?'ok':'warn','Sync state',lastSyncedAt?`Last successful sync ${lastSyncedAt.toLocaleString()}`:'No successful sync in this browser session');
+  return checks;
+}
+function renderSystemHealth(){
+  const list=document.getElementById('systemHealthList'), badge=document.getElementById('systemHealthBadge'); if(!list||!badge)return;
+  const checks=runSystemDiagnostics(), errors=checks.filter(c=>c.level==='err').length, warnings=checks.filter(c=>c.level==='warn').length;
+  const status=errors?'err':warnings?'warn':'ok'; badge.className=`health-badge ${status}`;
+  badge.textContent=errors?`${errors} ERROR${errors===1?'':'S'}`:warnings?`${warnings} WARNING${warnings===1?'':'S'}`:'ALL CHECKS PASS';
+  list.innerHTML=checks.map(c=>`<div class="health-row ${c.level}"><div><strong>${escapeHtml(c.label)}</strong>${c.detail?` — ${escapeHtml(c.detail)}`:''}</div></div>`).join('');
+}
+
 /* ---- Auto-sync from Apps Script ---- */
 function setSyncBar(status, text) {
   syncStatus = status;
@@ -5304,31 +5386,7 @@ async function syncFromScript(manual) {
     }
 
     lastSyncedAt = new Date();
-    render();
-    renderCyprus();
-    renderFH();
-    renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
-    renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
-    renderFplInfo();
-    renderCyChase();
-    renderDecisions();
-    renderHome();
-    renderRivalVerdict();
-    renderLeaguePositionContext();
-    renderLeagueMovement();
-    renderGwBattle();
-    renderRivalsOverview();
-    renderRivalCompare();
-    renderCaptainOwnership();
-    renderMiniLeagueOwnership();
-    renderThreatAnalysis();
-    renderRivalWatchHome();
-    renderPlayerAnalysis();
-    renderPlanner();
-    renderCaptainChipsTab();
-    renderComparison();
-    renderTransferLab();
-    renderSixGwPlanner();
+    renderAllViews();
     setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
   } catch (e) {
     console.error('Sync failed', e);
@@ -5376,7 +5434,7 @@ function aiValidateExport() {
   const missing = [];
   if (!lastSyncedAt) missing.push('fresh sync timestamp');
   if (!homeData) missing.push('Home/current team data');
-  if (!gwPlanner || !gwPlanner.squad || gwPlanner.squad.length !== 15) missing.push('15-player squad');
+  if (!gwPlanner || !gwPlanner.squad || gwPlanner.squad.length !== FPL_RULES.squadSize) missing.push('15-player squad');
   if (!playerAnalysis || !playerAnalysis.length) missing.push('player analysis');
   if (!rivalIntel || !rivalIntel.managers || !rivalIntel.managers.length) missing.push('rival intelligence');
   return { ok: missing.length === 0, missing };
@@ -5772,33 +5830,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   await loadCmpSelected();
   await loadTransferLab();
   await loadPlannerPlans();
-  render();
-  renderCyprus();
-  renderFH();
-  renderContextTable('cyContextWrap', 'cyContextLabel', cyContext);
-  renderContextTable('fhContextWrap', 'fhContextLabel', fhContext);
-  renderFplInfo();
-  renderDecisions();
-  renderHome();
-  renderRivalVerdict();
-  renderLeaguePositionContext();
-  renderLeagueMovement();
-  renderGwBattle();
-  renderRivalsOverview();
-  renderRivalCompare();
-  renderCaptainOwnership();
-  renderMiniLeagueOwnership();
-  renderThreatAnalysis();
-  renderRivalWatchHome();
-  renderPlayerAnalysis();
-  renderPlanner();
-  renderCaptainChipsTab();
-  renderComparison();
-  renderTransferLab();
-  renderSixGwPlanner();
+  renderAllViews();
   noteStorageMode();
 
   document.getElementById('syncNowBtn').addEventListener('click', () => syncFromScript(true));
+  document.getElementById('runDiagnosticsBtn').addEventListener('click', renderSystemHealth);
 
   document.getElementById('sandboxOut').addEventListener('change', (e) => {
     sandboxOutElement = e.target.value ? Number(e.target.value) : null;
