@@ -434,6 +434,108 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .cmp-verdict-why div::before { content: '•'; position: absolute; left: 0; }
 .cmp-tradeoff { margin-top: 10px; font-size: 12px; color: var(--gold); border-top: 1px solid var(--border-soft); padding-top: 10px; }
 
+/* ---- Transfer Lab ---- */
+.lab-scenario-card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; margin-bottom: 10px;
+}
+.lab-scenario-card.has-pairs { border-color: var(--lime-dim); }
+.lab-scenario-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.lab-scenario-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; text-transform: uppercase; }
+.lab-pair-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; position: relative; }
+.lab-pair-col { flex: 1; min-width: 160px; position: relative; }
+.lab-pair-col select, .lab-pair-col input[type=text] {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 8px 9px; border-radius: 3px; font-size: 13px;
+}
+.lab-remove-pair { background: none; border: 1px solid var(--border); color: var(--text-faint); border-radius: 3px; padding: 8px 10px; cursor: pointer; font-size: 12px; }
+.lab-remove-pair:hover { color: var(--red); border-color: var(--red); }
+.lab-add-pair-btn {
+  background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: var(--font-body);
+  font-size: 12px; padding: 8px 12px; border-radius: 3px; cursor: pointer;
+}
+.lab-add-pair-btn:hover { border-color: var(--lime-dim); color: var(--lime); }
+.lab-add-pair-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.lab-table-scroll { overflow-x: auto; }
+.lab-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.lab-table th, .lab-table td { padding: 8px 12px; text-align: center; font-family: var(--font-mono); font-size: 12px; border-top: 1px solid var(--border-soft); }
+.lab-table th { font-family: var(--font-body); font-weight: 600; font-size: 13px; border-top: none; }
+.lab-table td.lab-row-label { text-align: left; font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; white-space: nowrap; }
+.lab-table td.lab-illegal { color: var(--red); font-weight: 700; }
+.lab-effect-better { color: var(--lime); }
+.lab-effect-worse { color: var(--red); }
+.lab-effect-similar { color: var(--text-dim); }
+.lab-flex-high { color: var(--lime); }
+.lab-flex-medium { color: var(--gold); }
+.lab-flex-low { color: var(--red); }
+
+.lab-hit-card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; margin-bottom: 10px;
+}
+.lab-hit-cost { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--red); }
+.lab-hit-explain { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+.lab-hit-verdict { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-top: 10px; }
+.lab-hit-verdict.justified { color: var(--lime); }
+.lab-hit-verdict.not-justified { color: var(--red); }
+.lab-hit-reasons { margin-top: 6px; font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.lab-hit-reasons div { padding-left: 14px; position: relative; }
+.lab-hit-reasons div::before { content: '•'; position: absolute; left: 0; }
+
+/* ---- 6-GW Planner ---- */
+.sixgw-plan-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.sixgw-plan-bar select {
+  background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 8px 10px; border-radius: 3px; font-size: 13px; min-width: 140px;
+}
+.sixgw-timeline { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.sixgw-gw-pill {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; cursor: pointer;
+  text-align: center; min-width: 90px; flex: 1;
+}
+.sixgw-gw-pill.selected { border-color: var(--lime); background: linear-gradient(135deg, rgba(198,255,61,0.08), var(--bg-elev)); }
+.sixgw-gw-pill-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; }
+.sixgw-gw-pill-gw { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin-top: 2px; }
+.sixgw-gw-pill-action { font-family: var(--font-mono); font-size: 9px; color: var(--gold); margin-top: 3px; text-transform: uppercase; }
+
+.sixgw-badge-row { margin-bottom: 10px; }
+.sixgw-badge {
+  display: inline-block; font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 5px 12px;
+  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.sixgw-badge.planned { background: rgba(232,185,79,0.12); color: var(--gold); border: 1px solid var(--gold); }
+
+.sixgw-action-select { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.sixgw-action-btn {
+  background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--font-body);
+  font-size: 12px; padding: 9px 14px; border-radius: 3px; cursor: pointer; font-weight: 600;
+}
+.sixgw-action-btn.active { border-color: var(--lime); color: var(--lime); background: rgba(198,255,61,0.08); }
+
+.sixgw-wc-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.sixgw-wc-stat { background: var(--bg-elev-2); border-radius: 3px; padding: 6px 10px; font-family: var(--font-mono); font-size: 11px; }
+.sixgw-wc-stat.bad { color: var(--red); }
+.sixgw-wc-stat.ok { color: var(--lime); }
+.sixgw-wc-group-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin: 10px 0 6px; }
+.sixgw-wc-player-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 3px; padding: 7px 10px; margin-bottom: 5px; font-size: 12px;
+}
+.sixgw-wc-remove { background: none; border: none; color: var(--text-faint); cursor: pointer; }
+.sixgw-wc-remove:hover { color: var(--red); }
+.sixgw-wc-confirm { margin-top: 10px; }
+
+.sixgw-io-line { font-size: 12px; margin-bottom: 10px; }
+.sixgw-io-line .in { color: var(--lime); }
+.sixgw-io-line .out { color: var(--red); }
+
+.sixgw-health-col { display: flex; gap: 14px; flex-wrap: wrap; }
+.sixgw-health-block { flex: 1; min-width: 220px; }
+.sixgw-health-title { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; margin-bottom: 6px; }
+.sixgw-health-block.strengths .sixgw-health-title { color: var(--lime); }
+.sixgw-health-block.risks .sixgw-health-title { color: var(--red); }
+.sixgw-health-item { font-size: 12px; color: var(--text-dim); padding-left: 12px; position: relative; margin-bottom: 4px; }
+.sixgw-health-item::before { content: '•'; position: absolute; left: 0; }
+
 .targets-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .target-card {
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; flex: 1; min-width: 150px;
@@ -725,6 +827,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="planner">🧠 Planner</button>
     <button class="tab-btn" data-tab="captain">👑 Captain &amp; Chips</button>
     <button class="tab-btn" data-tab="compare">🔀 Compare</button>
+    <button class="tab-btn" data-tab="translab">🧪 Transfer Lab</button>
+    <button class="tab-btn" data-tab="sixgw">📅 6-GW Plan</button>
   </div>
 
   <div id="syncBar" class="sync-bar">
@@ -1027,6 +1131,67 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
   </div>
 
+  <!-- ================= TRANSFER LAB TAB ================= -->
+  <div class="tab-panel" id="tab-translab">
+
+    <div class="section-label">Transfer lab <span style="font-weight:400">— build up to 3 scenarios, compared against HOLD</span></div>
+
+    <div id="labScenarioBuilders"></div>
+
+    <div class="section-label">Comparison</div>
+    <div id="labComparisonWrap"></div>
+
+    <div class="section-label" id="labFixtureLabel" style="display:none">Affected players — next 6 fixtures</div>
+    <div id="labFixtureWrap"></div>
+
+    <div class="section-label" id="labHitLabel" style="display:none">Hit analysis</div>
+    <div id="labHitWrap"></div>
+
+    <div class="section-label">Verdict</div>
+    <div id="labVerdictWrap"></div>
+
+  </div>
+
+  <!-- ================= 6-GW PLANNER TAB ================= -->
+  <div class="tab-panel" id="tab-sixgw">
+
+    <div class="heuristic-note">📅 Simulation only — nothing here is ever sent to your real FPL team. Uses current player prices; future price changes are not projected.</div>
+
+    <div class="sixgw-plan-bar">
+      <select id="sixgwPlanSelect"></select>
+      <button class="lab-add-pair-btn" id="sixgwNewPlan">+ New</button>
+      <button class="lab-add-pair-btn" id="sixgwDuplicatePlan">Duplicate</button>
+      <button class="lab-add-pair-btn" id="sixgwRenamePlan">Rename</button>
+      <button class="lab-add-pair-btn" id="sixgwResetPlan">Reset from Live Team</button>
+      <button class="lab-add-pair-btn" id="sixgwDeletePlan">Delete</button>
+    </div>
+
+    <div class="sixgw-timeline" id="sixgwTimeline"></div>
+
+    <div class="sixgw-badge-row">
+      <span class="sixgw-badge planned">PLANNED — GW<span id="sixgwLiveGwLabel"></span></span>
+    </div>
+
+    <div class="section-label">Action for this gameweek</div>
+    <div id="sixgwActionEditor"></div>
+
+    <div class="section-label">Mechanics</div>
+    <div class="gw-status-card" id="sixgwMechanicsCard"></div>
+
+    <div class="section-label">Simulated squad</div>
+    <div id="sixgwSquadWrap"></div>
+
+    <div class="section-label">Structure warnings</div>
+    <div id="sixgwWarningsWrap"></div>
+
+    <div class="section-label">Plan health <span style="font-weight:400">— across all 6 gameweeks</span></div>
+    <div id="sixgwHealthWrap"></div>
+
+    <div class="section-label">Planner verdict</div>
+    <div id="sixgwVerdictWrap"></div>
+
+  </div>
+
   <div class="footer-note">Data persists in this artifact — paste new snapshots each gameweek to keep it current.</div>
 </div>
 
@@ -1050,6 +1215,8 @@ const CAPTAINCY_HISTORY_KEY = 'captaincy-history';
 const HOME_RANK_HISTORY_KEY = 'home-rank-history';
 const TEAM_STRUCTURE_KEY = 'team-structure';
 const CMP_SELECTED_KEY = 'compare-selected';
+const TRANSFER_LAB_KEY = 'transfer-lab-scenarios';
+const PLANNER_PLANS_KEY = 'sixgw-planner-plans';
 const MY_ENTRY = 5580812;
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMDnOjV441p8yKzc_yAs4u35-4TQYA72CF85dnGoOx8qZq9yM2vUhizb9AhBkl6T50/exec';
 let lastSyncedAt = null;
@@ -1124,6 +1291,13 @@ let captaincyHistory = null;
 let homeRankHistory = [];
 let teamStructure = null;
 let cmpSelectedIds = [];
+// Transfer Lab: 3 fixed scenario slots (A, B, C), each up to 2 OUT/IN pairs.
+let transferScenarios = [{ pairs: [] }, { pairs: [] }, { pairs: [] }];
+// 6-GW Planner state
+let plannerPlans = [{ id: 'plan-default', name: 'Plan A', actions: {} }];
+let plannerActivePlanId = 'plan-default';
+let plannerSelectedGwIdx = 0;
+let plannerWildcardDraft = null; // { ids: [...] } while editing a wildcard squad, before confirming
 let captainCandidates = [];
 let countdownInterval = null;
 let chartInstance = null;
@@ -1342,6 +1516,30 @@ async function loadCmpSelected() {
 }
 async function saveCmpSelected() {
   await storageSet(CMP_SELECTED_KEY, JSON.stringify(cmpSelectedIds));
+}
+
+async function loadTransferLab() {
+  const val = await storageGet(TRANSFER_LAB_KEY);
+  if (val) { transferScenarios = JSON.parse(val); return; }
+  transferScenarios = [{ pairs: [] }, { pairs: [] }, { pairs: [] }];
+}
+async function saveTransferLab() {
+  await storageSet(TRANSFER_LAB_KEY, JSON.stringify(transferScenarios));
+}
+
+async function loadPlannerPlans() {
+  const val = await storageGet(PLANNER_PLANS_KEY);
+  if (val) {
+    const parsed = JSON.parse(val);
+    plannerPlans = parsed.plans || [{ id: 'plan-default', name: 'Plan A', actions: {} }];
+    plannerActivePlanId = parsed.activePlanId || plannerPlans[0].id;
+    return;
+  }
+  plannerPlans = [{ id: 'plan-default', name: 'Plan A', actions: {} }];
+  plannerActivePlanId = 'plan-default';
+}
+async function savePlannerPlans() {
+  await storageSet(PLANNER_PLANS_KEY, JSON.stringify({ plans: plannerPlans, activePlanId: plannerActivePlanId }));
 }
 
 function parseContextJson(raw) {
@@ -1824,6 +2022,981 @@ function renderCmpVerdict(players) {
   html += '</div>';
   wrap.innerHTML = html;
 }
+
+/* ---- Transfer Lab (Phase 2 -- Part 2) ---- */
+const SCENARIO_LABELS = ['A', 'B', 'C'];
+
+function labGetSquadPlayer(id) {
+  return gwPlanner.squad.find(p => p.element === id);
+}
+function labGetAnyPlayer(id) {
+  const inSquad = labGetSquadPlayer(id);
+  if (inSquad) return inSquad;
+  return gwPlanner.allPlayers.find(p => p.id === id);
+}
+function labPlayerPrice(p) {
+  return p.price != null ? p.price : 0;
+}
+function labPlayerFixtureAvg(p) {
+  if (p.next5) return p.next5.length ? (p.next5.reduce((s, f) => s + f.difficulty, 0) / p.next5.length) : null;
+  return p.avgDifficultyNext5 != null ? p.avgDifficultyNext5 : null;
+}
+function labPlayerForm(p) {
+  return p.form != null ? p.form : 0;
+}
+function labPlayerXgiPer90(p) {
+  if (p.seasonMinutes > 0 && p.seasonXGI != null) return p.seasonXGI / (p.seasonMinutes / 90);
+  return 0;
+}
+
+function computeScenarioMetrics(scenario) {
+  const pairs = scenario.pairs.filter(pr => pr.outId && pr.inId);
+  if (!pairs.length || !gwPlanner) return null;
+
+  const outPlayers = pairs.map(pr => labGetSquadPlayer(pr.outId)).filter(Boolean);
+  const inPlayers = pairs.map(pr => labGetAnyPlayer(pr.inId)).filter(Boolean);
+  if (outPlayers.length !== pairs.length || inPlayers.length !== pairs.length) return null;
+
+  const transfersCount = pairs.length;
+  const outSum = outPlayers.reduce((s, p) => s + labPlayerPrice(p), 0);
+  const inSum = inPlayers.reduce((s, p) => s + labPlayerPrice(p), 0);
+  const bankAfter = gwPlanner.bank + outSum - inSum;
+  const affordable = bankAfter >= 0;
+
+  const outIds = new Set(pairs.map(pr => pr.outId));
+  const remainingSquadTeams = gwPlanner.squad.filter(p => !outIds.has(p.element)).map(p => p.team);
+  const afterTeams = [...remainingSquadTeams, ...inPlayers.map(p => p.team)];
+  const afterCounts = {};
+  afterTeams.forEach(t => { afterCounts[t] = (afterCounts[t] || 0) + 1; });
+  const teamLegal = Object.values(afterCounts).every(c => c <= 3);
+
+  const legal = affordable && teamLegal;
+  let illegalReason = null;
+  if (!affordable) illegalReason = `Not affordable -- £${Math.abs(bankAfter).toFixed(1)}m short`;
+  else if (!teamLegal) {
+    const overTeam = Object.keys(afterCounts).find(t => afterCounts[t] > 3);
+    illegalReason = `Would exceed 3 players from ${overTeam}`;
+  }
+
+  const ftAvailable = gwPlanner.ftEstimate != null ? gwPlanner.ftEstimate : 0;
+  const hitCount = Math.max(0, transfersCount - ftAvailable);
+  const hitCost = hitCount * 4;
+  const ftAfter = Math.max(0, ftAvailable - transfersCount);
+  let flexibility, flexClass;
+  if (ftAfter >= 2) { flexibility = 'High'; flexClass = 'lab-flex-high'; }
+  else if (ftAfter === 1) { flexibility = 'Medium'; flexClass = 'lab-flex-medium'; }
+  else { flexibility = 'Low'; flexClass = 'lab-flex-low'; }
+
+  const beforeCounts = {};
+  gwPlanner.squad.forEach(p => { beforeCounts[p.team] = (beforeCounts[p.team] || 0) + 1; });
+  const fullAfterCounts = {};
+  gwPlanner.squad.filter(p => !outIds.has(p.element)).forEach(p => { fullAfterCounts[p.team] = (fullAfterCounts[p.team] || 0) + 1; });
+  inPlayers.forEach(p => { fullAfterCounts[p.team] = (fullAfterCounts[p.team] || 0) + 1; });
+  const exposureChanges = [];
+  const allTeams = new Set([...Object.keys(beforeCounts), ...Object.keys(fullAfterCounts)]);
+  allTeams.forEach(t => {
+    const before = beforeCounts[t] || 0;
+    const after = fullAfterCounts[t] || 0;
+    if (before !== after) exposureChanges.push(`${t} ${before}\u2192${after}`);
+  });
+
+  const outFxVals = outPlayers.map(labPlayerFixtureAvg).filter(v => v != null);
+  const inFxVals = inPlayers.map(labPlayerFixtureAvg).filter(v => v != null);
+  let fixtureEffect = 'Similar', fixtureCls = 'lab-effect-similar';
+  if (outFxVals.length && inFxVals.length) {
+    const outAvg = outFxVals.reduce((a, b) => a + b, 0) / outFxVals.length;
+    const inAvg = inFxVals.reduce((a, b) => a + b, 0) / inFxVals.length;
+    if (inAvg < outAvg - 0.3) { fixtureEffect = 'Better'; fixtureCls = 'lab-effect-better'; }
+    else if (inAvg > outAvg + 0.3) { fixtureEffect = 'Worse'; fixtureCls = 'lab-effect-worse'; }
+  }
+
+  return {
+    pairs, outPlayers, inPlayers, transfersCount, outSum, inSum, bankAfter, affordable, teamLegal, legal, illegalReason,
+    ftAvailable, hitCount, hitCost, ftAfter, flexibility, flexClass, exposureChanges, fixtureEffect, fixtureCls
+  };
+}
+
+function renderLabScenarioBuilders() {
+  const wrap = document.getElementById('labScenarioBuilders');
+  if (!gwPlanner) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+
+  wrap.innerHTML = transferScenarios.map((sc, sIdx) => {
+    const hasPairs = sc.pairs.length > 0;
+    const pairsHtml = sc.pairs.map((pr, pIdx) => {
+      const outOptions = gwPlanner.squad.map(p => `<option value="${p.element}" ${pr.outId === p.element ? 'selected' : ''}>${escapeHtml(p.name)} (${p.position}, £${p.price.toFixed(1)}m)</option>`).join('');
+      let inLabel = '';
+      if (pr.inId) {
+        const inP = labGetAnyPlayer(pr.inId);
+        if (inP) inLabel = `${inP.name} (${escapeHtml(inP.team)}, £${labPlayerPrice(inP).toFixed(1)}m)`;
+      }
+      return `
+        <div class="lab-pair-row" data-scenario="${sIdx}" data-pair="${pIdx}">
+          <div class="lab-pair-col">
+            <label>OUT</label>
+            <select class="lab-out-select" data-scenario="${sIdx}" data-pair="${pIdx}">
+              <option value="">Select\u2026</option>
+              ${outOptions}
+            </select>
+          </div>
+          <div class="lab-pair-col">
+            <label>IN</label>
+            <input type="text" class="lab-in-search" data-scenario="${sIdx}" data-pair="${pIdx}" placeholder="${inLabel || 'Search replacement\u2026'}" autocomplete="off">
+            <div class="sandbox-search-results lab-in-results" data-scenario="${sIdx}" data-pair="${pIdx}"></div>
+          </div>
+          <button class="lab-remove-pair" data-remove-scenario="${sIdx}" data-remove-pair="${pIdx}">\u2715</button>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="lab-scenario-card ${hasPairs ? 'has-pairs' : ''}">
+        <div class="lab-scenario-head">
+          <div class="lab-scenario-title">Scenario ${SCENARIO_LABELS[sIdx]}</div>
+          <button class="lab-add-pair-btn" data-add-scenario="${sIdx}" ${sc.pairs.length >= 2 ? 'disabled' : ''}>+ Add transfer pair</button>
+        </div>
+        ${pairsHtml || '<div class="empty-note" style="padding:8px 0">No transfers in this scenario yet.</div>'}
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-add-scenario]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const sIdx = Number(btn.dataset.addScenario);
+      if (transferScenarios[sIdx].pairs.length < 2) {
+        transferScenarios[sIdx].pairs.push({ outId: null, inId: null });
+        await saveTransferLab();
+        renderTransferLab();
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-remove-scenario]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const sIdx = Number(btn.dataset.removeScenario);
+      const pIdx = Number(btn.dataset.removePair);
+      transferScenarios[sIdx].pairs.splice(pIdx, 1);
+      await saveTransferLab();
+      renderTransferLab();
+    });
+  });
+  wrap.querySelectorAll('.lab-out-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const sIdx = Number(sel.dataset.scenario);
+      const pIdx = Number(sel.dataset.pair);
+      transferScenarios[sIdx].pairs[pIdx].outId = sel.value ? Number(sel.value) : null;
+      transferScenarios[sIdx].pairs[pIdx].inId = null;
+      await saveTransferLab();
+      renderTransferLab();
+    });
+  });
+  wrap.querySelectorAll('.lab-in-search').forEach(inp => {
+    inp.addEventListener('input', () => runLabInSearch(Number(inp.dataset.scenario), Number(inp.dataset.pair), inp.value));
+  });
+}
+
+function runLabInSearch(sIdx, pIdx, query) {
+  const results = document.querySelector(`.lab-in-results[data-scenario="${sIdx}"][data-pair="${pIdx}"]`);
+  if (!results) return;
+  const outId = transferScenarios[sIdx].pairs[pIdx].outId;
+  if (!outId || !query || query.length < 2) { results.innerHTML = ''; return; }
+  const outPlayer = labGetSquadPlayer(outId);
+  if (!outPlayer) { results.innerHTML = ''; return; }
+  const squadIds = new Set(gwPlanner.squad.map(p => p.element));
+  const q = query.toLowerCase();
+  const matches = gwPlanner.allPlayers
+    .filter(p => p.position === outPlayer.position && !squadIds.has(p.id) && p.name.toLowerCase().includes(q))
+    .slice(0, 8);
+  if (!matches.length) { results.innerHTML = '<div class="sandbox-search-item">No matches</div>'; return; }
+  results.innerHTML = matches.map(p => `
+    <div class="sandbox-search-item" data-id="${p.id}">${escapeHtml(p.name)} <span class="ssi-meta">${escapeHtml(p.team)} \u00b7 £${p.price.toFixed(1)}m</span></div>
+  `).join('');
+  results.querySelectorAll('[data-id]').forEach(el => {
+    el.addEventListener('click', async () => {
+      transferScenarios[sIdx].pairs[pIdx].inId = Number(el.dataset.id);
+      await saveTransferLab();
+      renderTransferLab();
+    });
+  });
+}
+
+function renderLabComparison(allMetrics) {
+  const wrap = document.getElementById('labComparisonWrap');
+  const built = allMetrics.filter(m => m.metrics);
+  if (!built.length) {
+    wrap.innerHTML = '<div class="empty-note">Build at least one scenario above to compare against HOLD.</div>';
+    return;
+  }
+
+  const cols = [{ label: 'HOLD', metrics: null }, ...built];
+
+  let html = '<div class="lab-table-scroll"><table class="lab-table"><thead><tr><th></th>' +
+    cols.map(c => `<th>${c.label}</th>`).join('') + '</tr></thead><tbody>';
+
+  const rows = [
+    { label: 'Transfers', get: m => m ? m.transfersCount : 0 },
+    { label: 'Hit', get: m => m ? (m.hitCost > 0 ? '-' + m.hitCost : '0') : '0' },
+    { label: 'Bank after', get: m => m ? `£${m.bankAfter.toFixed(1)}m` : `£${gwPlanner.bank.toFixed(1)}m` },
+    { label: 'Legal', get: m => m ? (m.legal ? '\u2713' : '\u2717 ' + m.illegalReason) : '\u2713' },
+    { label: 'Team exposure change', get: m => m ? (m.exposureChanges.length ? m.exposureChanges.join(', ') : 'None') : 'None' },
+    { label: 'Fixture effect', get: m => m ? m.fixtureEffect : '\u2014' },
+    { label: 'Flexibility (FT after)', get: m => m ? `${m.flexibility} (${m.ftAfter})` : `High (${gwPlanner.ftEstimate})` }
+  ];
+
+  rows.forEach(r => {
+    html += `<tr><td class="lab-row-label">${r.label}</td>`;
+    cols.forEach(c => {
+      const val = r.get(c.metrics);
+      let cls = '';
+      if (r.label === 'Legal' && c.metrics && !c.metrics.legal) cls = 'lab-illegal';
+      if (r.label === 'Fixture effect' && c.metrics) cls = c.metrics.fixtureCls;
+      if (r.label === 'Flexibility (FT after)' && c.metrics) cls = c.metrics.flexClass;
+      html += `<td class="${cls}">${val}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function renderLabFixtures(allMetrics) {
+  const wrap = document.getElementById('labFixtureWrap');
+  const label = document.getElementById('labFixtureLabel');
+  const built = allMetrics.filter(m => m.metrics);
+  if (!built.length) { wrap.innerHTML = ''; label.style.display = 'none'; return; }
+  label.style.display = 'flex';
+
+  let html = '';
+  built.forEach(b => {
+    const allPlayersInScenario = [...b.metrics.outPlayers, ...b.metrics.inPlayers];
+    const allGws = [...new Set(allPlayersInScenario.flatMap(p => (p.next5 || p.fixtureRun5 || []).map(f => f.gw)))].sort((a, b2) => a - b2);
+    if (!allGws.length) return;
+    html += `<div class="pm-position-label" style="margin-top:10px">Scenario ${b.label}</div>`;
+    html += '<div class="cmp-fx-scroll"><table class="cmp-fx-table"><thead><tr><th style="text-align:left">Player</th>' +
+      allGws.map(gw => `<th>GW${gw}</th>`).join('') + '</tr></thead><tbody>';
+    allPlayersInScenario.forEach(p => {
+      const isOut = b.metrics.outPlayers.includes(p);
+      const fx = p.next5 || p.fixtureRun5 || [];
+      html += `<tr><td class="cmp-fx-name">${isOut ? 'OUT: ' : 'IN: '}${escapeHtml(p.name)}</td>`;
+      allGws.forEach(gw => {
+        const f = fx.find(x => x.gw === gw);
+        html += f ? `<td><span class="cmp-fx-cell ${fdrCellClass(f.difficulty)}">${escapeHtml(f.opponent)} ${f.venue}</span></td>` : `<td><span class="cmp-fx-cell" style="background:var(--bg-elev-2);color:var(--text-faint)">\u2014</span></td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  });
+  wrap.innerHTML = html;
+}
+
+function tallyGroupComparison(outPlayers, inPlayers) {
+  const avg = (arr, fn) => arr.length ? arr.reduce((s, p) => s + fn(p), 0) / arr.length : null;
+  const cats = [
+    { label: 'better fixture run', outV: avg(outPlayers, labPlayerFixtureAvg), inV: avg(inPlayers, labPlayerFixtureAvg), higherBetter: false },
+    { label: 'stronger form', outV: avg(outPlayers, labPlayerForm), inV: avg(inPlayers, labPlayerForm), higherBetter: true },
+    { label: 'higher underlying threat (xGI/90)', outV: avg(outPlayers, labPlayerXgiPer90), inV: avg(inPlayers, labPlayerXgiPer90), higherBetter: true }
+  ];
+  const reasons = [];
+  let inWins = 0, decided = 0;
+  cats.forEach(c => {
+    if (c.outV == null || c.inV == null) return;
+    const tolerance = Math.abs(c.outV) * 0.03;
+    if (Math.abs(c.outV - c.inV) <= tolerance) return;
+    decided++;
+    const inBetter = c.higherBetter ? c.inV > c.outV : c.inV < c.outV;
+    if (inBetter) { inWins++; reasons.push(`Incoming combination has ${c.label}`); }
+    else reasons.push(`Outgoing combination has ${c.label}`);
+  });
+  return { inWins, decided, reasons };
+}
+
+function renderLabHitAnalysis(allMetrics) {
+  const wrap = document.getElementById('labHitWrap');
+  const label = document.getElementById('labHitLabel');
+  const hitScenarios = allMetrics.filter(m => m.metrics && m.metrics.hitCost > 0);
+  if (!hitScenarios.length) { wrap.innerHTML = ''; label.style.display = 'none'; return; }
+  label.style.display = 'flex';
+
+  wrap.innerHTML = hitScenarios.map(b => {
+    const tally = tallyGroupComparison(b.metrics.outPlayers, b.metrics.inPlayers);
+    const justified = tally.decided > 0 && tally.inWins > tally.decided / 2;
+    return `
+      <div class="lab-hit-card">
+        <div class="pm-position-label" style="margin-bottom:6px">Scenario ${b.label}</div>
+        <div class="lab-hit-cost">TRANSFER COST: -${b.metrics.hitCost}</div>
+        <div class="lab-hit-explain">To justify this move, the incoming combination needs to outperform the outgoing combination by more than ${b.metrics.hitCost} points over the relevant period compared with simply holding.</div>
+        <div class="lab-hit-verdict ${justified ? 'justified' : 'not-justified'}">VERDICT: ${justified ? 'HIT MAY BE JUSTIFIED' : 'HIT NOT JUSTIFIED'}</div>
+        <div class="lab-hit-reasons">${tally.reasons.length ? tally.reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('') : '<div>Comparison too close across the available data</div>'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLabVerdict(allMetrics) {
+  const wrap = document.getElementById('labVerdictWrap');
+  const built = allMetrics.filter(m => m.metrics);
+
+  if (!built.length) {
+    const problems = gwPlanner ? gwPlanner.squadProblems : [];
+    const newsProblems = problems.filter(p => p.type === 'news');
+    let verdict = 'HOLD', reasons = [];
+    if (newsProblems.length) {
+      verdict = 'WAIT FOR NEWS';
+      newsProblems.forEach(p => reasons.push(`${p.player} -- ${p.detail}`));
+    } else if (gwPlanner && gwPlanner.ftEstimate >= 2) {
+      verdict = 'ROLL FT';
+      reasons.push(`Banking ${gwPlanner.ftEstimate} free transfers keeps flexibility -- no scenario built yet to compare against it`);
+    } else {
+      reasons.push('No scenarios built yet -- add a transfer above to compare against holding');
+    }
+    wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">${verdict}</div><div class="cmp-verdict-why">${reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div></div>`;
+    return;
+  }
+
+  const legalScenarios = built.filter(b => b.metrics.legal);
+  if (!legalScenarios.length) {
+    wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">NO LEGAL SCENARIO</div><div class="cmp-verdict-why"><div>Every built scenario is currently illegal -- check the comparison table above.</div></div></div>`;
+    return;
+  }
+
+  const effectRank = { Better: 2, Similar: 1, Worse: 0 };
+  const scored = legalScenarios.map(b => {
+    const tally = tallyGroupComparison(b.metrics.outPlayers, b.metrics.inPlayers);
+    let hitOk = true;
+    if (b.metrics.hitCost > 0) hitOk = tally.decided > 0 && tally.inWins > tally.decided / 2;
+    return { ...b, hitOk, tally, effectScore: effectRank[b.metrics.fixtureEffect] };
+  });
+
+  const ranked = scored.sort((a, b) => {
+    if (a.hitOk !== b.hitOk) return a.hitOk ? -1 : 1;
+    return b.effectScore - a.effectScore;
+  });
+
+  const top = ranked[0];
+  const second = ranked[1];
+  const bankBefore = gwPlanner.bank;
+
+  let verdict, whyLines = [], tradeoffLines = [];
+
+  if (top.metrics.hitCost > 0 && !top.hitOk) {
+    verdict = 'HIT NOT JUSTIFIED';
+    whyLines.push(`Scenario ${top.label} requires a -${top.metrics.hitCost} hit`);
+    whyLines.push(`Incoming combination does not clearly outperform outgoing on the available data`);
+    top.tally.reasons.forEach(r => whyLines.push(r));
+    tradeoffLines.push('Rolling the transfer instead preserves the hit cost and keeps flexibility');
+  } else if (second && top.hitOk === second.hitOk && top.effectScore === second.effectScore) {
+    verdict = 'CLOSE DECISION';
+    ranked.filter(r => r.hitOk === top.hitOk && r.effectScore === top.effectScore).forEach(r => {
+      const strengths = [];
+      if (r.metrics.fixtureEffect === 'Better') strengths.push('better fixtures');
+      strengths.push(...r.tally.reasons.filter(x => x.startsWith('Incoming')).map(x => x.replace('Incoming combination has ', '')));
+      if (r.metrics.bankAfter > bankBefore - (top === r ? 0 : 0)) strengths.push(`£${r.metrics.bankAfter.toFixed(1)}m bank after`);
+      whyLines.push(`Scenario ${r.label}: ${strengths.length ? strengths.join(', ') : 'no standout advantage detected'}`);
+    });
+    tradeoffLines.push('No sufficiently strong evidence to prefer one yet — check the comparison table for the factor that matters most to you');
+  } else {
+    verdict = `SCENARIO ${top.label} PREFERRED`;
+    whyLines.push(`Scenario ${top.label} is legal`);
+    if (top.metrics.hitCost > 0) whyLines.push(`Hit of -${top.metrics.hitCost} judged justified based on incoming vs outgoing comparison`);
+    else whyLines.push('No hit required');
+    whyLines.push(`Fixture effect: incoming combination has ${top.metrics.fixtureEffect.toLowerCase()} upcoming fixtures`);
+    top.tally.reasons.forEach(r => whyLines.push(r));
+    whyLines.push(`Bank after transfer: £${top.metrics.bankAfter.toFixed(1)}m`);
+    whyLines.push(top.metrics.exposureChanges.length ? `Team structure change: ${top.metrics.exposureChanges.join(', ')}` : 'Squad remains structurally balanced — no club exposure change');
+
+    if (top.metrics.transfersCount > 0) tradeoffLines.push(`Uses ${top.metrics.transfersCount} FT instead of rolling`);
+    const bankDrop = bankBefore - top.metrics.bankAfter;
+    if (bankDrop > 0.05) tradeoffLines.push(`Reduces available bank by £${bankDrop.toFixed(1)}m`);
+    if (top.metrics.ftAfter < gwPlanner.ftEstimate) tradeoffLines.push('HOLD preserves greater flexibility into next gameweek');
+  }
+
+  wrap.innerHTML = `
+    <div class="cmp-verdict-card">
+      <div class="cmp-verdict-label">${escapeHtml(verdict)}</div>
+      <div class="pm-position-label" style="margin-top:10px">Why</div>
+      <div class="cmp-verdict-why">${whyLines.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div>
+      ${tradeoffLines.length ? `<div class="pm-position-label" style="margin-top:10px">Trade-off</div><div class="cmp-tradeoff">${tradeoffLines.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderTransferLab() {
+  renderLabScenarioBuilders();
+  if (!gwPlanner) {
+    document.getElementById('labComparisonWrap').innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>';
+    document.getElementById('labVerdictWrap').innerHTML = '';
+    return;
+  }
+  const allMetrics = transferScenarios.map((sc, i) => ({ label: SCENARIO_LABELS[i], metrics: computeScenarioMetrics(sc) }));
+  renderLabComparison(allMetrics);
+  renderLabFixtures(allMetrics);
+  renderLabHitAnalysis(allMetrics);
+  renderLabVerdict(allMetrics);
+}
+
+/* ============================================================
+   6-GW FORWARD PLANNER (Phase 2 -- Part 3)
+   Simulation only. Reuses the same FT/hit rules as Transfer Lab's
+   computeScenarioMetrics (transfersCount vs ftAvailable -> hit math),
+   applied gameweek-by-gameweek. Uses gwPlanner.allPlayers as the
+   single source for all player data across the whole feature.
+   ============================================================ */
+
+function plannerGetPlayer(id) {
+  return gwPlanner.allPlayers.find(p => p.id === id);
+}
+
+function plannerGwList() {
+  if (!gwPlanner || !gwPlanner.nextGw) return [];
+  const start = gwPlanner.nextGw;
+  return [0, 1, 2, 3, 4, 5].map(o => start + o);
+}
+
+function plannerActivePlan() {
+  return plannerPlans.find(p => p.id === plannerActivePlanId) || plannerPlans[0];
+}
+
+// Runs the whole plan forward from the LIVE squad, gameweek by gameweek.
+// Every action affects every subsequent gameweek until changed again.
+function computePlanSimulation(plan) {
+  const gws = plannerGwList();
+  if (!gws.length || !gwPlanner) return [];
+
+  let squadIds = gwPlanner.squad.map(p => p.element);
+  let ftIn = gwPlanner.ftEstimate != null ? gwPlanner.ftEstimate : 1;
+  let bank = gwPlanner.bank;
+  const results = [];
+
+  gws.forEach(gw => {
+    const action = (plan.actions && plan.actions[gw]) || { type: 'roll' };
+    let transfersUsed = 0, hitCost = 0, incoming = [], outgoing = [];
+    let illegal = null;
+
+    if (action.type === 'wildcard' && action.wildcardSquad && action.wildcardSquad.length === 15) {
+      const beforeValue = squadIds.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
+      const afterValue = action.wildcardSquad.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
+      outgoing = squadIds.filter(id => !action.wildcardSquad.includes(id));
+      incoming = action.wildcardSquad.filter(id => !squadIds.includes(id));
+      bank = bank + beforeValue - afterValue;
+      squadIds = [...action.wildcardSquad];
+      hitCost = 0;
+    } else if (action.type === 'transfer' || action.type === 'double') {
+      const pairs = (action.pairs || []).filter(pr => pr.outId && pr.inId);
+      transfersUsed = pairs.length;
+      pairs.forEach(pr => {
+        const idx = squadIds.indexOf(pr.outId);
+        if (idx > -1) { squadIds[idx] = pr.inId; outgoing.push(pr.outId); incoming.push(pr.inId); }
+      });
+      const outSum = pairs.reduce((s, pr) => { const p = plannerGetPlayer(pr.outId); return s + (p ? p.price : 0); }, 0);
+      const inSum = pairs.reduce((s, pr) => { const p = plannerGetPlayer(pr.inId); return s + (p ? p.price : 0); }, 0);
+      bank = bank + outSum - inSum;
+      if (bank < 0) illegal = 'Insufficient bank for this transfer';
+      const hitCount = Math.max(0, transfersUsed - ftIn);
+      hitCost = hitCount * 4;
+    }
+
+    const ftOut = (action.type === 'wildcard') ? Math.min(5, ftIn) : Math.max(0, ftIn - transfersUsed);
+    const ftForNext = Math.min(5, ftOut + 1);
+
+    const squadFull = squadIds.map(plannerGetPlayer).filter(Boolean);
+    const teamValue = squadFull.reduce((s, p) => s + p.price, 0) + bank;
+    const exposures = {};
+    squadFull.forEach(p => { exposures[p.team] = (exposures[p.team] || 0) + 1; });
+    const teamCountsOk = Object.values(exposures).every(c => c <= 3);
+    if (!teamCountsOk && !illegal) illegal = 'Squad would exceed 3 players from one club';
+
+    results.push({
+      gw, action: action.type, transfersUsed, hitCost, bank, ftIn, ftOut, illegal,
+      squadIds: [...squadIds], squadFull, incoming, outgoing, teamValue, exposures
+    });
+
+    ftIn = ftForNext;
+  });
+
+  return results;
+}
+
+/* ---- Plan bar (select / new / duplicate / rename / delete / reset) ---- */
+function renderPlanBar() {
+  const sel = document.getElementById('sixgwPlanSelect');
+  sel.innerHTML = plannerPlans.map(p => `<option value="${p.id}" ${p.id === plannerActivePlanId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
+}
+
+async function plannerNewPlan() {
+  const id = 'plan-' + Date.now();
+  plannerPlans.push({ id, name: 'Plan ' + String.fromCharCode(65 + plannerPlans.length), actions: {} });
+  plannerActivePlanId = id;
+  await savePlannerPlans();
+  renderSixGwPlanner();
+}
+async function plannerDuplicatePlan() {
+  const active = plannerActivePlan();
+  const id = 'plan-' + Date.now();
+  plannerPlans.push({ id, name: active.name + ' (copy)', actions: JSON.parse(JSON.stringify(active.actions)) });
+  plannerActivePlanId = id;
+  await savePlannerPlans();
+  renderSixGwPlanner();
+}
+async function plannerRenamePlan() {
+  const active = plannerActivePlan();
+  const name = window.prompt('Rename plan:', active.name);
+  if (name && name.trim()) {
+    active.name = name.trim();
+    await savePlannerPlans();
+    renderSixGwPlanner();
+  }
+}
+async function plannerDeletePlan() {
+  if (plannerPlans.length <= 1) { window.alert('At least one plan must remain.'); return; }
+  const active = plannerActivePlan();
+  if (!window.confirm(`Delete "${active.name}"? This cannot be undone.`)) return;
+  plannerPlans = plannerPlans.filter(p => p.id !== active.id);
+  plannerActivePlanId = plannerPlans[0].id;
+  await savePlannerPlans();
+  renderSixGwPlanner();
+}
+async function plannerResetPlan() {
+  const active = plannerActivePlan();
+  if (!window.confirm(`Reset "${active.name}" back to your live team? All planned actions in this plan will be cleared.`)) return;
+  active.actions = {};
+  await savePlannerPlans();
+  renderSixGwPlanner();
+}
+
+/* ---- Timeline ---- */
+function renderSixGwTimeline(results) {
+  const wrap = document.getElementById('sixgwTimeline');
+  const gws = plannerGwList();
+  wrap.innerHTML = gws.map((gw, idx) => {
+    const r = results[idx];
+    const actionLabel = r ? (r.action === 'roll' ? 'Roll' : r.action === 'wildcard' ? 'Wildcard' : r.action === 'double' ? 'Double' : 'Transfer') : 'Roll';
+    return `
+      <div class="sixgw-gw-pill ${idx === plannerSelectedGwIdx ? 'selected' : ''}" data-gw-idx="${idx}">
+        <div class="sixgw-gw-pill-label">${idx === 0 ? 'Next' : 'GW +' + idx}</div>
+        <div class="sixgw-gw-pill-gw">GW${gw}</div>
+        <div class="sixgw-gw-pill-action">${actionLabel}</div>
+      </div>
+    `;
+  }).join('');
+  wrap.querySelectorAll('[data-gw-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      plannerSelectedGwIdx = Number(el.dataset.gwIdx);
+      plannerWildcardDraft = null;
+      renderSixGwPlanner();
+    });
+  });
+  document.getElementById('sixgwLiveGwLabel').textContent = gws[plannerSelectedGwIdx] || '';
+}
+
+/* ---- Action editor ---- */
+function renderSixGwActionEditor(results) {
+  const wrap = document.getElementById('sixgwActionEditor');
+  const gws = plannerGwList();
+  const gw = gws[plannerSelectedGwIdx];
+  const plan = plannerActivePlan();
+  const currentAction = plan.actions[gw] || { type: 'roll' };
+  const enteringSquadIds = plannerSelectedGwIdx === 0 ? gwPlanner.squad.map(p => p.element) : results[plannerSelectedGwIdx - 1].squadIds;
+
+  const actionBtns = ['roll', 'transfer', 'double', 'wildcard'].map(t => {
+    const labels = { roll: 'Roll', transfer: 'Transfer', double: 'Double Transfer', wildcard: 'Wildcard' };
+    return `<button class="sixgw-action-btn ${currentAction.type === t ? 'active' : ''}" data-set-action="${t}">${labels[t]}</button>`;
+  }).join('');
+
+  let bodyHtml = '';
+  if (currentAction.type === 'transfer' || currentAction.type === 'double') {
+    const pairCount = currentAction.type === 'double' ? 2 : 1;
+    const pairs = currentAction.pairs || [];
+    while (pairs.length < pairCount) pairs.push({ outId: null, inId: null });
+    bodyHtml = pairs.slice(0, pairCount).map((pr, pIdx) => {
+      const outOptions = enteringSquadIds.map(id => {
+        const p = plannerGetPlayer(id);
+        if (!p) return '';
+        return `<option value="${id}" ${pr.outId === id ? 'selected' : ''}>${escapeHtml(p.name)} (${p.position}, £${p.price.toFixed(1)}m)</option>`;
+      }).join('');
+      let inLabel = '';
+      if (pr.inId) { const inP = plannerGetPlayer(pr.inId); if (inP) inLabel = `${inP.name} (£${inP.price.toFixed(1)}m)`; }
+      return `
+        <div class="lab-pair-row">
+          <div class="lab-pair-col">
+            <label>OUT</label>
+            <select class="sixgw-out-select" data-pair="${pIdx}"><option value="">Select\u2026</option>${outOptions}</select>
+          </div>
+          <div class="lab-pair-col">
+            <label>IN</label>
+            <input type="text" class="sixgw-in-search" data-pair="${pIdx}" placeholder="${inLabel || 'Search replacement\u2026'}" autocomplete="off">
+            <div class="sandbox-search-results sixgw-in-results" data-pair="${pIdx}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else if (currentAction.type === 'wildcard') {
+    bodyHtml = renderWildcardEditor(enteringSquadIds, currentAction, results);
+  } else {
+    bodyHtml = '<div class="empty-note">No transfer planned this gameweek -- FT rolls forward.</div>';
+  }
+
+  wrap.innerHTML = `<div class="sixgw-action-select">${actionBtns}</div>${bodyHtml}`;
+
+  wrap.querySelectorAll('[data-set-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const type = btn.dataset.setAction;
+      if (type === 'wildcard') {
+        plannerWildcardDraft = { ids: [...enteringSquadIds] };
+      } else {
+        plannerWildcardDraft = null;
+      }
+      plan.actions[gw] = type === 'roll' ? { type: 'roll' } : (type === 'wildcard' ? { type: 'wildcard' } : { type, pairs: [] });
+      await savePlannerPlans();
+      renderSixGwPlanner();
+    });
+  });
+  wrap.querySelectorAll('.sixgw-out-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const pIdx = Number(sel.dataset.pair);
+      const pairCount = currentAction.type === 'double' ? 2 : 1;
+      const pairs = plan.actions[gw].pairs || [];
+      while (pairs.length < pairCount) pairs.push({ outId: null, inId: null });
+      pairs[pIdx] = { outId: sel.value ? Number(sel.value) : null, inId: null };
+      plan.actions[gw].pairs = pairs;
+      await savePlannerPlans();
+      renderSixGwPlanner();
+    });
+  });
+  wrap.querySelectorAll('.sixgw-in-search').forEach(inp => {
+    inp.addEventListener('input', () => runSixGwInSearch(gw, Number(inp.dataset.pair), inp.value, enteringSquadIds));
+  });
+}
+
+function runSixGwInSearch(gw, pIdx, query, enteringSquadIds) {
+  const results = document.querySelector(`.sixgw-in-results[data-pair="${pIdx}"]`);
+  if (!results) return;
+  const plan = plannerActivePlan();
+  const outId = plan.actions[gw].pairs[pIdx].outId;
+  if (!outId || !query || query.length < 2) { results.innerHTML = ''; return; }
+  const outPlayer = plannerGetPlayer(outId);
+  if (!outPlayer) { results.innerHTML = ''; return; }
+  const excludeIds = new Set(enteringSquadIds);
+  const q = query.toLowerCase();
+  const matches = gwPlanner.allPlayers
+    .filter(p => p.position === outPlayer.position && !excludeIds.has(p.id) && p.name.toLowerCase().includes(q))
+    .slice(0, 8);
+  results.innerHTML = matches.length
+    ? matches.map(p => `<div class="sandbox-search-item" data-id="${p.id}">${escapeHtml(p.name)} <span class="ssi-meta">${escapeHtml(p.team)} \u00b7 £${p.price.toFixed(1)}m</span></div>`).join('')
+    : '<div class="sandbox-search-item">No matches</div>';
+  results.querySelectorAll('[data-id]').forEach(el => {
+    el.addEventListener('click', async () => {
+      plan.actions[gw].pairs[pIdx].inId = Number(el.dataset.id);
+      await savePlannerPlans();
+      renderSixGwPlanner();
+    });
+  });
+}
+
+/* ---- Wildcard editor ---- */
+const WILDCARD_TARGETS = { GKP: 2, DEF: 5, MID: 5, FWD: 3 };
+
+function renderWildcardEditor(enteringSquadIds, currentAction, results) {
+  if (!plannerWildcardDraft) {
+    plannerWildcardDraft = { ids: currentAction.wildcardSquad ? [...currentAction.wildcardSquad] : [...enteringSquadIds] };
+  }
+  const draftPlayers = plannerWildcardDraft.ids.map(plannerGetPlayer).filter(Boolean);
+
+  const enteringValue = enteringSquadIds.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
+  const bankEntering = plannerSelectedGwIdx === 0 ? gwPlanner.bank : results[plannerSelectedGwIdx - 1].bank;
+  const totalBudget = enteringValue + bankEntering;
+  const spent = draftPlayers.reduce((s, p) => s + p.price, 0);
+  const remaining = totalBudget - spent;
+
+  const counts = {};
+  draftPlayers.forEach(p => { counts[p.position] = (counts[p.position] || 0) + 1; });
+  const teamCounts = {};
+  draftPlayers.forEach(p => { teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
+  const teamLegal = Object.values(teamCounts).every(c => c <= 3);
+  const positionsOk = Object.keys(WILDCARD_TARGETS).every(pos => (counts[pos] || 0) === WILDCARD_TARGETS[pos]);
+  const complete = draftPlayers.length === 15 && positionsOk && teamLegal && remaining >= 0;
+
+  const summaryHtml = `
+    <div class="sixgw-wc-summary">
+      <div class="sixgw-wc-stat ${draftPlayers.length === 15 ? 'ok' : ''}">Squad: ${draftPlayers.length}/15</div>
+      ${Object.keys(WILDCARD_TARGETS).map(pos => `<div class="sixgw-wc-stat ${(counts[pos]||0) === WILDCARD_TARGETS[pos] ? 'ok' : ''}">${pos}: ${counts[pos] || 0}/${WILDCARD_TARGETS[pos]}</div>`).join('')}
+      <div class="sixgw-wc-stat ${remaining >= 0 ? 'ok' : 'bad'}">Budget: £${remaining.toFixed(1)}m left</div>
+      <div class="sixgw-wc-stat ${teamLegal ? 'ok' : 'bad'}">Team limit: ${teamLegal ? 'OK' : 'exceeded'}</div>
+    </div>
+    <div class="heuristic-note">Wildcard simulation uses current prices and does not predict future market values.</div>
+  `;
+
+  const groupsHtml = Object.keys(WILDCARD_TARGETS).map(pos => {
+    const inPos = draftPlayers.filter(p => p.position === pos);
+    return `
+      <div class="sixgw-wc-group-label">${pos} (${inPos.length}/${WILDCARD_TARGETS[pos]})</div>
+      ${inPos.map(p => `
+        <div class="sixgw-wc-player-row">
+          <span>${escapeHtml(p.name)} · ${escapeHtml(p.team)} · £${p.price.toFixed(1)}m</span>
+          <button class="sixgw-wc-remove" data-remove-id="${p.id}">\u2715</button>
+        </div>
+      `).join('')}
+    `;
+  }).join('');
+
+  const searchHtml = `
+    <label for="sixgwWcSearch">Add player</label>
+    <input type="text" id="sixgwWcSearch" placeholder="Search any player\u2026" autocomplete="off">
+    <div class="sandbox-search-results" id="sixgwWcResults"></div>
+  `;
+
+  const confirmHtml = `<button class="lab-add-pair-btn sixgw-wc-confirm" id="sixgwWcConfirm" ${complete ? '' : 'disabled'}>Confirm Wildcard Squad${complete ? '' : ' (incomplete)'}</button>`;
+
+  return summaryHtml + groupsHtml + searchHtml + confirmHtml;
+}
+
+function wireWildcardEditorEvents(gw) {
+  const removeButtons = document.querySelectorAll('.sixgw-wc-remove');
+  removeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.removeId);
+      plannerWildcardDraft.ids = plannerWildcardDraft.ids.filter(x => x !== id);
+      renderSixGwPlanner();
+    });
+  });
+  const searchInput = document.getElementById('sixgwWcSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const results = document.getElementById('sixgwWcResults');
+      const q = searchInput.value.toLowerCase();
+      if (!q || q.length < 2) { results.innerHTML = ''; return; }
+      const excludeIds = new Set(plannerWildcardDraft.ids);
+      const matches = gwPlanner.allPlayers.filter(p => !excludeIds.has(p.id) && p.name.toLowerCase().includes(q)).slice(0, 8);
+      results.innerHTML = matches.length
+        ? matches.map(p => `<div class="sandbox-search-item" data-id="${p.id}">${escapeHtml(p.name)} <span class="ssi-meta">${escapeHtml(p.team)} \u00b7 ${p.position} \u00b7 £${p.price.toFixed(1)}m</span></div>`).join('')
+        : '<div class="sandbox-search-item">No matches</div>';
+      results.querySelectorAll('[data-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = Number(el.dataset.id);
+          if (plannerWildcardDraft.ids.length < 15 && !plannerWildcardDraft.ids.includes(id)) {
+            plannerWildcardDraft.ids.push(id);
+          }
+          searchInput.value = ''; results.innerHTML = '';
+          renderSixGwPlanner();
+        });
+      });
+    });
+  }
+  const confirmBtn = document.getElementById('sixgwWcConfirm');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', async () => {
+      const plan = plannerActivePlan();
+      plan.actions[gw] = { type: 'wildcard', wildcardSquad: [...plannerWildcardDraft.ids] };
+      plannerWildcardDraft = null;
+      await savePlannerPlans();
+      renderSixGwPlanner();
+    });
+  }
+}
+
+/* ---- Mechanics + squad + warnings for selected GW ---- */
+function renderSixGwMechanics(results) {
+  const wrap = document.getElementById('sixgwMechanicsCard');
+  const r = results[plannerSelectedGwIdx];
+  if (!r) { wrap.innerHTML = '<div class="empty-note">No data.</div>'; return; }
+  wrap.innerHTML = `
+    <div class="gw-status-item"><div class="gw-status-label">FT entering</div><div class="gw-status-val">${r.ftIn}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Transfers used</div><div class="gw-status-val">${r.transfersUsed}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Hit</div><div class="gw-status-val ${r.hitCost > 0 ? 'warn' : ''}">${r.hitCost > 0 ? '-' + r.hitCost : '0'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">FT remaining</div><div class="gw-status-val">${r.ftOut}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Bank</div><div class="gw-status-val">£${r.bank.toFixed(1)}m</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Team value <span class="estimate-tag">current prices</span></div><div class="gw-status-val">£${r.teamValue.toFixed(1)}m</div></div>
+  `;
+}
+
+function renderSixGwSquad(results) {
+  const wrap = document.getElementById('sixgwSquadWrap');
+  const r = results[plannerSelectedGwIdx];
+  if (!r) { wrap.innerHTML = ''; return; }
+
+  let ioHtml = '';
+  if (r.incoming.length || r.outgoing.length) {
+    const inNames = r.incoming.map(id => { const p = plannerGetPlayer(id); return p ? p.name : '?'; }).join(', ');
+    const outNames = r.outgoing.map(id => { const p = plannerGetPlayer(id); return p ? p.name : '?'; }).join(', ');
+    ioHtml = `<div class="sixgw-io-line">${r.incoming.length ? `<span class="in">IN: ${escapeHtml(inNames)}</span>` : ''}${r.incoming.length && r.outgoing.length ? ' &nbsp; ' : ''}${r.outgoing.length ? `<span class="out">OUT: ${escapeHtml(outNames)}</span>` : ''}</div>`;
+  }
+
+  if (r.illegal) {
+    ioHtml += `<div class="warning-banner">\u26a0\ufe0f ${escapeHtml(r.illegal)}</div>`;
+  }
+
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const sorted = [...r.squadFull].sort((a, b) => (order[a.position] || 9) - (order[b.position] || 9));
+  const gw = r.gw;
+
+  const squadHtml = sorted.map(p => {
+    const fx = (p.fixtureRun5 || []).find(f => f.gw === gw);
+    return `
+      <div class="planner-squad-row">
+        <div class="planner-squad-head">
+          <div>
+            <div class="planner-squad-name">${escapeHtml(p.name)}</div>
+            <div class="planner-squad-meta">${escapeHtml(p.team)} \u00b7 ${p.position} \u00b7 £${p.price.toFixed(1)}m</div>
+          </div>
+          ${fx ? fixtureBadge(fx) : '<span class="chip-none">no fixture GW' + gw + '</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  wrap.innerHTML = ioHtml + squadHtml;
+}
+
+function renderSixGwWarnings(results) {
+  const wrap = document.getElementById('sixgwWarningsWrap');
+  const r = results[plannerSelectedGwIdx];
+  if (!r) { wrap.innerHTML = ''; return; }
+
+  const warnings = [];
+  Object.keys(r.exposures).forEach(team => {
+    const count = r.exposures[team];
+    if (count >= 3) {
+      const teamPlayers = r.squadFull.filter(p => p.team === team);
+      const fx = teamPlayers.map(p => (p.fixtureRun5 || []).find(f => f.gw === r.gw)).filter(Boolean);
+      const avgDiff = fx.length ? fx.reduce((s, f) => s + f.difficulty, 0) / fx.length : null;
+      if (avgDiff != null && avgDiff >= 3.2) {
+        warnings.push(`\u26a0\ufe0f HEAVY ${team} EXPOSURE — ${count} players entering a difficult GW${r.gw} fixture`);
+      }
+    }
+  });
+  const myTeams = new Set(Object.keys(r.exposures));
+  if (fplInfo && fplInfo.fixtureDifficulty) {
+    fplInfo.fixtureDifficulty.teams.forEach(t => {
+      if (!myTeams.has(t.team)) {
+        const fx = t.fixtures.find(f => f.gw === r.gw);
+        if (fx && fx.difficulty <= 2) {
+          warnings.push(`\u26a0\ufe0f NO ${t.team} EXPOSURE — favourable GW${r.gw} fixture, zero players owned`);
+        }
+      }
+    });
+  }
+
+  wrap.innerHTML = warnings.length
+    ? warnings.map(w => `<div class="warning-banner">${w}</div>`).join('')
+    : '<div class="empty-note">No structural warnings detected for this gameweek.</div>';
+}
+
+/* ---- Plan health (scans all 6 GWs) ---- */
+function renderSixGwHealth(results) {
+  const wrap = document.getElementById('sixgwHealthWrap');
+  if (!results.length) { wrap.innerHTML = ''; return; }
+
+  const strengths = [], risks = [];
+  const totalHits = results.reduce((s, r) => s + r.hitCost, 0);
+  const hitGws = results.filter(r => r.hitCost > 0).length;
+  const finalFt = results[results.length - 1].ftOut;
+  const minBank = Math.min(...results.map(r => r.bank));
+  const hasWildcard = results.some(r => r.action === 'wildcard');
+  const illegalGws = results.filter(r => r.illegal);
+
+  if (totalHits === 0) strengths.push('No hits taken across the plan');
+  if (finalFt >= 2) strengths.push(`Ends the horizon with ${finalFt} free transfers banked`);
+  if (hasWildcard) strengths.push('Wildcard used to reset squad structure');
+  const firstExposures = results[0].exposures;
+  const lastExposures = results[results.length - 1].exposures;
+  Object.keys(firstExposures).forEach(t => {
+    if (firstExposures[t] >= 3 && (lastExposures[t] || 0) < firstExposures[t]) {
+      strengths.push(`Reduces ${t} concentration (${firstExposures[t]} \u2192 ${lastExposures[t] || 0})`);
+    }
+  });
+
+  if (hitGws > 1) risks.push(`${hitGws} gameweeks require a hit (-${totalHits} total)`);
+  if (minBank < 0.3) risks.push(`Bank falls as low as £${minBank.toFixed(1)}m — little price flexibility`);
+  if (illegalGws.length) risks.push(`${illegalGws.length} gameweek(s) currently illegal — check the timeline`);
+  risks.push('Plan depends on current prices — future price changes are not projected');
+
+  wrap.innerHTML = `
+    <div class="sixgw-health-col">
+      <div class="sixgw-health-block strengths">
+        <div class="sixgw-health-title">Strengths</div>
+        ${strengths.length ? strengths.map(s => `<div class="sixgw-health-item">${escapeHtml(s)}</div>`).join('') : '<div class="sixgw-health-item">None detected yet — plan is mostly rolling</div>'}
+      </div>
+      <div class="sixgw-health-block risks">
+        <div class="sixgw-health-title">Risks</div>
+        ${risks.map(r => `<div class="sixgw-health-item">${escapeHtml(r)}</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderSixGwVerdict(results) {
+  const wrap = document.getElementById('sixgwVerdictWrap');
+  if (!results.length) { wrap.innerHTML = ''; return; }
+
+  const totalHits = results.reduce((s, r) => s + r.hitCost, 0);
+  const hitGws = results.filter(r => r.hitCost > 0).length;
+  const illegalGws = results.filter(r => r.illegal);
+  const minBank = Math.min(...results.map(r => r.bank));
+  const anyTransfers = results.some(r => r.transfersUsed > 0 || r.action === 'wildcard');
+  const hasStructureWarning = results.some(r => {
+    return Object.keys(r.exposures).some(team => {
+      if (r.exposures[team] < 3) return false;
+      const teamPlayers = r.squadFull.filter(p => p.team === team);
+      const fx = teamPlayers.map(p => (p.fixtureRun5 || []).find(f => f.gw === r.gw)).filter(Boolean);
+      const avgDiff = fx.length ? fx.reduce((s, f) => s + f.difficulty, 0) / fx.length : null;
+      return avgDiff != null && avgDiff >= 3.2;
+    });
+  });
+  const hasWildcard = results.some(r => r.action === 'wildcard');
+
+  let verdict, reasons = [];
+  if (illegalGws.length) {
+    verdict = 'PLAN HAS LEGALITY ISSUES';
+    reasons.push(`${illegalGws.length} gameweek(s) in this plan are currently illegal`);
+  } else if (hitGws > 1) {
+    verdict = 'PLAN REQUIRES MULTIPLE HITS';
+    reasons.push(`${hitGws} gameweeks require a hit, totalling -${totalHits}`);
+  } else if (hasWildcard && hasStructureWarning) {
+    verdict = 'WILDCARD MAY SOLVE STRUCTURAL ISSUES';
+    reasons.push('A structural exposure warning appears before the wildcard gameweek in this plan');
+  } else if (hasStructureWarning) {
+    verdict = 'PLAN HAS FIXTURE RISKS';
+    reasons.push('One or more gameweeks show heavy club exposure into a difficult fixture');
+  } else if (minBank < 0.3) {
+    verdict = 'PLAN DEPENDS HEAVILY ON CURRENT PRICES';
+    reasons.push(`Bank falls to £${minBank.toFixed(1)}m at its lowest — a single price rise could break this plan`);
+  } else if (!anyTransfers) {
+    verdict = 'PLAN LOOKS STRUCTURALLY SOUND';
+    reasons.push('Pure roll across the horizon — no changes to evaluate yet');
+  } else {
+    verdict = 'PLAN LOOKS STRUCTURALLY SOUND';
+    reasons.push('No hit, legality, structural or price-risk signals detected across the 6-GW horizon');
+  }
+
+  wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">${escapeHtml(verdict)}</div><div class="cmp-verdict-why">${reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div></div>`;
+}
+
+function renderSixGwPlanner() {
+  renderPlanBar();
+  if (!gwPlanner) {
+    document.getElementById('sixgwTimeline').innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>';
+    document.getElementById('sixgwActionEditor').innerHTML = '';
+    document.getElementById('sixgwMechanicsCard').innerHTML = '';
+    document.getElementById('sixgwSquadWrap').innerHTML = '';
+    document.getElementById('sixgwWarningsWrap').innerHTML = '';
+    document.getElementById('sixgwHealthWrap').innerHTML = '';
+    document.getElementById('sixgwVerdictWrap').innerHTML = '';
+    return;
+  }
+  const plan = plannerActivePlan();
+  const results = computePlanSimulation(plan);
+  renderSixGwTimeline(results);
+  renderSixGwActionEditor(results);
+  renderSixGwMechanics(results);
+  renderSixGwSquad(results);
+  renderSixGwWarnings(results);
+  renderSixGwHealth(results);
+  renderSixGwVerdict(results);
+
+  const gws = plannerGwList();
+  const gw = gws[plannerSelectedGwIdx];
+  const action = plan.actions[gw];
+  if (action && action.type === 'wildcard') wireWildcardEditorEvents(gw);
+}
+
 
 /* ---- Rival Intelligence rendering ---- */
 function computeThreat(myPts, rivalPts, rivalPlayersRemaining) {
@@ -3304,6 +4477,8 @@ async function syncFromScript(manual) {
     renderPlanner();
     renderCaptainChipsTab();
     renderComparison();
+    renderTransferLab();
+    renderSixGwPlanner();
     setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
   } catch (e) {
     console.error('Sync failed', e);
@@ -3348,6 +4523,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   await loadHomeRankHistory();
   await loadTeamStructure();
   await loadCmpSelected();
+  await loadTransferLab();
+  await loadPlannerPlans();
   render();
   renderCyprus();
   renderFH();
@@ -3362,6 +4539,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   renderPlanner();
   renderCaptainChipsTab();
   renderComparison();
+  renderTransferLab();
+  renderSixGwPlanner();
   noteStorageMode();
 
   document.getElementById('syncNowBtn').addEventListener('click', () => syncFromScript(true));
@@ -3377,6 +4556,19 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   document.getElementById('captainAddSearch').addEventListener('input', (e) => runCaptainAddSearch(e.target.value));
   document.getElementById('cmpSearch').addEventListener('input', (e) => runCmpSearch(e.target.value));
   document.getElementById('cmpPositionFilter').addEventListener('change', () => runCmpSearch(document.getElementById('cmpSearch').value));
+
+  document.getElementById('sixgwPlanSelect').addEventListener('change', async (e) => {
+    plannerActivePlanId = e.target.value;
+    plannerSelectedGwIdx = 0;
+    plannerWildcardDraft = null;
+    await savePlannerPlans();
+    renderSixGwPlanner();
+  });
+  document.getElementById('sixgwNewPlan').addEventListener('click', plannerNewPlan);
+  document.getElementById('sixgwDuplicatePlan').addEventListener('click', plannerDuplicatePlan);
+  document.getElementById('sixgwRenamePlan').addEventListener('click', plannerRenamePlan);
+  document.getElementById('sixgwDeletePlan').addEventListener('click', plannerDeletePlan);
+  document.getElementById('sixgwResetPlan').addEventListener('click', plannerResetPlan);
   document.getElementById('rollFtBtn').addEventListener('click', () => {
     document.getElementById('rollFtNote').textContent = '✓ Noted — rolling your free transfer this gameweek.';
   });
