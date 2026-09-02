@@ -536,6 +536,80 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .sixgw-health-item { font-size: 12px; color: var(--text-dim); padding-left: 12px; position: relative; margin-bottom: 4px; }
 .sixgw-health-item::before { content: '•'; position: absolute; left: 0; }
 
+/* ---- Rival Intelligence (Phase 3) ---- */
+.league-pos-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.league-pos-stat { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; flex: 1; min-width: 130px; }
+.league-pos-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.league-pos-val { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--gold); margin-top: 4px; }
+.league-pos-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+.movement-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 3px; padding: 10px 14px; font-size: 13px;
+}
+.movement-val { font-family: var(--font-mono); font-weight: 700; }
+.movement-val.up { color: var(--lime); }
+.movement-val.down { color: var(--red); }
+.movement-val.same { color: var(--text-faint); }
+
+.gw-battle-row {
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 10px 14px; margin-bottom: 6px;
+}
+.gw-battle-head { display: flex; justify-content: space-between; align-items: center; }
+.gw-battle-name { font-weight: 600; font-size: 13px; }
+.gw-battle-diff { font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+.gw-battle-diff.ahead { color: var(--red); }
+.gw-battle-diff.behind { color: var(--lime); }
+.gw-battle-cap { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 4px; }
+.gw-battle-transfers { font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); margin-top: 3px; }
+
+.squad-overlap-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.overlap-stat { background: var(--bg-elev-2); border-radius: 3px; padding: 8px 12px; font-family: var(--font-mono); font-size: 12px; text-align: center; flex: 1; min-width: 90px; }
+.overlap-stat-val { font-size: 18px; font-weight: 700; color: var(--lime); }
+.diff-eff-tag {
+  font-family: var(--font-mono); font-size: 8px; padding: 1px 5px; border-radius: 2px; margin-left: 6px; text-transform: uppercase;
+}
+.diff-eff-tag.bench { background: var(--bg-elev-2); color: var(--text-faint); }
+.diff-eff-tag.starting { background: rgba(198,255,61,0.10); color: var(--lime); }
+.diff-eff-tag.captained { background: rgba(232,185,79,0.14); color: var(--gold); }
+
+.captain-own-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px;
+}
+.captain-own-bar { flex: 1; height: 6px; background: var(--bg-elev-2); border-radius: 3px; margin: 0 10px; overflow: hidden; }
+.captain-own-fill { height: 100%; background: var(--gold); }
+
+.ownership-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px;
+}
+.ownership-bar { flex: 1; height: 6px; background: var(--bg-elev-2); border-radius: 3px; margin: 0 10px; overflow: hidden; }
+.ownership-fill { height: 100%; background: var(--lime); }
+.ownership-fill.mine { background: #7fd4ff; }
+
+.threat-item {
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 10px 14px; margin-bottom: 6px;
+}
+.threat-item-head { display: flex; justify-content: space-between; align-items: center; }
+.threat-item-name { font-weight: 700; font-size: 13px; }
+.threat-item-detail { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: var(--font-mono); }
+.threat-item-note { font-size: 11px; color: var(--text-faint); margin-top: 6px; font-style: italic; }
+.relationship-tag {
+  font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 2px; margin-left: 8px; text-transform: uppercase;
+}
+.relationship-tag.PROTECTION { background: rgba(127,212,255,0.10); color: #7fd4ff; }
+.relationship-tag.ATTACK { background: rgba(198,255,61,0.10); color: var(--lime); }
+.relationship-tag.NEUTRAL { background: var(--bg-elev-2); color: var(--text-faint); }
+
+.rival-watch-card { background: var(--bg-elev); border: 1px solid var(--gold); border-radius: 4px; padding: 16px; }
+.rival-watch-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.rw-stat { flex: 1; min-width: 120px; }
+.rw-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.rw-val { font-family: var(--font-mono); font-size: 15px; font-weight: 700; margin-top: 3px; }
+.rw-line { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+.rw-goto-btn { margin-top: 10px; background: var(--gold); color: #0a1410; border: none; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 3px; cursor: pointer; }
+
 .targets-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .target-card {
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; flex: 1; min-width: 150px;
@@ -861,6 +935,9 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="section-label">Upcoming</div>
     <div class="gw-status-card" id="upcomingCard"></div>
 
+    <div class="section-label">Rival watch</div>
+    <div id="rivalWatchWrap"></div>
+
     <div class="section-label">Rivals — Almost Champions</div>
     <div id="homeRivalWrap"></div>
 
@@ -1002,6 +1079,18 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <!-- ================= RIVALS TAB ================= -->
   <div class="tab-panel" id="tab-rivals">
 
+    <div class="section-label">Rival verdict</div>
+    <div id="rivalVerdictWrap"></div>
+
+    <div class="section-label">League position</div>
+    <div id="leaguePositionWrap"></div>
+
+    <div class="section-label">League movement <span style="font-weight:400">— since last snapshot</span></div>
+    <div id="leagueMovementWrap"></div>
+
+    <div class="section-label">This gameweek — rival battle</div>
+    <div id="gwBattleWrap"></div>
+
     <div class="section-label"><span>League overview</span><span id="rivalsGwLabel"></span></div>
     <div id="rivalsOverviewWrap">
       <div class="empty-note">Waiting for first sync…</div>
@@ -1012,6 +1101,17 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div id="rivalCompareWrap">
       <div class="empty-note">Select a rival above to compare.</div>
     </div>
+
+    <div class="section-label">Captaincy across the league</div>
+    <div id="captainOwnershipWrap"></div>
+
+    <div class="section-label">Mini-league ownership</div>
+    <div class="heuristic-note">📊 Fraction of all tracked Almost Champions managers (including you) who own each player — not global FPL ownership.</div>
+    <div id="miniLeagueOwnershipWrap"></div>
+
+    <div class="section-label">Exposure &amp; differentials</div>
+    <div class="heuristic-note">🎯 These are mini-league exposure warnings, NOT recommendations to buy or sell. Evaluate any flagged player normally in Compare/Transfer Lab before deciding whether to respond. Thresholds live in RIVAL_HEURISTIC_RULES.</div>
+    <div id="threatAnalysisWrap"></div>
 
   </div>
 
@@ -1134,21 +1234,27 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <!-- ================= TRANSFER LAB TAB ================= -->
   <div class="tab-panel" id="tab-translab">
 
-    <div class="section-label">Transfer lab <span style="font-weight:400">— build up to 3 scenarios, compared against HOLD</span></div>
+    <div class="section-label">🧪 Transfer lab verdict</div>
+    <div id="labVerdictWrap"></div>
 
+    <div class="section-label">🛡️ Hold current team <span style="font-weight:400">— the baseline</span></div>
+    <div id="labHoldHeroWrap"></div>
+
+    <div class="section-label">Scenarios <span style="font-weight:400">— build up to 3, compared against HOLD</span></div>
     <div id="labScenarioBuilders"></div>
 
-    <div class="section-label">Comparison</div>
+    <div class="section-label">Decision matrix</div>
     <div id="labComparisonWrap"></div>
 
-    <div class="section-label" id="labFixtureLabel" style="display:none">Affected players — next 6 fixtures</div>
-    <div id="labFixtureWrap"></div>
+    <button class="lab-add-pair-btn" id="labDetailsToggle" style="margin-bottom:10px">▸ Show detailed data (fixtures, hit analysis)</button>
 
-    <div class="section-label" id="labHitLabel" style="display:none">Hit analysis</div>
-    <div id="labHitWrap"></div>
+    <div id="labDetailsSection" style="display:none">
+      <div class="section-label" id="labFixtureLabel" style="display:none">Affected players — next 6 fixtures</div>
+      <div id="labFixtureWrap"></div>
 
-    <div class="section-label">Verdict</div>
-    <div id="labVerdictWrap"></div>
+      <div class="section-label" id="labHitLabel" style="display:none">Hit analysis</div>
+      <div id="labHitWrap"></div>
+    </div>
 
   </div>
 
@@ -3121,16 +3227,16 @@ function renderRivalCompare() {
       <div class="swing-potential">Captaincy swing potential: ${swingActive ? '🟡 active — a captain still to play' : '✅ settled — both captains have played'}</div>
     </div>
 
-    <div class="section-label">Differential battle</div>
+    <div class="section-label">Starting XI overlap <span style="font-weight:400">(${shared.length}/${me.picks.filter(p=>p.multiplier>0).length} shared this GW — active differential battle)</span></div>
     <div class="swing-card">
       <div class="swing-cols">
         <div class="swing-col">
           <div class="swing-col-label">Ours only (${oursOnly.length})</div>
-          ${oursOnly.length ? oursOnly.map(p => `<div class="swing-player"><span>${escapeHtml(p.name)}</span><span>${p.contribution}</span></div>`).join('') : '<div class="empty-note" style="padding:8px 0">None</div>'}
+          ${oursOnly.length ? oursOnly.map(p => `<div class="swing-player"><span>${escapeHtml(p.name)}${effTag(p)}</span><span>${p.contribution}</span></div>`).join('') : '<div class="empty-note" style="padding:8px 0">None</div>'}
         </div>
         <div class="swing-col">
           <div class="swing-col-label">Theirs only (${theirsOnly.length})</div>
-          ${theirsOnly.length ? theirsOnly.map(p => `<div class="swing-player"><span>${escapeHtml(p.name)}</span><span>${p.contribution}</span></div>`).join('') : '<div class="empty-note" style="padding:8px 0">None</div>'}
+          ${theirsOnly.length ? theirsOnly.map(p => `<div class="swing-player"><span>${escapeHtml(p.name)}${effTag(p)}</span><span>${p.contribution}</span></div>`).join('') : '<div class="empty-note" style="padding:8px 0">None</div>'}
         </div>
       </div>
       <div class="swing-total ${netSwing >= 0 ? 'pos' : 'neg'}">
@@ -3138,6 +3244,316 @@ function renderRivalCompare() {
       </div>
     </div>
   `;
+}
+
+/* ---- Rival Intelligence: standalone sections (Phase 3) ---- */
+
+// Client-side rival heuristic registry -- mirrors the server-side pattern:
+// thresholds live here, not scattered through the render functions.
+const RIVAL_HEURISTIC_RULES = {
+  ownership: {
+    highExposureMin: 0.6,    // >=60% of tracked managers own it, I don't -> HIGH EXPOSURE DIFFERENCE
+    meaningfulMin: 0.35,     // >=35% -> MEANINGFUL DIFFERENCE
+    monitorMin: 0.15,        // >=15% -> MONITOR (below this, not flagged -- too low to matter)
+    differentialMax: 0.2     // <=20% own it AND I own+start -> ACTIVE DIFFERENTIAL
+  },
+  protection: {
+    protectionMin: 0.5,      // I own it AND >=50% of league owns it -> PROTECTION
+    attackMax: 0.25          // I own it AND <=25% of league owns it -> ATTACK
+    // anything else I own -> NEUTRAL
+  }
+};
+
+function computeLeagueOwnership() {
+  if (!rivalIntel) return [];
+  const totalManagers = rivalIntel.managers.length;
+  const me = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const myIds = me ? new Set(me.picks.map(p => p.element)) : new Set();
+  const myStartedIds = me ? new Set(me.picks.filter(p => p.multiplier > 0).map(p => p.element)) : new Set();
+
+  const byElement = {};
+  rivalIntel.managers.forEach(m => {
+    m.picks.forEach(p => {
+      if (!byElement[p.element]) byElement[p.element] = { id: p.element, name: p.name, team: p.team, owned: 0, started: 0, captained: 0 };
+      byElement[p.element].owned++;
+      if (p.multiplier > 0) byElement[p.element].started++;
+      if (p.isCaptain) byElement[p.element].captained++;
+    });
+  });
+
+  return Object.values(byElement).map(e => ({
+    ...e, totalManagers,
+    iOwn: myIds.has(e.id), iStarted: myStartedIds.has(e.id)
+  })).sort((a, b) => b.owned - a.owned);
+}
+
+/* ---- League position context ---- */
+function renderLeaguePositionContext() {
+  const wrap = document.getElementById('leaguePositionWrap');
+  const rows = currentStandings();
+  if (!rows.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+
+  const myIdx = rows.findIndex(r => r.entry === MY_ENTRY);
+  if (myIdx === -1) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+  const me = rows[myIdx];
+  const leader = rows[0];
+  const above = myIdx > 0 ? rows[myIdx - 1] : null;
+  const below = myIdx < rows.length - 1 ? rows[myIdx + 1] : null;
+
+  wrap.innerHTML = `
+    <div class="league-pos-row">
+      <div class="league-pos-stat"><div class="league-pos-label">Position</div><div class="league-pos-val">${me.rank}/${rows.length}</div></div>
+      <div class="league-pos-stat"><div class="league-pos-label">Leader gap</div><div class="league-pos-val" style="color:${me.rank===1?'var(--lime)':'var(--red)'}">${me.rank===1?'\ud83e\udd47 Leading':(me.total - leader.total)}</div><div class="league-pos-sub">${me.rank===1?'':escapeHtml(leader.entry_name)}</div></div>
+      <div class="league-pos-stat"><div class="league-pos-label">Gap above</div><div class="league-pos-val">${above ? (me.total - above.total) : '\u2014'}</div><div class="league-pos-sub">${above ? escapeHtml(above.entry_name) : 'You are top'}</div></div>
+      <div class="league-pos-stat"><div class="league-pos-label">Cushion below</div><div class="league-pos-val">${below ? (me.total - below.total) : '\u2014'}</div><div class="league-pos-sub">${below ? escapeHtml(below.entry_name) : 'You are last'}</div></div>
+    </div>
+  `;
+}
+
+/* ---- League movement (reuses the existing stored Almost Champions snapshots -- no new storage) ---- */
+function renderLeagueMovement() {
+  const wrap = document.getElementById('leagueMovementWrap');
+  if (snapshots.length < 2) { wrap.innerHTML = '<div class="empty-note">Need at least two saved gameweeks to show movement.</div>'; return; }
+
+  const sorted = [...snapshots].sort((a, b) => a.gw - b.gw);
+  const rankAt = (snap) => {
+    const rows = [...snap.results].sort((a, b) => b.total - a.total);
+    const idx = rows.findIndex(r => r.entry === MY_ENTRY);
+    return idx === -1 ? null : { rank: idx + 1, total: rows[idx].total, leaderTotal: rows[0].total };
+  };
+  const prev = rankAt(sorted[sorted.length - 2]);
+  const curr = rankAt(sorted[sorted.length - 1]);
+  if (!prev || !curr) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+
+  const posDiff = prev.rank - curr.rank;
+  const gapPrev = prev.leaderTotal - prev.total;
+  const gapCurr = curr.leaderTotal - curr.total;
+  const gapChange = gapPrev - gapCurr; // positive = closed the gap
+
+  let posCls = 'same', posText = 'No change';
+  if (posDiff > 0) { posCls = 'up'; posText = `\u25b2 +${posDiff} position${posDiff>1?'s':''}`; }
+  else if (posDiff < 0) { posCls = 'down'; posText = `\u25bc ${posDiff} position${posDiff<-1?'s':''}`; }
+
+  let gapCls = 'same', gapText = 'No change';
+  if (gapChange > 0) { gapCls = 'up'; gapText = `+${gapChange} gained on leader`; }
+  else if (gapChange < 0) { gapCls = 'down'; gapText = `${gapChange} lost to leader`; }
+
+  wrap.innerHTML = `
+    <div class="movement-row"><span>Position: GW${sorted[sorted.length-2].gw} \u2192 GW${sorted[sorted.length-1].gw}</span><span class="movement-val ${posCls}">${posText}</span></div>
+    <div class="movement-row" style="margin-top:6px"><span>Gap to leader</span><span class="movement-val ${gapCls}">${gapText}</span></div>
+  `;
+}
+
+/* ---- GW battle: me vs every tracked rival, this gameweek ---- */
+function renderGwBattle() {
+  const wrap = document.getElementById('gwBattleWrap');
+  if (!rivalIntel || !rivalIntel.managers.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const me = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const rivals = rivalIntel.managers.filter(m => m.entry !== MY_ENTRY);
+  if (!me) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+
+  const sorted = [...rivals].sort((a, b) => (b.gwPoints ?? -1) - (a.gwPoints ?? -1));
+  wrap.innerHTML = sorted.map(r => {
+    const diff = (r.gwPoints ?? 0) - (me.gwPoints ?? 0);
+    const t = formatTransferActivity(r);
+    return `
+      <div class="gw-battle-row">
+        <div class="gw-battle-head">
+          <div class="gw-battle-name">${escapeHtml(r.entry_name)}</div>
+          <div class="gw-battle-diff ${diff > 0 ? 'ahead' : 'behind'}">${diff > 0 ? '+' : ''}${diff}</div>
+        </div>
+        <div class="gw-battle-cap">Captain: You ${me.captainName ? escapeHtml(me.captainName) : '\u2014'} (${me.captainPoints ?? 0}) vs ${escapeHtml(r.entry_name)} ${r.captainName ? escapeHtml(r.captainName) : '\u2014'} (${r.captainPoints ?? 0})</div>
+        <div class="gw-battle-transfers">${escapeHtml(t.line)}${t.detail ? ' \u2014 ' + escapeHtml(t.detail) : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---- Captaincy ownership across the whole tracked league ---- */
+function renderCaptainOwnership() {
+  const wrap = document.getElementById('captainOwnershipWrap');
+  if (!rivalIntel || !rivalIntel.managers.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const total = rivalIntel.managers.length;
+  const byCaptain = {};
+  rivalIntel.managers.forEach(m => {
+    if (!m.captainName) return;
+    byCaptain[m.captainName] = (byCaptain[m.captainName] || 0) + 1;
+  });
+  const sorted = Object.keys(byCaptain).map(name => ({ name, count: byCaptain[name] })).sort((a, b) => b.count - a.count);
+  wrap.innerHTML = sorted.map(c => `
+    <div class="captain-own-row">
+      <span>${escapeHtml(c.name)}</span>
+      <div class="captain-own-bar"><div class="captain-own-fill" style="width:${(c.count/total*100).toFixed(0)}%"></div></div>
+      <span>${c.count}/${total}</span>
+    </div>
+  `).join('') || '<div class="empty-note">No captain data yet.</div>';
+}
+
+/* ---- Mini-league ownership (top players by owner count) ---- */
+function renderMiniLeagueOwnership() {
+  const wrap = document.getElementById('miniLeagueOwnershipWrap');
+  const ownership = computeLeagueOwnership();
+  if (!ownership.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const top = ownership.filter(e => e.owned >= 2).slice(0, 12);
+  wrap.innerHTML = top.length ? top.map(e => `
+    <div class="ownership-row">
+      <span>${escapeHtml(e.name)} <span style="color:var(--text-faint);font-family:var(--font-mono)">${escapeHtml(e.team)}</span>${e.iOwn ? ' <span class="diff-eff-tag starting">You own</span>' : ''}</span>
+      <div class="ownership-bar"><div class="ownership-fill ${e.iOwn ? 'mine' : ''}" style="width:${(e.owned/e.totalManagers*100).toFixed(0)}%"></div></div>
+      <span>${e.owned}/${e.totalManagers}</span>
+    </div>
+  `).join('') : '<div class="empty-note">No significant shared ownership yet.</div>';
+}
+
+/* ---- Threat analysis / differential opportunities / protection-neutral-attack ---- */
+function classifyOwnershipThreat(e) {
+  const R = RIVAL_HEURISTIC_RULES.ownership;
+  const frac = e.owned / e.totalManagers;
+  if (!e.iOwn) {
+    if (frac >= R.highExposureMin) return { label: 'HIGH EXPOSURE DIFFERENCE', cls: 'threat-high', emoji: '\ud83d\udd34' };
+    if (frac >= R.meaningfulMin) return { label: 'MEANINGFUL DIFFERENCE', cls: 'threat-med', emoji: '\ud83d\udfe0' };
+    if (frac >= R.monitorMin) return { label: 'MONITOR', cls: 'threat-med', emoji: '\ud83d\udfe1' };
+    return null;
+  }
+  return null; // "well covered" only shown for differential-flagged players, not every owned player
+}
+function classifyDifferential(e) {
+  const R = RIVAL_HEURISTIC_RULES.ownership;
+  const frac = e.owned / e.totalManagers;
+  if (e.iOwn && e.iStarted && frac <= R.differentialMax) {
+    return { label: 'ACTIVE DIFFERENTIAL', cls: 'threat-low', emoji: '\ud83d\udfe2' };
+  }
+  return null;
+}
+function classifyRelationship(e) {
+  if (!e.iOwn) return null;
+  const R = RIVAL_HEURISTIC_RULES.protection;
+  const frac = e.owned / e.totalManagers;
+  if (frac >= R.protectionMin) return 'PROTECTION';
+  if (frac <= R.attackMax) return 'ATTACK';
+  return 'NEUTRAL';
+}
+
+function renderThreatAnalysis() {
+  const wrap = document.getElementById('threatAnalysisWrap');
+  const ownership = computeLeagueOwnership();
+  if (!ownership.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+
+  const threats = ownership.map(e => ({ e, t: classifyOwnershipThreat(e) })).filter(x => x.t).slice(0, 6);
+  const differentials = ownership.map(e => ({ e, t: classifyDifferential(e) })).filter(x => x.t).slice(0, 6);
+
+  let html = '';
+  if (threats.length) {
+    html += '<div class="pm-position-label">Exposure warnings</div>';
+    html += threats.map(({ e, t }) => `
+      <div class="threat-item">
+        <div class="threat-item-head">
+          <span class="threat-item-name">${escapeHtml(e.name)} <span style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px">${escapeHtml(e.team)}</span></span>
+          <span class="threat-badge ${t.cls}">${t.emoji} ${t.label}</span>
+        </div>
+        <div class="threat-item-detail">${e.owned}/${e.totalManagers} tracked managers own \u00b7 ${e.started} starting \u00b7 ${e.captained} captained \u00b7 You do not own</div>
+        <div class="threat-item-note">This is a mini-league exposure warning, NOT a recommendation to buy.</div>
+      </div>
+    `).join('');
+  }
+  if (differentials.length) {
+    html += '<div class="pm-position-label" style="margin-top:12px">Differential opportunities</div>';
+    html += differentials.map(({ e, t }) => {
+      const rel = classifyRelationship(e);
+      return `
+        <div class="threat-item">
+          <div class="threat-item-head">
+            <span class="threat-item-name">${escapeHtml(e.name)} <span style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px">${escapeHtml(e.team)}</span>${rel ? `<span class="relationship-tag ${rel}">${rel}</span>` : ''}</span>
+            <span class="threat-badge ${t.cls}">${t.emoji} ${t.label}</span>
+          </div>
+          <div class="threat-item-detail">Only ${e.owned}/${e.totalManagers} tracked managers own \u00b7 You own and start</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  wrap.innerHTML = html || '<div class="empty-note">No notable exposure or differential signals detected.</div>';
+}
+
+/* ---- Rival verdict (top of Rivals tab) ---- */
+function renderRivalVerdict() {
+  const wrap = document.getElementById('rivalVerdictWrap');
+  const rows = currentStandings();
+  if (!rows.length || !rivalIntel) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+
+  const myIdx = rows.findIndex(r => r.entry === MY_ENTRY);
+  if (myIdx === -1) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+  const me = rows[myIdx];
+  const leader = rows[0];
+  const gap = me.total - leader.total;
+
+  const ownership = computeLeagueOwnership();
+  const highThreats = ownership.filter(e => classifyOwnershipThreat(e)?.label === 'HIGH EXPOSURE DIFFERENCE');
+  const activeDiffs = ownership.filter(e => classifyDifferential(e));
+
+  const rivals = rivalIntel.managers.filter(m => m.entry !== MY_ENTRY);
+  const meRival = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const gwLeader = [...rivals].sort((a,b) => (b.gwPoints??-1)-(a.gwPoints??-1))[0];
+  const gwDiff = gwLeader && meRival ? (gwLeader.gwPoints ?? 0) - (meRival.gwPoints ?? 0) : 0;
+
+  let verdict, reasons = [];
+  if (highThreats.length) {
+    verdict = 'HIGH OWNERSHIP EXPOSURE TO MONITOR';
+    reasons.push(`${highThreats.length} player(s) are heavily owned across the league that you don't have`);
+  } else if (Math.abs(gap) <= 15 && gwDiff <= 5) {
+    verdict = 'NO RIVAL RESPONSE NEEDED';
+    reasons.push(me.rank === 1 ? 'You lead the mini-league' : `Leader gap is only ${Math.abs(gap)} points`);
+    reasons.push('No rival transfer or exposure creates an obvious structural problem for your team');
+  } else if (activeDiffs.length && gap < 0) {
+    verdict = 'OUR DIFFERENTIALS ARE WORKING';
+    reasons.push(`${activeDiffs.length} active differential(s) currently in your starting XI`);
+  } else if (gwDiff > 5) {
+    verdict = 'RIVALS HAVE GAINED THIS GW';
+    reasons.push(`${gwLeader ? escapeHtml(gwLeader.entry_name) : 'A rival'} is outscoring you by ${gwDiff} points this gameweek`);
+  } else {
+    verdict = 'CAPTAINCY IS THE MAIN DIFFERENCE';
+    reasons.push('No major structural or ownership gap detected -- captaincy choice is the biggest lever this week');
+  }
+
+  wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">${escapeHtml(verdict)}</div><div class="cmp-verdict-why">${reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div></div>`;
+}
+
+/* ---- Compact Rival Watch card on Home ---- */
+function renderRivalWatchHome() {
+  const wrap = document.getElementById('rivalWatchWrap');
+  const rows = currentStandings();
+  if (!rows.length || !rivalIntel) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const myIdx = rows.findIndex(r => r.entry === MY_ENTRY);
+  if (myIdx === -1) { wrap.innerHTML = '<div class="empty-note">No data yet.</div>'; return; }
+  const me = rows[myIdx];
+  const leader = rows[0];
+  const ownership = computeLeagueOwnership();
+  const topThreat = ownership.find(e => classifyOwnershipThreat(e)?.label === 'HIGH EXPOSURE DIFFERENCE');
+  const topDiff = ownership.find(e => classifyDifferential(e));
+  const meRival = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const rivals = rivalIntel.managers.filter(m => m.entry !== MY_ENTRY);
+  const majorityCaptain = (() => {
+    const counts = {};
+    rivalIntel.managers.forEach(m => { if (m.captainName) counts[m.captainName] = (counts[m.captainName]||0)+1; });
+    const sorted = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+    return sorted[0];
+  })();
+
+  wrap.innerHTML = `
+    <div class="rival-watch-card">
+      <div class="rival-watch-grid">
+        <div class="rw-stat"><div class="rw-label">League position</div><div class="rw-val">${me.rank}/${rows.length}</div></div>
+        <div class="rw-stat"><div class="rw-label">Leader gap</div><div class="rw-val">${me.rank===1?'Leading':(me.total-leader.total)}</div></div>
+      </div>
+      <div class="rw-line">Main exposure warning: ${topThreat ? escapeHtml(topThreat.name) : 'None flagged'}</div>
+      <div class="rw-line">Best active differential: ${topDiff ? escapeHtml(topDiff.name) : 'None flagged'}</div>
+      <div class="rw-line">Captain split: You ${meRival && meRival.captainName ? escapeHtml(meRival.captainName) : '\u2014'}${majorityCaptain && meRival && majorityCaptain !== meRival.captainName ? ' vs majority ' + escapeHtml(majorityCaptain) : ''}</div>
+      <button class="rw-goto-btn" id="rivalWatchGoto">View Rival Intelligence</button>
+    </div>
+  `;
+  const btn = document.getElementById('rivalWatchGoto');
+  if (btn) btn.addEventListener('click', () => {
+    document.querySelector('.tab-btn[data-tab="rivals"]').click();
+  });
 }
 
 /* ---- Player Analysis (Phase 3A) rendering ---- */
@@ -4471,8 +4887,16 @@ async function syncFromScript(manual) {
     renderCyChase();
     renderDecisions();
     renderHome();
+    renderRivalVerdict();
+    renderLeaguePositionContext();
+    renderLeagueMovement();
+    renderGwBattle();
     renderRivalsOverview();
     renderRivalCompare();
+    renderCaptainOwnership();
+    renderMiniLeagueOwnership();
+    renderThreatAnalysis();
+    renderRivalWatchHome();
     renderPlayerAnalysis();
     renderPlanner();
     renderCaptainChipsTab();
@@ -4533,8 +4957,16 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   renderFplInfo();
   renderDecisions();
   renderHome();
+  renderRivalVerdict();
+  renderLeaguePositionContext();
+  renderLeagueMovement();
+  renderGwBattle();
   renderRivalsOverview();
   renderRivalCompare();
+  renderCaptainOwnership();
+  renderMiniLeagueOwnership();
+  renderThreatAnalysis();
+  renderRivalWatchHome();
   renderPlayerAnalysis();
   renderPlanner();
   renderCaptainChipsTab();
