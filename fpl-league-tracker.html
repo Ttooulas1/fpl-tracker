@@ -4064,7 +4064,8 @@ function renderPlayerAnalysis() {
     const o = p.official;
     const t = p.trend;
     const h = p.heuristic;
-    const bucketCls = BUCKET_CLASS[h.bucket] || 'monitor';
+    const effectiveBucket = aiEffectiveClassification(p);
+    const bucketCls = effectiveBucket === 'FIXTURE CONCERN / HOLD' ? 'monitor' : (BUCKET_CLASS[effectiveBucket] || 'monitor');
 
     return `
       <div class="pa-card ${p.isBench ? 'bench' : ''}">
@@ -4076,7 +4077,7 @@ function renderPlayerAnalysis() {
             </div>
             <div class="pa-meta">${escapeHtml(p.team || '')} · ${p.position} ${p.isBench ? '· bench' : ''} ${fixtureBadge(p.nextFixture)}</div>
           </div>
-          <div class="pa-bucket ${bucketCls}">${h.emoji} ${h.bucket}</div>
+          <div class="pa-bucket ${bucketCls}">${effectiveBucket === 'FIXTURE CONCERN / HOLD' ? '⚠️' : h.emoji} ${effectiveBucket}</div>
         </div>
         ${(h.bucket === 'Possible Sell' || h.bucket === 'Sell') ? `<button class="lab-compare-btn" data-send-to-lab="${p.element}" style="margin:8px 0 0">\ud83e\uddea Send to Transfer Lab</button>` : ''}
 
@@ -4177,7 +4178,8 @@ function renderPlannerSquad() {
     return (order[a.position] || 9) - (order[b.position] || 9);
   });
   wrap.innerHTML = sorted.map(pl => {
-    const bucketCls = pl.heuristic ? (BUCKET_CLASS[pl.heuristic.bucket] || 'monitor') : '';
+    const effectiveBucket = pl.heuristic ? aiEffectiveClassification(pl) : '';
+    const bucketCls = effectiveBucket === 'FIXTURE CONCERN / HOLD' ? 'monitor' : (BUCKET_CLASS[effectiveBucket] || 'monitor');
     return `
       <div class="planner-squad-row">
         <div class="planner-squad-head">
@@ -4185,7 +4187,7 @@ function renderPlannerSquad() {
             <div class="planner-squad-name">${pl.isCaptain ? '<span class="squad-badge c">C</span> ' : ''}${pl.isVice ? '<span class="squad-badge v">V</span> ' : ''}${escapeHtml(pl.name)}</div>
             <div class="planner-squad-meta">${escapeHtml(pl.team || '')} · ${pl.position} · £${pl.price != null ? pl.price.toFixed(1) : '—'}m · ep_next ${pl.epNext != null ? pl.epNext.toFixed(1) : '—'} · form ${pl.form != null ? pl.form.toFixed(1) : '—'}</div>
           </div>
-          ${pl.heuristic ? `<div class="pa-bucket ${bucketCls}">${pl.heuristic.emoji} ${pl.heuristic.bucket}</div>` : ''}
+          ${pl.heuristic ? `<div class="pa-bucket ${bucketCls}">${effectiveBucket === 'FIXTURE CONCERN / HOLD' ? '⚠️' : pl.heuristic.emoji} ${effectiveBucket}</div>` : ''}
         </div>
         ${pl.news ? `<div class="pa-news">⚠️ ${escapeHtml(pl.news)}</div>` : ''}
         <div class="planner-fx-row">
@@ -5455,7 +5457,8 @@ async function syncFromScript(manual) {
    Generates a portable context report from the LIVE tracker state.
    PDF/TXT are context snapshots, not substitutes for fresh web research.
    ============================================================ */
-const AI_HANDOFF_VERSION = '2.0';
+const AI_HANDOFF_VERSION = '3.0 / Phase 6';
+const AI_REPORT_HORIZON = 8;
 
 function aiText(id) {
   const el = document.getElementById(id);
@@ -5480,7 +5483,65 @@ function aiFixtureText(f) {
 }
 
 function aiPlayerById(id) {
-  return gwPlanner && gwPlanner.allPlayers ? gwPlanner.allPlayers.find(p => p.id === id) : null;
+  return gwPlanner && gwPlanner.allPlayers ? gwPlanner.allPlayers.find(p => String(p.id) === String(id)) : null;
+}
+
+function aiEffectiveClassification(pa) {
+  const raw = pa?.heuristic?.bucket || '—';
+  if (raw !== 'Possible Sell') return raw;
+  const reasons = (pa?.heuristic?.reasons || []).map(x=>String(x).toLowerCase());
+  const fixtureOnly = reasons.length > 0 && reasons.every(r => /fixture|opponent|fdr|difficult|tough/.test(r));
+  return fixtureOnly ? 'FIXTURE CONCERN / HOLD' : raw;
+}
+
+function aiSquadFinancials(sp) {
+  const p = aiPlayerById(sp.element) || sp;
+  const current = aiFirst(p,['price','nowCost','currentPrice'],aiFirst(sp,['price','nowCost'],null));
+  const purchase = aiFirst(sp,['purchasePrice','purchase_price','purchaseCost','purchase_cost'],aiFirst(p,['purchasePrice','purchase_price'],null));
+  const selling = aiFirst(sp,['sellingPrice','selling_price','sellPrice','sell_price'],aiFirst(p,['sellingPrice','selling_price','sellPrice','sell_price'],null));
+  const c=Number(current), b=Number(purchase), sv=Number(selling);
+  return {current:Number.isFinite(c)?c:null,purchase:Number.isFinite(b)?b:null,selling:Number.isFinite(sv)?sv:null,profit:(Number.isFinite(c)&&Number.isFinite(b))?Number((c-b).toFixed(1)):null,cashReleased:Number.isFinite(sv)?sv:null};
+}
+
+function aiProjectionRecord(p) {
+  const ep1 = Number(aiFirst(p,['epNext','ep_next'],NaN));
+  return {
+    source: Number.isFinite(ep1) ? 'Official FPL ep_next' : null,
+    updated: lastSyncedAt ? lastSyncedAt.toISOString() : null,
+    xpNext1: Number.isFinite(ep1) ? ep1 : null, xpNext3:null, xpNext5:null, xpNext8:null
+  };
+}
+
+function aiDetailedConsistencyCheck() {
+  const issues=[]; const warnings=[]; const squad=gwPlanner?.squad||[];
+  const gw=Number(homeData?.gw ?? gwDecision?.gw);
+  if(!Number.isFinite(gw)||gw<1) issues.push('Current GW is missing/invalid');
+  if(aiDeadlineValue()==='NOT AVAILABLE IN TRACKER') warnings.push('Next deadline unavailable');
+  if(squad.length!==FPL_RULES.squadSize) issues.push('Squad is not exactly 15 players');
+  const ids=squad.map(x=>String(x.element??x.id)); if(new Set(ids).size!==ids.length) issues.push('Duplicate players detected');
+  const clubs={}; squad.forEach(x=>clubs[x.team]=(clubs[x.team]||0)+1); Object.entries(clubs).forEach(([t,n])=>{if(n>FPL_RULES.maxPlayersPerClub)issues.push(t+' exceeds 3-player club limit');});
+  if(!squad.find(x=>x.isCaptain)) warnings.push('Captain not identified');
+  if(!squad.find(x=>x.isVice)) warnings.push('Vice-captain not identified');
+  const bench=squad.filter(x=>x.isBench); if(bench.length!==4) warnings.push('Bench order/size is not 4 players');
+  if(gwPlanner?.bank==null) warnings.push('Money ITB unavailable');
+  if(gwPlanner?.teamValue==null) warnings.push('Team value unavailable');
+  if(gwPlanner?.ftEstimate==null && homeData?.freeTransfersEstimate==null) warnings.push('Free-transfer count unavailable');
+  const missingSelling=squad.filter(x=>aiSquadFinancials(x).selling==null); if(missingSelling.length) warnings.push('Actual selling prices missing for '+missingSelling.length+'/15 players');
+  if(!lastSyncedAt) issues.push('No fresh sync timestamp');
+  return {ok:issues.length===0,issues,warnings};
+}
+
+function aiMissingDataSummary() {
+  const squad=gwPlanner?.squad||[];
+  const sellingMissing=squad.some(x=>aiSquadFinancials(x).selling==null);
+  const xpMissing=squad.some(x=>aiProjectionRecord(aiPlayerById(x.element)||x).xpNext3==null);
+  const minsMissing=squad.some(x=>aiFirst(aiPlayerById(x.element)||x,['expectedMinutes','expected_minutes'],null)==null);
+  const research=phase5State?.research||{};
+  return {
+    sellingPrices:sellingMissing, multiGwXp:xpMissing, expectedMinutes:minsMissing,
+    pressConferenceData:research.pressers!=='done', eliteManagerResearch:!(phase5State?.experts||[]).some(e=>e.manager),
+    pricePredictor:true, topManagerOwnership:true
+  };
 }
 
 function aiValidateExport() {
@@ -5814,14 +5875,12 @@ function aiOwnershipText(p) {
 function aiPlayerLineDetailed(sp) {
   const p = aiPlayerById(sp.element) || sp;
   const fixtures = (typeof getPlanningFixtures === 'function' ? getPlanningFixtures(p) : (p.fixtureRun || p.fixtures || [])).slice(0,8);
-  const currentPrice = aiFirst(p,['price','nowCost','currentPrice'],aiFirst(sp,['price','nowCost'],'—'));
-  const purchase = aiFirst(sp,['purchasePrice','purchase_price','purchaseCost','purchase_cost'],aiFirst(p,['purchasePrice','purchase_price'],'—'));
-  const selling = aiFirst(sp,['sellingPrice','selling_price','sellPrice','sell_price'],aiFirst(p,['sellingPrice','selling_price','sellPrice','sell_price'],'—'));
-  const profit = (Number.isFinite(Number(currentPrice)) && Number.isFinite(Number(purchase))) ? (Number(currentPrice)-Number(purchase)).toFixed(1) : '—';
+  const fin = aiSquadFinancials(sp);
+  const currentPrice=fin.current, purchase=fin.purchase, selling=fin.selling, profit=fin.profit;
   const flags = [sp.isCaptain?'C':'',sp.isVice?'V':'',sp.isBench?'BENCH':'START'].filter(Boolean).join('/');
   return [
     sp.name + ' | ' + sp.team + ' | ' + sp.position + ' | ' + flags,
-    'Current ' + aiMaybeMoney(currentPrice) + ' | Purchase ' + aiMaybeMoney(purchase) + ' | Selling ' + aiMaybeMoney(selling) + ' | Market change vs purchase ' + (profit==='—'?'—':(Number(profit)>=0?'+':'')+profit+'m'),
+    'Current ' + aiMaybeMoney(currentPrice) + ' | Purchase ' + aiMaybeMoney(purchase) + ' | Actual selling ' + aiMaybeMoney(selling) + ' | Profit/loss ' + (profit==null?'NOT AVAILABLE':(profit>=0?'+':'')+profit.toFixed(1)+'m') + ' | Cash released if sold ' + aiMaybeMoney(fin.cashReleased),
     'Ownership ' + aiOwnershipText(p) + ' | Status ' + aiStatusText(p) + ' | Chance playing ' + aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],'—') + ' | News ' + aiFirst(p,['news'],'—'),
     'Total pts ' + aiFirst(p,['totalPoints','total_points'],'—') + ' | PPG ' + aiFirst(p,['pointsPerGame','points_per_game'],'—') + ' | Form ' + aiFirst(p,['form'],'—') + ' | Minutes ' + aiFirst(p,['seasonMinutes','minutes'],'—') + ' | Starts ' + aiFirst(p,['starts'],'—'),
     'Goals ' + aiFirst(p,['goals','goalsScored','goals_scored'],'—') + ' | Assists ' + aiFirst(p,['assists'],'—') + ' | CS ' + aiFirst(p,['cleanSheets','clean_sheets'],'—') + ' | Bonus ' + aiFirst(p,['bonus'],'—') + ' | BPS ' + aiFirst(p,['bps'],'—'),
@@ -5899,13 +5958,13 @@ function aiRoleMinutes(lines) {
 
 function aiFixtures8(lines) {
   aiSection(lines, '5. FIXTURES — NEXT 8 GAMEWEEKS / DATA LIMITS');
-  lines.push('Tracker native planning horizon: '+PLANNING_HORIZON+' GWs. The receiving AI must extend to 8 GWs with fresh fixture research when this export contains fewer than 8.');
+  lines.push('AI report horizon: '+AI_REPORT_HORIZON+' GWs. Known fixtures are exported through GW+8 whenever the synced payload contains them. Missing GW7/GW8 are explicitly marked rather than researched or invented by the tracker.');
   const all=gwPlanner?.allPlayers||[];
   const teams=[...new Set(all.map(p=>p.team).filter(Boolean))].sort();
   teams.forEach(team=>{
     const p=all.find(x=>x.team===team);
     const run=p?(typeof getPlanningFixtures==='function'?getPlanningFixtures(p):(p.fixtures||[])):[];
-    lines.push(team+': '+(run.slice(0,8).map(aiFixtureText).join(' ; ')||'—'));
+    lines.push(team+': '+(run.slice(0,AI_REPORT_HORIZON).map(aiFixtureText).join(' ; ')||'—'));
   });
   lines.push(aiUnavailable('Opponent attacking/defensive strength beyond tracker FDR', true));
   lines.push(aiUnavailable('Clean-sheet probability', true));
@@ -5919,7 +5978,7 @@ function aiSquadFixtureMap(lines) {
   (gwPlanner?.squad||[]).forEach(sp=>{
     const p=aiPlayerById(sp.element)||sp;
     const run=typeof getPlanningFixtures==='function'?getPlanningFixtures(p):(p.fixtures||[]);
-    lines.push(sp.name+' | '+run.slice(0,8).map(aiFixtureText).join(' | '));
+    lines.push(sp.name+' | '+run.slice(0,AI_REPORT_HORIZON).map(aiFixtureText).join(' | '));
   });
   const counts={};(gwPlanner?.squad||[]).forEach(p=>counts[p.team]=(counts[p.team]||0)+1);
   lines.push('Club concentration: '+Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([t,n])=>t+' '+n).join(' | '));
@@ -5927,10 +5986,13 @@ function aiSquadFixtureMap(lines) {
 }
 
 function aiExpectedPoints(lines) {
-  aiSection(lines, '7. EXPECTED POINTS / PROJECTION DISCIPLINE');
-  lines.push('The tracker does NOT manufacture multi-GW xP. Official/available ep_next is exported below where present.');
-  (gwPlanner?.squad||[]).forEach(sp=>{const p=aiPlayerById(sp.element)||sp;lines.push(sp.name+' | ep_next '+aiFirst(p,['epNext','ep_next'],'—')+' | xP GW+2..GW+8: NOT STORED IN TRACKER');});
-  lines.push('Receiving AI: if using an external xP model, name the model/source and timestamp, and compare PLAYER OUT vs PLAYER IN across 1/3/5/8 GW. Never present invented xP.');
+  aiSection(lines, '7. MULTI-GAMEWEEK EXPECTED POINTS');
+  lines.push('Projection rule: never fabricate xP. Official FPL ep_next is kept separate from any external model. No hidden/blended score is created unless source components are explicit.');
+  (gwPlanner?.squad||[]).forEach(sp=>{
+    const p=aiPlayerById(sp.element)||sp, pr=aiProjectionRecord(p);
+    lines.push(sp.name+' | GW+1 '+aiFmt(pr.xpNext1,'NOT AVAILABLE')+' | Next 3 '+aiFmt(pr.xpNext3,'NOT AVAILABLE')+' | Next 5 '+aiFmt(pr.xpNext5,'NOT AVAILABLE')+' | Next 8 '+aiFmt(pr.xpNext8,'NOT AVAILABLE')+' | Source '+aiFmt(pr.source,'NONE')+' | Updated '+aiFmt(pr.updated,'—'));
+  });
+  lines.push('Realistic transfer targets must be evaluated with the same 1/3/5/8-GW model before a projection-based recommendation is locked.');
 }
 
 function aiTransferMarket(lines) {
@@ -5949,17 +6011,24 @@ function aiTransferMarket(lines) {
 }
 
 function aiTransferCombinations(lines) {
-  aiSection(lines, '9. TRANSFER COMBINATIONS');
-  lines.push('HOLD BASELINE');
-  lines.push(aiText('labHoldHeroWrap')||'—');
+  aiSection(lines, '9. PLAYER OUT vs PLAYER IN / TRANSFER COMBINATIONS');
+  lines.push('OPTION A — HOLD / ROLL | FT now '+aiFmt(gwPlanner?.ftEstimate ?? homeData?.freeTransfersEstimate)+' | Bank '+aiMoney(gwPlanner?.bank ?? homeData?.bank)+' | xP: only available from sourced projection data.');
   (transferScenarios||[]).forEach((sc,i)=>{
     const pairs=(sc.pairs||[]).filter(pr=>pr.outId||pr.inId); if(!pairs.length)return;
-    const label=String.fromCharCode(65+i); lines.push('Scenario '+label+(sc.name?' — '+sc.name:''));
-    pairs.forEach(pr=>{const o=typeof labGetSquadPlayer==='function'?labGetSquadPlayer(pr.outId):null; const inp=aiPlayerById(pr.inId); lines.push('OUT '+(o?.name||pr.outId||'—')+' -> IN '+(inp?.name||pr.inId||'—'));});
+    const label=String.fromCharCode(66+i); lines.push('OPTION '+label+' — '+(sc.name||((pairs.length||0)+' transfer(s)')));
+    pairs.forEach(pr=>{
+      const o=typeof labGetSquadPlayer==='function'?labGetSquadPlayer(pr.outId):null, inp=aiPlayerById(pr.inId);
+      const of=o?aiSquadFinancials(o):{selling:null};
+      const op=o?aiProjectionRecord(aiPlayerById(o.element)||o):{}, ip=inp?aiProjectionRecord(inp):{};
+      lines.push('OUT '+(o?.name||pr.outId||'—')+' | selling '+aiMaybeMoney(of.selling)+' | xP 1/3/5/8 '+[op.xpNext1,op.xpNext3,op.xpNext5,op.xpNext8].map(v=>aiFmt(v,'NA')).join('/'));
+      lines.push('IN  '+(inp?.name||pr.inId||'—')+' | buy '+aiMaybeMoney(inp?.price)+' | xP 1/3/5/8 '+[ip.xpNext1,ip.xpNext3,ip.xpNext5,ip.xpNext8].map(v=>aiFmt(v,'NA')).join('/'));
+    });
     try{const m=computeScenarioMetrics(sc);lines.push('Transfers '+m.transfersCount+' | Hit -'+m.hitCost+' | Bank after '+aiMoney(m.bankAfter)+' | Legal '+(m.legal?'YES':'NO')+' | Fixture effect '+m.fixtureEffect+' | Flexibility '+m.flexibility);}catch(e){lines.push('Scenario metrics unavailable.');}
   });
-  lines.push('Projected GW+1 / 3-GW / 5-GW gains: NOT CALCULATED unless a real xP source is connected. Do not infer them from heuristic labels.');
-  lines.push('CRITICAL: actual selling prices must be used for affordability. If missing from Section 2, receiving AI must request/verify them before approving a transfer combination.');
+  const md=aiMissingDataSummary();
+  if(md.sellingPrices) lines.push('FINANCE BLOCK: actual selling prices are incomplete, therefore affordability must NOT be treated as confirmed.');
+  if(md.multiGwXp) lines.push('PROJECTION BLOCK: multi-GW xP is incomplete, therefore projected gains must NOT be invented.');
+  lines.push('The system must not assume using a transfer is better than HOLD/ROLL. Hits require sourced multi-week benefit greater than the points cost plus uncertainty.');
 }
 
 function aiPrices(lines) {
@@ -6057,7 +6126,7 @@ function aiTransferPathways(lines) {
 
 function aiDecisionMatrix(lines) {
   aiSection(lines, '21. DECISION MATRIX');
-  (playerAnalysis||[]).forEach(p=>lines.push(p.name+' | Classification '+(p.heuristic?.bucket||'—')+' | Underlying data: form '+aiFirst(p.official,['form'],'—')+', mins '+aiFirst(p.official,['seasonMinutes'],'—')+', xG '+aiFirst(p.official,['seasonXG'],'—')+', xA '+aiFirst(p.official,['seasonXA'],'—')+', xGI '+aiFirst(p.official,['seasonXGI'],'—')+', ep_next '+aiFirst(p.official,['epNext'],'—')+' | Reasons '+(p.heuristic?.reasons||[]).join('; ')));
+  (playerAnalysis||[]).forEach(p=>lines.push(p.name+' | Classification '+(aiEffectiveClassification(p))+' | Underlying data: form '+aiFirst(p.official,['form'],'—')+', mins '+aiFirst(p.official,['seasonMinutes'],'—')+', xG '+aiFirst(p.official,['seasonXG'],'—')+', xA '+aiFirst(p.official,['seasonXA'],'—')+', xGI '+aiFirst(p.official,['seasonXGI'],'—')+', ep_next '+aiFirst(p.official,['epNext'],'—')+' | Reasons '+(p.heuristic?.reasons||[]).join('; ')));
   lines.push('The receiving AI may disagree with BUY/HOLD/SELL/WATCH-style tracker classifications because the underlying data and reasons are included. No hidden total score is used.');
 }
 
@@ -6071,6 +6140,31 @@ function aiDataQuality(lines) {
   lines.push('Any external datapoint used after export must include source and last-updated time; stale data must be labelled stale.');
 }
 
+function aiBenchQuality(lines) {
+  aiSection(lines, '22A. BENCH QUALITY / BENCH BOOST READINESS');
+  const bench=(gwPlanner?.squad||[]).filter(x=>x.isBench);
+  bench.forEach(sp=>{const p=aiPlayerById(sp.element)||sp, pr=aiProjectionRecord(p); lines.push(sp.name+' | Fixture '+aiFixtureText(getNextPlanningFixture(p))+' | Expected mins '+aiFirst(p,['expectedMinutes','expected_minutes'],'NOT AVAILABLE')+' | xP '+aiFmt(pr.xpNext1,'NOT AVAILABLE')+' | Playing probability '+aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],'NOT AVAILABLE'));});
+  lines.push('Bench xP total: NOT CALCULATED unless every bench player has a compatible sourced xP value.');
+}
+
+function aiMissingDataImpact(lines) {
+  aiSection(lines, '22B. MISSING DATA IMPACT');
+  const m=aiMissingDataSummary();
+  const row=(name,missing,impact,why)=>lines.push(name+': '+(missing?'MISSING':'AVAILABLE')+' | '+impact+' | '+why);
+  row('Selling prices',m.sellingPrices,'HIGH IMPACT','Missing selling values prevent confirmed affordability/budget maths.');
+  row('Multi-GW xP',m.multiGwXp,'HIGH IMPACT','Do not claim 3/5/8-GW projection gains without a sourced model.');
+  row('Expected minutes',m.expectedMinutes,'HIGH IMPACT','Rotation-sensitive moves should wait for fresh minutes/team-news evidence.');
+  row('Press conference data',m.pressConferenceData,'HIGH IMPACT','Late availability/role information requires fresh web research.');
+  row('Elite manager research',m.eliteManagerResearch,'MEDIUM IMPACT','Useful supporting evidence, never authority.');
+  row('Price predictor',m.pricePredictor,'MEDIUM IMPACT','Transfer pressure alone is not rise/fall probability.');
+  row('Top-manager ownership',m.topManagerOwnership,'LOW/MEDIUM IMPACT','Useful for EO/risk context, not core player quality.');
+}
+
+function aiDoNotTrust(lines) {
+  aiSection(lines, '22C. DO NOT TRUST BLINDLY');
+  ['FDR alone is not enough to justify selling.','ep_next is not a complete projection model.','Transfer pressure is not price-rise probability.','Rival threat heuristic is not an official statistic.','One difficult fixture is not a sell signal.','Recent points are not proof of future points.','BUY/SELL tracker labels are suggestions only.','A Wildcard week shown by the planner is not automatically optimal.'].forEach(x=>lines.push('- '+x));
+}
+
 function aiMachineState(lines) {
   aiSection(lines, '23. AI HANDOFF — CURRENT STATE (MACHINE-READABLE)');
   const h=homeData||{}, squad=gwPlanner?.squad||[], ml=aiCurrentMiniLeague();
@@ -6078,11 +6172,11 @@ function aiMachineState(lines) {
     season:'2026/27',gw:h.gw??gwDecision?.gw??null,deadline:aiDeadlineValue(),generated:new Date().toISOString(),synced:lastSyncedAt?lastSyncedAt.toISOString():null,
     managerId:MY_ENTRY,team:'BYFARTHEGREATESTEAM',points:ml.me?.total??h.totalPoints??null,overallRank:h.overallRank??null,cyprusRank:aiCurrentCyprusRank(),miniLeagueRank:ml.me?.rank??null,
     freeTransfers:gwPlanner?.ftEstimate??h.freeTransfersEstimate??null,bank:gwPlanner?.bank??h.bank??null,teamValue:gwPlanner?.teamValue??null,
-    squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:aiFirst(p,['price','nowCost'],null),purchasePrice:aiFirst(sp,['purchasePrice','purchase_price'],null),sellingPrice:aiFirst(sp,['sellingPrice','selling_price','sellPrice'],null),captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
+    squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp,fin=aiSquadFinancials(sp),pr=aiProjectionRecord(p);return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:fin.current,purchasePrice:fin.purchase,sellingPrice:fin.selling,xpNext1:pr.xpNext1,xpNext3:pr.xpNext3,xpNext5:pr.xpNext5,xpNext8:pr.xpNext8,expectedMinutesNext:aiFirst(p,['expectedMinutes','expected_minutes'],null),rotationRisk:aiFirst(p,['rotationRisk'],null),penaltyRole:aiFirst(p,['penaltyRole'],null),setPieceRole:aiFirst(p,['setPieceRole','cornerRole','freeKickRole'],null),priceRiseRisk:null,priceFallRisk:null,captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
     captain:squad.find(p=>p.isCaptain)?.name||null,vice:squad.find(p=>p.isVice)?.name||null,
     currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,news:p.news}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
-    phase5:{status:typeof phase5AutoStatus==='function'?phase5AutoStatus():null,transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0}
+    phase5:{status:typeof phase5AutoStatus==='function'?phase5AutoStatus():null,transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0}, transferPaths:(typeof plannerActivePlan==='function'&&plannerActivePlan())?computePlanSimulation(plannerActivePlan()):[], wildcardScenarios:'REQUIRES COMPARATIVE MODEL / NOT PRESELECTED', missingData:aiMissingDataSummary()
   };
   lines.push(JSON.stringify(state,null,2));
 }
@@ -6109,7 +6203,7 @@ function aiExactInstructions(lines) {
     'The final recommendation must clearly state:',
     'TRANSFERS','CAPTAIN','VICE-CAPTAIN','STARTING XI','BENCH ORDER','CHIP','HITS','MONEY ITB AFTER MOVES','WILDCARD STATUS','NEXT-GW PLAN',
     '',
-    'If evidence is insufficient: WAIT.','Do not manufacture a recommendation.'
+    'If evidence is insufficient: WAIT.','Do not manufacture a recommendation.','', 'DECISION ORDER:', '1. Identify weak positions/assets.', '2. Compare HOLD / ROLL baseline.', '3. Identify realistic replacements.', '4. Check ACTUAL affordability using selling prices.', '5. Compare 1/3/5/8 GW expected value using sourced projections.', '6. Check minutes/rotation.', '7. Check team structure after the move.', '8. Check future transfer path.', '9. Check Wildcard interaction.', '10. Only then recommend the transfer.', '', 'Do not start with a desired incoming player and force the structure around him.', 'If no move clearly improves the team: ROLL THE TRANSFER.'
   );
 }
 
@@ -6121,6 +6215,8 @@ function buildAiHandoffReport() {
   lines.push('Season: 2026/27 | Report version: '+AI_HANDOFF_VERSION);
   lines.push('PURPOSE: give a fresh AI/FPL analyst enough factual context to reconstruct the current FPL situation, evaluate decisions independently, compare rivals and elite similar managers, and plan beyond the immediate GW.');
   lines.push('DATA PRINCIPLE: raw facts first. Recommendations/heuristics must never hide the underlying data. Unsupported fields are explicitly marked NOT AVAILABLE rather than fabricated.');
+  const consistency=aiDetailedConsistencyCheck();
+  if(!consistency.ok || consistency.warnings.length){ lines.push('DATA WARNING: '+[...consistency.issues,...consistency.warnings].join(' | ')); } else { lines.push('CONSISTENCY CHECK: PASS'); }
   lines.push('');
   aiReportMetadata(lines);
   aiExactSquad(lines);
@@ -6144,6 +6240,9 @@ function buildAiHandoffReport() {
   aiTransferPathways(lines);
   aiDecisionMatrix(lines);
   aiDataQuality(lines);
+  aiBenchQuality(lines);
+  aiMissingDataImpact(lines);
+  aiDoNotTrust(lines);
   aiMachineState(lines);
   aiExactInstructions(lines);
   aiSection(lines,'APPENDIX A — PERMANENT PROJECT OPERATING RULES');
@@ -6197,7 +6296,7 @@ function downloadAiPdfReport() {
     let y = top;
     pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(20,30,25);
 
-    const rawLines = report.split('\n');
+    const rawLines = report.split('\n').map(line => line.replace(/→/g,'->').replace(/—/g,'-').replace(/–/g,'-').replace(/•/g,'-')); // searchable text; avoid unsupported glyph corruption in jsPDF core fonts
     rawLines.forEach(raw => {
       const isMajor = /^PART [A-F] -/.test(raw) || raw === 'FPL PERSONAL MANAGER - AI HANDOFF REPORT';
       const isDivider = /^=+$/.test(raw);
