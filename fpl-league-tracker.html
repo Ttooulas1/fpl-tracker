@@ -5564,7 +5564,7 @@ async function syncFromScript(manual) {
    Generates a portable context report from the LIVE tracker state.
    PDF/TXT are context snapshots, not substitutes for fresh web research.
    ============================================================ */
-const AI_HANDOFF_VERSION = '3.0 / Phase 6';
+const AI_HANDOFF_VERSION = '3.1 / Phase 6 Export Session';
 const AI_REPORT_HORIZON = 8;
 
 function aiText(id) {
@@ -5611,19 +5611,33 @@ function aiSquadFinancials(sp) {
 }
 
 function aiProjectionRecord(p) {
-  const ep1 = Number(aiFirst(p,['epNext','ep_next'],NaN));
-  return {
-    source: Number.isFinite(ep1) ? 'Official FPL ep_next' : null,
-    updated: lastSyncedAt ? lastSyncedAt.toISOString() : null,
-    xpNext1: Number.isFinite(ep1) ? ep1 : null, xpNext3:null, xpNext5:null, xpNext8:null
-  };
+  const readNum=(keys)=>{ const v=Number(aiFirst(p,keys,NaN)); return Number.isFinite(v)?v:null; };
+  const ep1=readNum(['epNext','ep_next','xpNext1','xP_next1']);
+  const xp2=readNum(['xpNext2','xP_next2','xp_next2']);
+  const xp3single=readNum(['xpNext3Single','xP_next3_single','xp_next3_single']);
+  const xp4=readNum(['xpNext4','xP_next4','xp_next4']);
+  const xp5single=readNum(['xpNext5Single','xP_next5_single','xp_next5_single']);
+  const xp6=readNum(['xpNext6','xP_next6','xp_next6']);
+  const xp7=readNum(['xpNext7','xP_next7','xp_next7']);
+  const xp8single=readNum(['xpNext8Single','xP_next8_single','xp_next8_single']);
+  const direct3=readNum(['xpNext3','xP_next3','xp_next3']);
+  const direct5=readNum(['xpNext5','xP_next5','xp_next5']);
+  const direct8=readNum(['xpNext8','xP_next8','xp_next8']);
+  const seq=[ep1,xp2,xp3single,xp4,xp5single,xp6,xp7,xp8single];
+  const total=(n,direct)=> direct!=null?direct:(seq.slice(0,n).every(v=>v!=null)?Number(seq.slice(0,n).reduce((a,b)=>a+b,0).toFixed(2)):null);
+  const source=aiFirst(p,['xpSource','xPSource','projectionSource','projection_source'],ep1!=null?'Official FPL ep_next':null);
+  const updated=aiFirst(p,['xpUpdated','xPUpdated','projectionUpdated','projection_updated'],lastSyncedAt?lastSyncedAt.toISOString():null);
+  return {source,updated,xpNext1:ep1,xpByGw:seq,xpNext3:total(3,direct3),xpNext5:total(5,direct5),xpNext8:total(8,direct8)};
 }
 
 function aiDetailedConsistencyCheck() {
   const issues=[]; const warnings=[]; const squad=gwPlanner?.squad||[];
-  const gw=Number(homeData?.gw ?? gwDecision?.gw);
+  const h=homeData||{}; const gw=Number(h.gw ?? gwDecision?.gw);
   if(!Number.isFinite(gw)||gw<1) issues.push('Current GW is missing/invalid');
   if(aiDeadlineValue()==='NOT AVAILABLE IN TRACKER') warnings.push('Next deadline unavailable');
+  if(h.totalPoints==null && !aiCurrentMiniLeague()?.me?.total) warnings.push('Current total points unavailable');
+  if(h.overallRank==null) warnings.push('Overall rank unavailable');
+  if(aiCurrentMiniLeague()?.me?.rank==null) warnings.push('Mini-league rank unavailable');
   if(squad.length!==FPL_RULES.squadSize) issues.push('Squad is not exactly 15 players');
   const ids=squad.map(x=>String(x.element??x.id)); if(new Set(ids).size!==ids.length) issues.push('Duplicate players detected');
   const clubs={}; squad.forEach(x=>clubs[x.team]=(clubs[x.team]||0)+1); Object.entries(clubs).forEach(([t,n])=>{if(n>FPL_RULES.maxPlayersPerClub)issues.push(t+' exceeds 3-player club limit');});
@@ -5632,9 +5646,13 @@ function aiDetailedConsistencyCheck() {
   const bench=squad.filter(x=>x.isBench); if(bench.length!==4) warnings.push('Bench order/size is not 4 players');
   if(gwPlanner?.bank==null) warnings.push('Money ITB unavailable');
   if(gwPlanner?.teamValue==null) warnings.push('Team value unavailable');
-  if(gwPlanner?.ftEstimate==null && homeData?.freeTransfersEstimate==null) warnings.push('Free-transfer count unavailable');
+  if(gwPlanner?.ftEstimate==null && h.freeTransfersEstimate==null) warnings.push('Free-transfer count unavailable');
   const missingSelling=squad.filter(x=>aiSquadFinancials(x).selling==null); if(missingSelling.length) warnings.push('Actual selling prices missing for '+missingSelling.length+'/15 players');
+  const missingPrice=squad.filter(x=>aiSquadFinancials(x).current==null); if(missingPrice.length) warnings.push('Current prices missing for '+missingPrice.length+'/15 players');
+  const fixtureMissing=squad.filter(x=>{const p=aiPlayerById(x.element)||x; return getPlanningFixtures(p).length<Math.min(8,AI_REPORT_HORIZON);}); if(fixtureMissing.length) warnings.push('Full 8-GW fixture horizon missing for '+fixtureMissing.length+'/15 players');
   if(!lastSyncedAt) issues.push('No fresh sync timestamp');
+  else if(Date.now()-lastSyncedAt.getTime()>12*60*60*1000) warnings.push('Tracker sync is older than 12 hours');
+  try{(transferScenarios||[]).forEach(sc=>{if((sc.pairs||[]).some(p=>p.outId||p.inId)){const m=computeScenarioMetrics(sc);if(m && m.legal===false) warnings.push('At least one Transfer Lab scenario is illegal/impossible');}});}catch(e){warnings.push('Transfer-path legality could not be fully validated');}
   return {ok:issues.length===0,issues,warnings};
 }
 
@@ -6058,9 +6076,29 @@ function aiRoleMinutes(lines) {
   (gwPlanner?.squad || []).forEach(sp=>{
     const pa=(playerAnalysis||[]).find(x=>String(x.element||x.id)===String(sp.element) || x.name===sp.name);
     const p=aiPlayerById(sp.element)||sp;
-    lines.push(sp.name+' | Expected minutes next GW '+aiFirst(p,['expectedMinutes','expected_minutes'],'NOT STORED')+' | Expected starts next 5 '+aiFirst(p,['expectedStartsNext5'],'NOT STORED')+' | Rotation risk '+aiFirst(pa?.heuristic||p,['rotationRisk'],'NOT STORED')+' | Penalties '+aiFirst(p,['penaltyRole'],'NOT STORED')+' | Free kicks '+aiFirst(p,['freeKickRole'],'NOT STORED')+' | Corners '+aiFirst(p,['cornerRole'],'NOT STORED')+' | Tactical role '+aiFirst(p,['tacticalRole'],'NOT STORED')+' | Competition '+aiFirst(p,['positionCompetition'],'NOT STORED')+(p.news?' | Official news '+p.news:''));
+    const recent=aiFirst(p,['recentMinutes','recent_minutes','minutesHistory','minutes_history'],null);
+    const recentText=Array.isArray(recent)?recent.join(', '):(recent??'NOT STORED');
+    lines.push(sp.name+
+      ' | Expected mins next GW '+aiFirst(p,['expectedMinutes','expected_minutes'],'NOT STORED')+
+      ' | Expected mins next 3 '+aiFirst(p,['expectedMinutesNext3','expected_minutes_next3'],'NOT STORED')+
+      ' | Expected starts next 5 '+aiFirst(p,['expectedStartsNext5','expected_starts_next5'],'NOT STORED')+
+      ' | Recent mins '+recentText+
+      ' | Starts last 5 '+aiFirst(p,['startsLast5','starts_last5'],'NOT STORED')+
+      ' | Bench apps '+aiFirst(p,['benchAppearances','bench_appearances'],'NOT STORED')+
+      ' | Sub pattern '+aiFirst(p,['substitutionPattern','substitution_pattern'],'NOT STORED')+
+      ' | Rotation risk '+aiFirst(pa?.heuristic||p,['rotationRisk'],'NOT STORED')+
+      ' | Fitness risk '+aiFirst(p,['fitnessRisk','injuryRisk'],'NOT STORED')+
+      ' | Role '+aiFirst(p,['tacticalRole'],'NOT STORED')+
+      ' | Role change '+aiFirst(p,['recentRoleChange','recent_role_change'],'NOT STORED')+
+      ' | Competition '+aiFirst(p,['positionCompetition'],'NOT STORED')+
+      ' | Pens '+aiFirst(p,['penaltyRole'],'NOT STORED')+
+      ' | Pen order '+aiFirst(p,['penaltyOrder'],'NOT STORED')+
+      ' | FK '+aiFirst(p,['freeKickRole'],'NOT STORED')+
+      ' | Corners '+aiFirst(p,['cornerRole'],'NOT STORED')+
+      ' | Cup/Europe rotation '+aiFirst(p,['cupRotationRisk','europeRotationRisk'],'NOT STORED')+
+      ' | Manager comments '+aiFirst(p,['managerComments','managerQuote'],'NOT STORED')+(p.news?' | Official news '+p.news:''));
   });
-  lines.push('Do not convert minutes security into an arbitrary rating. Where expected minutes/role data are absent, receiving AI must research manager quotes, lineups and recent minutes.');
+  lines.push('Do not convert uncertain minutes/role evidence into fake exact ratings. Missing expected-minutes, role or rotation fields require fresh research before locking rotation-sensitive transfers.');
 }
 
 function aiFixtures8(lines) {
@@ -6119,23 +6157,43 @@ function aiTransferMarket(lines) {
 
 function aiTransferCombinations(lines) {
   aiSection(lines, '9. PLAYER OUT vs PLAYER IN / TRANSFER COMBINATIONS');
-  lines.push('OPTION A — HOLD / ROLL | FT now '+aiFmt(gwPlanner?.ftEstimate ?? homeData?.freeTransfersEstimate)+' | Bank '+aiMoney(gwPlanner?.bank ?? homeData?.bank)+' | xP: only available from sourced projection data.');
+  const squad=gwPlanner?.squad||[];
+  const beforeCounts={}; squad.forEach(p=>beforeCounts[p.team]=(beforeCounts[p.team]||0)+1);
+  const ft=Number(gwPlanner?.ftEstimate ?? homeData?.freeTransfersEstimate ?? 0)||0;
+  const bank=Number(gwPlanner?.bank ?? homeData?.bank ?? 0)||0;
+  lines.push('OPTION A — HOLD / ROLL | FT now '+ft+' | FT next GW '+Math.min(FPL_RULES.maxFreeTransfers,ft+1)+' | Bank '+aiMoney(bank)+' | Hit 0 | Baseline must be beaten before any transfer is recommended.');
   (transferScenarios||[]).forEach((sc,i)=>{
     const pairs=(sc.pairs||[]).filter(pr=>pr.outId||pr.inId); if(!pairs.length)return;
     const label=String.fromCharCode(66+i); lines.push('OPTION '+label+' — '+(sc.name||((pairs.length||0)+' transfer(s)')));
+    const afterCounts={...beforeCounts};
     pairs.forEach(pr=>{
       const o=typeof labGetSquadPlayer==='function'?labGetSquadPlayer(pr.outId):null, inp=aiPlayerById(pr.inId);
       const of=o?aiSquadFinancials(o):{selling:null};
       const op=o?aiProjectionRecord(aiPlayerById(o.element)||o):{}, ip=inp?aiProjectionRecord(inp):{};
-      lines.push('OUT '+(o?.name||pr.outId||'—')+' | selling '+aiMaybeMoney(of.selling)+' | xP 1/3/5/8 '+[op.xpNext1,op.xpNext3,op.xpNext5,op.xpNext8].map(v=>aiFmt(v,'NA')).join('/'));
-      lines.push('IN  '+(inp?.name||pr.inId||'—')+' | buy '+aiMaybeMoney(inp?.price)+' | xP 1/3/5/8 '+[ip.xpNext1,ip.xpNext3,ip.xpNext5,ip.xpNext8].map(v=>aiFmt(v,'NA')).join('/'));
+      const outP=o?(aiPlayerById(o.element)||o):null;
+      const outM=outP?aiFirst(outP,['expectedMinutes','expected_minutes'],null):null;
+      const inM=inp?aiFirst(inp,['expectedMinutes','expected_minutes'],null):null;
+      if(o?.team) afterCounts[o.team]=Math.max(0,(afterCounts[o.team]||0)-1);
+      if(inp?.team) afterCounts[inp.team]=(afterCounts[inp.team]||0)+1;
+      const delta=(a,b)=>(a!=null&&b!=null)?Number((b-a).toFixed(2)):null;
+      lines.push('OUT '+(o?.name||pr.outId||'—')+' | selling '+aiMaybeMoney(of.selling)+' | xP 1/3/5/8 '+[op.xpNext1,op.xpNext3,op.xpNext5,op.xpNext8].map(v=>aiFmt(v,'NA')).join('/')+' | exp mins '+aiFmt(outM,'NA'));
+      lines.push('IN  '+(inp?.name||pr.inId||'—')+' | buy '+aiMaybeMoney(inp?.price)+' | xP 1/3/5/8 '+[ip.xpNext1,ip.xpNext3,ip.xpNext5,ip.xpNext8].map(v=>aiFmt(v,'NA')).join('/')+' | exp mins '+aiFmt(inM,'NA'));
+      lines.push('PAIR DELTA | xP 1/3/5/8 '+[delta(op.xpNext1,ip.xpNext1),delta(op.xpNext3,ip.xpNext3),delta(op.xpNext5,ip.xpNext5),delta(op.xpNext8,ip.xpNext8)].map(v=>v==null?'NA':(v>=0?'+':'')+v).join('/')+' | Expected mins '+(outM!=null&&inM!=null?((Number(inM)-Number(outM)>=0?'+':'')+(Number(inM)-Number(outM))):'NA'));
     });
-    try{const m=computeScenarioMetrics(sc);lines.push('Transfers '+m.transfersCount+' | Hit -'+m.hitCost+' | Bank after '+aiMoney(m.bankAfter)+' | Legal '+(m.legal?'YES':'NO')+' | Fixture effect '+m.fixtureEffect+' | Flexibility '+m.flexibility);}catch(e){lines.push('Scenario metrics unavailable.');}
+    try{
+      const m=computeScenarioMetrics(sc);
+      const nextFt=Math.min(FPL_RULES.maxFreeTransfers,Math.max(0,ft-m.transfersCount)+1);
+      lines.push('Transfers '+m.transfersCount+' | Hit -'+m.hitCost+' | Bank after '+aiMoney(m.bankAfter)+' | FT next GW '+nextFt+' | Legal '+(m.legal?'YES':'NO')+' | Fixture effect '+m.fixtureEffect+' | Flexibility '+m.flexibility);
+      lines.push('Club concentration BEFORE: '+Object.entries(beforeCounts).filter(([,n])=>n).map(([t,n])=>t+' '+n).join(' | '));
+      lines.push('Club concentration AFTER: '+Object.entries(afterCounts).filter(([,n])=>n).map(([t,n])=>t+' '+n).join(' | '));
+      lines.push('Wildcard compatibility: '+(sc.wildcardCompatible??sc.wcCompatible??'NOT STORED — receiving AI must judge against active transfer path.'));
+    }catch(e){lines.push('Scenario metrics unavailable.');}
   });
   const md=aiMissingDataSummary();
   if(md.sellingPrices) lines.push('FINANCE BLOCK: actual selling prices are incomplete, therefore affordability must NOT be treated as confirmed.');
   if(md.multiGwXp) lines.push('PROJECTION BLOCK: multi-GW xP is incomplete, therefore projected gains must NOT be invented.');
-  lines.push('The system must not assume using a transfer is better than HOLD/ROLL. Hits require sourced multi-week benefit greater than the points cost plus uncertainty.');
+  if(md.expectedMinutes) lines.push('MINUTES BLOCK: expected-minutes data are incomplete; rotation-sensitive moves require fresh research.');
+  lines.push('Decision rule: HOLD/ROLL is the default baseline. A transfer or hit must improve the team after finance, minutes, multi-GW value, structure and future-path effects are considered.');
 }
 
 function aiPrices(lines) {
@@ -6275,15 +6333,18 @@ function aiDoNotTrust(lines) {
 function aiMachineState(lines) {
   aiSection(lines, '23. AI HANDOFF — CURRENT STATE (MACHINE-READABLE)');
   const h=homeData||{}, squad=gwPlanner?.squad||[], ml=aiCurrentMiniLeague();
+  const plan=typeof plannerActivePlan==='function'?plannerActivePlan():null;
   const state={
-    season:'2026/27',gw:h.gw??gwDecision?.gw??null,deadline:aiDeadlineValue(),generated:new Date().toISOString(),synced:lastSyncedAt?lastSyncedAt.toISOString():null,
+    season:'2026/27',reportVersion:AI_HANDOFF_VERSION,gw:h.gw??gwDecision?.gw??null,deadline:aiDeadlineValue(),generated:new Date().toISOString(),synced:lastSyncedAt?lastSyncedAt.toISOString():null,
     managerId:MY_ENTRY,team:'BYFARTHEGREATESTEAM',points:ml.me?.total??h.totalPoints??null,overallRank:h.overallRank??null,cyprusRank:aiCurrentCyprusRank(),miniLeagueRank:ml.me?.rank??null,
     freeTransfers:gwPlanner?.ftEstimate??h.freeTransfersEstimate??null,bank:gwPlanner?.bank??h.bank??null,teamValue:gwPlanner?.teamValue??null,
-    squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp,fin=aiSquadFinancials(sp),pr=aiProjectionRecord(p);return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:fin.current,purchasePrice:fin.purchase,sellingPrice:fin.selling,xpNext1:pr.xpNext1,xpNext3:pr.xpNext3,xpNext5:pr.xpNext5,xpNext8:pr.xpNext8,expectedMinutesNext:aiFirst(p,['expectedMinutes','expected_minutes'],null),rotationRisk:aiFirst(p,['rotationRisk'],null),penaltyRole:aiFirst(p,['penaltyRole'],null),setPieceRole:aiFirst(p,['setPieceRole','cornerRole','freeKickRole'],null),priceRiseRisk:null,priceFallRisk:null,captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
+    squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp,fin=aiSquadFinancials(sp),pr=aiProjectionRecord(p);return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:fin.current,purchasePrice:fin.purchase,sellingPrice:fin.selling,profitLoss:fin.profit,cashReleased:fin.cashReleased,xpNext1:pr.xpNext1,xpNext3:pr.xpNext3,xpNext5:pr.xpNext5,xpNext8:pr.xpNext8,xpByGw:pr.xpByGw,projectionSource:pr.source,projectionUpdated:pr.updated,expectedMinutesNext:aiFirst(p,['expectedMinutes','expected_minutes'],null),expectedMinutesNext3:aiFirst(p,['expectedMinutesNext3','expected_minutes_next3'],null),rotationRisk:aiFirst(p,['rotationRisk'],null),fitnessRisk:aiFirst(p,['fitnessRisk','injuryRisk'],null),tacticalRole:aiFirst(p,['tacticalRole'],null),penaltyRole:aiFirst(p,['penaltyRole'],null),setPieceRole:aiFirst(p,['setPieceRole','cornerRole','freeKickRole'],null),priceRiseRisk:aiFirst(p,['priceRiseRisk'],null),priceFallRisk:aiFirst(p,['priceFallRisk'],null),captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
     captain:squad.find(p=>p.isCaptain)?.name||null,vice:squad.find(p=>p.isVice)?.name||null,
-    currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,news:p.news}:null;}).filter(Boolean),
+    currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,chanceOfPlaying:aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],null),news:p.news,source:'Official FPL/tracker sync',updated:lastSyncedAt?lastSyncedAt.toISOString():null}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
-    phase5:{status:typeof phase5AutoStatus==='function'?phase5AutoStatus():null,transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0}, transferPaths:(typeof plannerActivePlan==='function'&&plannerActivePlan())?computePlanSimulation(plannerActivePlan()):[], wildcardScenarios:'REQUIRES COMPARATIVE MODEL / NOT PRESELECTED', missingData:aiMissingDataSummary()
+    phase5:{status:typeof phase5AutoStatus==='function'?phase5AutoStatus():null,transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0},
+    transferScenarios:(transferScenarios||[]).map(sc=>({name:sc.name||null,pairs:(sc.pairs||[]).filter(p=>p.outId||p.inId).map(pr=>({outId:pr.outId||null,out:labGetSquadPlayer?.(pr.outId)?.name||null,inId:pr.inId||null,in:aiPlayerById(pr.inId)?.name||null}))})),
+    transferPaths:plan?computePlanSimulation(plan):[], wildcardScenarios:'REQUIRES COMPARATIVE MODEL / NOT PRESELECTED', missingData:aiMissingDataSummary(), consistency:aiDetailedConsistencyCheck()
   };
   lines.push(JSON.stringify(state,null,2));
 }
@@ -6397,32 +6458,31 @@ function downloadAiPdfReport() {
     const report = buildAiHandoffReport();
     if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library did not load. Refresh the page and try again, or use Download TXT.');
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait', putOnlyUsedFonts:true, compress:true });
     const marginX = 14, top = 16, bottom = 15, pageW = 210, pageH = 297;
     const maxW = pageW - marginX * 2;
     let y = top;
     pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(20,30,25);
-
-    const rawLines = report.split('\n').map(line => line.replace(/→/g,'->').replace(/—/g,'-').replace(/–/g,'-').replace(/•/g,'-')); // searchable text; avoid unsupported glyph corruption in jsPDF core fonts
+    const safePdfText=(line)=>String(line??'').replace(/→/g,'->').replace(/—|–/g,'-').replace(/•/g,'-').replace(/✅/g,'PASS').replace(/⚠️|⚠/g,'WARNING').replace(/❌/g,'ERROR');
+    const rawLines = report.split('\n').map(safePdfText);
     rawLines.forEach(raw => {
-      const isMajor = /^PART [A-F] -/.test(raw) || raw === 'FPL PERSONAL MANAGER - AI HANDOFF REPORT';
+      const isMajor = /^PART [A-F] -/.test(raw) || raw === 'FPL AI DECISION REPORT' || /^\d+\. [A-Z]/.test(raw);
       const isDivider = /^=+$/.test(raw);
       if (isDivider) return;
       const wrapped = pdf.splitTextToSize(raw || ' ', maxW);
-      const lineH = isMajor ? 5.2 : 3.9;
-      const needed = wrapped.length * lineH + (isMajor ? 2 : 0);
+      const lineH = isMajor ? 5.0 : 3.9;
+      const needed = wrapped.length * lineH + (isMajor ? 1.5 : 0);
       if (y + needed > pageH - bottom) { pdf.addPage(); y = top; }
-      if (isMajor) { pdf.setFont('helvetica','bold'); pdf.setFontSize(raw.startsWith('FPL PERSONAL') ? 15 : 11); pdf.setTextColor(22,35,28); }
+      if (isMajor) { pdf.setFont('helvetica','bold'); pdf.setFontSize(raw==='FPL AI DECISION REPORT' ? 14 : 10); pdf.setTextColor(22,35,28); }
       else { pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(35,45,40); }
       pdf.text(wrapped, marginX, y);
       y += needed;
     });
-
     const pages = pdf.internal.getNumberOfPages();
     for (let i=1; i<=pages; i++) {
       pdf.setPage(i); pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(120,130,125);
-      pdf.text(`BYFARTHEGREATESTEAM | AI Handoff | GW${homeData?.gw ?? '—'}`, marginX, pageH-7);
-      pdf.text(`Page ${i}/${pages}`, pageW-marginX, pageH-7, { align:'right' });
+      pdf.text('BYFARTHEGREATESTEAM | AI Handoff | GW'+(homeData?.gw ?? '-'), marginX, pageH-7);
+      pdf.text('Page '+i+'/'+pages, pageW-marginX, pageH-7, { align:'right' });
     }
     pdf.save(aiExportFilename('pdf'));
     setAiExportStatus('AI handoff PDF generated from the current synced tracker state.', 'ok');
