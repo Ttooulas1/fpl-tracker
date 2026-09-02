@@ -390,6 +390,50 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .pressure-badge.Rising { background: rgba(198,255,61,0.12); color: var(--lime); border: 1px solid var(--lime-dim); }
 .pressure-badge.Falling { background: rgba(255,107,92,0.12); color: var(--red); border: 1px solid var(--red); }
 
+/* ---- Player Comparison ---- */
+.cmp-controls { display: flex; gap: 10px; flex-wrap: wrap; position: relative; }
+.cmp-controls input[type=text] {
+  flex: 2; min-width: 200px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 9px 10px; border-radius: 3px; font-size: 14px;
+}
+.cmp-controls select {
+  flex: 1; min-width: 120px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-body); padding: 9px 10px; border-radius: 3px; font-size: 14px;
+}
+.cmp-selected-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.cmp-chip {
+  display: flex; align-items: center; gap: 8px; background: var(--bg-elev); border: 1px solid var(--lime-dim);
+  border-radius: 4px; padding: 8px 12px; font-size: 13px; font-weight: 600;
+}
+.cmp-chip button { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 14px; }
+.cmp-chip button:hover { color: var(--red); }
+
+.cmp-table-scroll { overflow-x: auto; margin-top: 10px; }
+.cmp-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.cmp-table th, .cmp-table td {
+  padding: 8px 12px; text-align: center; font-family: var(--font-mono); font-size: 12px; border-top: 1px solid var(--border-soft);
+}
+.cmp-table th { font-family: var(--font-body); font-weight: 600; font-size: 13px; border-top: none; }
+.cmp-table td.cmp-row-label {
+  text-align: left; font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; white-space: nowrap;
+}
+.cmp-table td.cmp-best { color: var(--lime); font-weight: 700; }
+.cmp-fx-scroll { overflow-x: auto; }
+.cmp-fx-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.cmp-fx-table th, .cmp-fx-table td { padding: 6px 8px; text-align: center; font-family: var(--font-mono); font-size: 11px; }
+.cmp-fx-table td.cmp-fx-name { text-align: left; font-family: var(--font-body); font-weight: 600; font-size: 12px; }
+.cmp-fx-cell { display: inline-block; padding: 4px 6px; border-radius: 3px; font-weight: 700; min-width: 46px; }
+
+.cmp-verdict-card {
+  background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 4px; padding: 16px 20px; margin-top: 4px;
+}
+.cmp-verdict-label { font-family: var(--font-display); font-size: 17px; font-weight: 700; text-transform: uppercase; color: var(--lime); }
+.cmp-verdict-strength { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin-top: 2px; }
+.cmp-verdict-why { margin-top: 10px; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+.cmp-verdict-why div { padding-left: 14px; position: relative; }
+.cmp-verdict-why div::before { content: '•'; position: absolute; left: 0; }
+.cmp-tradeoff { margin-top: 10px; font-size: 12px; color: var(--gold); border-top: 1px solid var(--border-soft); padding-top: 10px; }
+
 .targets-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .target-card {
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; flex: 1; min-width: 150px;
@@ -680,6 +724,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="analysis">📊 Analysis</button>
     <button class="tab-btn" data-tab="planner">🧠 Planner</button>
     <button class="tab-btn" data-tab="captain">👑 Captain &amp; Chips</button>
+    <button class="tab-btn" data-tab="compare">🔀 Compare</button>
   </div>
 
   <div id="syncBar" class="sync-bar">
@@ -810,7 +855,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       <div class="leader-manager" id="deadlineDateLabel" style="margin-top:10px"></div>
     </div>
 
-    <div class="section-label">Fixture difficulty — next 5 gameweeks</div>
+    <div class="section-label">Fixture difficulty — next 6 gameweeks</div>
     <div id="fdrWrap"></div>
 
     <div class="section-label">Price changes today</div>
@@ -886,7 +931,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     </div>
     <div id="plannerWarningWrap"></div>
 
-    <div class="section-label">Squad — next 5 fixtures</div>
+    <div class="section-label">Squad — next 6 fixtures</div>
     <div id="plannerSquadWrap"></div>
 
     <div class="section-label">Transfer sandbox</div>
@@ -914,7 +959,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="section-label">Possible moves <span style="font-weight:400">(heuristic candidates — not tied to a specific sale)</span></div>
     <div id="possibleMovesWrap"></div>
 
-    <div class="section-label">Future watch <span style="font-weight:400">(fixture swings, blanks &amp; doubles, next 5 GWs)</span></div>
+    <div class="section-label">Future watch <span style="font-weight:400">(fixture swings, blanks &amp; doubles, next 6 GWs)</span></div>
     <div id="futureWatchWrap"></div>
 
   </div>
@@ -953,6 +998,35 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
   </div>
 
+  <!-- ================= PLAYER COMPARISON TAB ================= -->
+  <div class="tab-panel" id="tab-compare">
+
+    <div class="section-label">Player comparison <span style="font-weight:400">— pick 2 to 4 players</span></div>
+
+    <div class="cmp-controls">
+      <input type="text" id="cmpSearch" placeholder="Search any player…" autocomplete="off">
+      <select id="cmpPositionFilter">
+        <option value="">All positions</option>
+        <option value="GKP">GKP</option>
+        <option value="DEF">DEF</option>
+        <option value="MID">MID</option>
+        <option value="FWD">FWD</option>
+      </select>
+      <div id="cmpResults" class="sandbox-search-results" style="position:static;max-height:180px;margin-top:6px"></div>
+    </div>
+
+    <div id="cmpSelectedWrap" class="cmp-selected-wrap"></div>
+
+    <div id="cmpTableWrap"></div>
+
+    <div class="section-label" id="cmpFixtureLabel" style="display:none">Fixture run comparison</div>
+    <div id="cmpFixtureWrap"></div>
+
+    <div class="section-label" id="cmpVerdictLabel" style="display:none">Verdict</div>
+    <div id="cmpVerdictWrap"></div>
+
+  </div>
+
   <div class="footer-note">Data persists in this artifact — paste new snapshots each gameweek to keep it current.</div>
 </div>
 
@@ -975,6 +1049,7 @@ const GW_PLANNER_KEY = 'gw-planner';
 const CAPTAINCY_HISTORY_KEY = 'captaincy-history';
 const HOME_RANK_HISTORY_KEY = 'home-rank-history';
 const TEAM_STRUCTURE_KEY = 'team-structure';
+const CMP_SELECTED_KEY = 'compare-selected';
 const MY_ENTRY = 5580812;
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMDnOjV441p8yKzc_yAs4u35-4TQYA72CF85dnGoOx8qZq9yM2vUhizb9AhBkl6T50/exec';
 let lastSyncedAt = null;
@@ -1048,6 +1123,7 @@ let sandboxInElement = null;
 let captaincyHistory = null;
 let homeRankHistory = [];
 let teamStructure = null;
+let cmpSelectedIds = [];
 let captainCandidates = [];
 let countdownInterval = null;
 let chartInstance = null;
@@ -1257,6 +1333,15 @@ async function loadTeamStructure() {
 }
 async function saveTeamStructure() {
   await storageSet(TEAM_STRUCTURE_KEY, JSON.stringify(teamStructure));
+}
+
+async function loadCmpSelected() {
+  const val = await storageGet(CMP_SELECTED_KEY);
+  if (val) { cmpSelectedIds = JSON.parse(val); return; }
+  cmpSelectedIds = [];
+}
+async function saveCmpSelected() {
+  await storageSet(CMP_SELECTED_KEY, JSON.stringify(cmpSelectedIds));
 }
 
 function parseContextJson(raw) {
@@ -1499,6 +1584,245 @@ function renderTeamStructureSection() {
   }
 
   wrap.innerHTML = html || '<div class="empty-note">No structure data yet.</div>';
+}
+
+/* ---- Player Comparison (Phase 2 — Part 1) ---- */
+function runCmpSearch(query) {
+  const results = document.getElementById('cmpResults');
+  const posFilter = document.getElementById('cmpPositionFilter').value;
+  if (!gwPlanner) { results.innerHTML = ''; return; }
+  if (!query || query.length < 2) { results.innerHTML = ''; return; }
+  const q = query.toLowerCase();
+  const matches = gwPlanner.allPlayers
+    .filter(p => !cmpSelectedIds.includes(p.id))
+    .filter(p => !posFilter || p.position === posFilter)
+    .filter(p => p.name.toLowerCase().includes(q))
+    .slice(0, 8);
+  if (!matches.length) { results.innerHTML = '<div class="sandbox-search-item">No matches</div>'; return; }
+  results.innerHTML = matches.map(p => `
+    <div class="sandbox-search-item" data-id="${p.id}">
+      ${escapeHtml(p.name)} <span class="ssi-meta">${escapeHtml(p.team)} · ${p.position} · £${p.price.toFixed(1)}m</span>
+    </div>
+  `).join('');
+  results.querySelectorAll('[data-id]').forEach(el => {
+    el.addEventListener('click', () => addCmpPlayer(Number(el.dataset.id)));
+  });
+}
+
+async function addCmpPlayer(id) {
+  if (cmpSelectedIds.includes(id) || cmpSelectedIds.length >= 4) return;
+  cmpSelectedIds.push(id);
+  await saveCmpSelected();
+  document.getElementById('cmpSearch').value = '';
+  document.getElementById('cmpResults').innerHTML = '';
+  renderComparison();
+}
+
+async function removeCmpPlayer(id) {
+  cmpSelectedIds = cmpSelectedIds.filter(x => x !== id);
+  await saveCmpSelected();
+  renderComparison();
+}
+
+function renderComparison() {
+  const selectedWrap = document.getElementById('cmpSelectedWrap');
+  const tableWrap = document.getElementById('cmpTableWrap');
+  const fxLabel = document.getElementById('cmpFixtureLabel');
+  const fxWrap = document.getElementById('cmpFixtureWrap');
+  const verdictLabel = document.getElementById('cmpVerdictLabel');
+  const verdictWrap = document.getElementById('cmpVerdictWrap');
+
+  if (!gwPlanner) {
+    selectedWrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    tableWrap.innerHTML = ''; fxWrap.innerHTML = ''; verdictWrap.innerHTML = '';
+    fxLabel.style.display = 'none'; verdictLabel.style.display = 'none';
+    return;
+  }
+
+  const players = cmpSelectedIds.map(id => gwPlanner.allPlayers.find(p => p.id === id)).filter(Boolean);
+
+  selectedWrap.innerHTML = players.map(p => `
+    <div class="cmp-chip">${escapeHtml(p.name)}<button data-remove="${p.id}">✕</button></div>
+  `).join('') || '<div class="empty-note">Search above and pick 2–4 players to compare.</div>';
+  selectedWrap.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => removeCmpPlayer(Number(btn.dataset.remove)));
+  });
+
+  if (players.length < 2) {
+    tableWrap.innerHTML = '';
+    fxWrap.innerHTML = ''; fxLabel.style.display = 'none';
+    verdictWrap.innerHTML = ''; verdictLabel.style.display = 'none';
+    return;
+  }
+
+  renderCmpTable(players);
+  renderCmpFixtures(players);
+  fxLabel.style.display = 'flex';
+  renderCmpVerdict(players);
+  verdictLabel.style.display = 'flex';
+}
+
+function cmpBestClass(vals, val, higherBetter) {
+  const valid = vals.filter(v => v != null && !isNaN(v));
+  if (!valid.length) return '';
+  const best = higherBetter ? Math.max(...valid) : Math.min(...valid);
+  return (val === best) ? 'cmp-best' : '';
+}
+
+function renderCmpTable(players) {
+  const wrap = document.getElementById('cmpTableWrap');
+  const rows = [
+    { label: 'Team', get: p => p.team, higher: null },
+    { label: 'Price', get: p => '£' + p.price.toFixed(1) + 'm', raw: p => p.price, higher: false },
+    { label: 'Ownership', get: p => p.ownership.toFixed(1) + '%', raw: p => p.ownership, higher: null },
+    { label: 'Total points', get: p => p.totalPoints, raw: p => p.totalPoints, higher: true },
+    { label: 'Form', get: p => p.form.toFixed(1), raw: p => p.form, higher: true },
+    { label: 'ep_next (FPL)', get: p => p.epNext.toFixed(1), raw: p => p.epNext, higher: true },
+    { label: 'Minutes', get: p => p.seasonMinutes, raw: p => p.seasonMinutes, higher: true },
+    { label: 'Starts', get: p => p.starts, raw: p => p.starts, higher: true },
+    { label: 'Goals', get: p => p.goalsScored, raw: p => p.goalsScored, higher: true },
+    { label: 'Assists', get: p => p.assists, raw: p => p.assists, higher: true },
+    { label: 'Clean sheets', get: p => p.cleanSheets, raw: p => p.cleanSheets, higher: true },
+    { label: 'Bonus', get: p => p.bonus, raw: p => p.bonus, higher: true },
+    { label: 'BPS', get: p => p.bps, raw: p => p.bps, higher: true },
+    { label: 'xG (season)', get: p => p.seasonXG.toFixed(2), raw: p => p.seasonXG, higher: true },
+    { label: 'xA (season)', get: p => p.seasonXA.toFixed(2), raw: p => p.seasonXA, higher: true },
+    { label: 'xGI (season)', get: p => p.seasonXGI.toFixed(2), raw: p => p.seasonXGI, higher: true },
+    { label: 'Next fixture', get: p => p.nextFixture ? escapeHtml(p.nextFixture.opponent) + ' (' + p.nextFixture.venue + ')' : '—', higher: null },
+    { label: 'Avg diff. (6 GW)', get: p => p.avgDifficultyNext5 != null ? p.avgDifficultyNext5.toFixed(1) : '—', raw: p => p.avgDifficultyNext5, higher: false },
+    { label: 'Net transfers', get: p => (p.netTransfers >= 0 ? '+' : '') + p.netTransfers.toLocaleString(), raw: p => p.netTransfers, higher: null },
+    { label: 'Status', get: p => p.news ? '⚠️ ' + escapeHtml(p.news) : (p.status === 'a' ? 'Available' : p.status.toUpperCase()), higher: null }
+  ];
+
+  let html = '<div class="cmp-table-scroll"><table class="cmp-table"><thead><tr><th></th>' +
+    players.map(p => `<th>${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
+
+  rows.forEach(r => {
+    html += `<tr><td class="cmp-row-label">${r.label}</td>`;
+    const rawVals = r.raw ? players.map(r.raw) : null;
+    players.forEach(p => {
+      const displayVal = r.get(p);
+      let cls = '';
+      if (r.higher !== null && rawVals) cls = cmpBestClass(rawVals, r.raw(p), r.higher);
+      html += `<td class="${cls}">${displayVal}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function fdrCellClass(diff) {
+  if (diff <= 2) return 'fdr-1';
+  if (diff >= 4) return 'fdr-5';
+  return 'fdr-3';
+}
+
+function renderCmpFixtures(players) {
+  const wrap = document.getElementById('cmpFixtureWrap');
+  const allGws = [...new Set(players.flatMap(p => (p.fixtureRun5 || []).map(f => f.gw)))].sort((a, b) => a - b);
+  if (!allGws.length) { wrap.innerHTML = '<div class="empty-note">No fixture data yet.</div>'; return; }
+
+  let html = '<div class="cmp-fx-scroll"><table class="cmp-fx-table"><thead><tr><th style="text-align:left">Player</th>' +
+    allGws.map(gw => `<th>GW${gw}</th>`).join('') + '</tr></thead><tbody>';
+
+  players.forEach(p => {
+    html += `<tr><td class="cmp-fx-name">${escapeHtml(p.name)}</td>`;
+    allGws.forEach(gw => {
+      const f = (p.fixtureRun5 || []).find(x => x.gw === gw);
+      if (f) html += `<td><span class="cmp-fx-cell ${fdrCellClass(f.difficulty)}">${escapeHtml(f.opponent)} ${f.venue}</span></td>`;
+      else html += `<td><span class="cmp-fx-cell" style="background:var(--bg-elev-2);color:var(--text-faint)">—</span></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+// ---- Comparison heuristic registry ----
+// Centralized so categories, weights, and verdict thresholds can evolve later
+// (e.g. minutes weighted above value, or position-specific xGI weighting)
+// without rewriting the render/tally logic below. Weight is currently unused —
+// every category counts equally ("1 clear category win = 1 tally") — but the
+// field exists so future re-weighting is a registry edit, not a rewrite.
+const COMPARISON_CATEGORIES = [
+  { key: 'fixtureRun', label: 'better upcoming fixture run', get: p => p.avgDifficultyNext5, higher: false, weight: 1 },
+  { key: 'form', label: 'stronger current form', get: p => p.form, higher: true, weight: 1 },
+  { key: 'value', label: 'better value (ep_next per £m)', get: p => p.price > 0 ? p.epNext / p.price : 0, higher: true, weight: 1 },
+  { key: 'minutes', label: 'safer minutes profile', get: p => p.seasonMinutes, higher: true, weight: 1 },
+  { key: 'xgi', label: 'higher underlying attacking threat (xGI)', get: p => p.seasonXGI, higher: true, weight: 1 }
+];
+const COMPARISON_TOLERANCE_RATIO = 0.03; // categories within 3% of each other are "too close to call" — skipped, not tallied
+const COMPARISON_VERDICT_THRESHOLDS = {
+  strongMinShare: 1.0,   // wins ALL decided categories -> Strong recommendation
+  leaningMinShare: 0.5   // wins MORE than half -> Leaning toward; otherwise -> Close decision
+};
+
+function renderCmpVerdict(players) {
+  const wrap = document.getElementById('cmpVerdictWrap');
+
+  const categories = COMPARISON_CATEGORIES;
+
+  const wins = {};
+  players.forEach(p => { wins[p.id] = []; });
+  let decidedCount = 0;
+
+  categories.forEach(cat => {
+    const vals = players.map(p => ({ id: p.id, v: cat.get(p) })).filter(x => x.v != null && !isNaN(x.v));
+    if (vals.length < 2) return;
+    const sorted = [...vals].sort((a, b) => cat.higher ? b.v - a.v : a.v - b.v);
+    const best = sorted[0];
+    const second = sorted[1];
+    const tolerance = Math.abs(best.v) * COMPARISON_TOLERANCE_RATIO;
+    if (Math.abs(best.v - second.v) <= tolerance) return; // too close to call, skip
+    decidedCount++;
+    wins[best.id].push(cat.label);
+  });
+
+  const ranked = players
+    .map(p => ({ player: p, winCount: wins[p.id].length, reasons: wins[p.id] }))
+    .sort((a, b) => b.winCount - a.winCount);
+
+  const top = ranked[0];
+  const second = ranked[1];
+
+  let strength, verdictText;
+  const T = COMPARISON_VERDICT_THRESHOLDS;
+  if (!decidedCount || top.winCount === 0 || (second && top.winCount === second.winCount)) {
+    strength = 'NO CLEAR WINNER';
+    verdictText = 'Comparison too close across the available data';
+  } else if (top.winCount >= decidedCount * T.strongMinShare) {
+    strength = 'Strong recommendation';
+    verdictText = `${top.player.name} preferred`;
+  } else if (top.winCount > decidedCount * T.leaningMinShare) {
+    strength = 'Leaning toward';
+    verdictText = `${top.player.name} preferred`;
+  } else {
+    strength = 'Close decision';
+    verdictText = `${top.player.name} slightly preferred`;
+  }
+
+  let html = `
+    <div class="cmp-verdict-card">
+      <div class="cmp-verdict-strength">${strength}</div>
+      <div class="cmp-verdict-label">${escapeHtml(verdictText)}</div>
+  `;
+
+  if (top.winCount > 0) {
+    html += `<div class="cmp-verdict-why">${top.reasons.map(r => `<div>${escapeHtml(top.player.name)} has ${escapeHtml(r)}</div>`).join('')}</div>`;
+  }
+
+  if (second && second.player.id !== top.player.id) {
+    if (second.reasons.length) {
+      html += `<div class="cmp-tradeoff">Trade-off: ${escapeHtml(second.player.name)} has ${escapeHtml(second.reasons[0])}${second.player.price < top.player.price ? ` and costs £${(top.player.price - second.player.price).toFixed(1)}m less` : ''}.</div>`;
+    } else if (second.player.price < top.player.price) {
+      html += `<div class="cmp-tradeoff">Trade-off: ${escapeHtml(second.player.name)} costs £${(top.player.price - second.player.price).toFixed(1)}m less, preserving bank flexibility.</div>`;
+    }
+  }
+
+  html += '</div>';
+  wrap.innerHTML = html;
 }
 
 /* ---- Rival Intelligence rendering ---- */
@@ -1931,7 +2255,7 @@ function renderSandboxResult() {
         <tbody>
           <tr><td>Price</td><td>£${out.price.toFixed(1)}m</td><td>£${inP.price.toFixed(1)}m</td></tr>
           <tr><td>Next fixture (1-GW)</td><td>${out.next5 && out.next5[0] ? escapeHtml(out.next5[0].opponent) + ' (' + out.next5[0].venue + ')' : '—'}</td><td>${inP.nextFixture ? escapeHtml(inP.nextFixture.opponent) + ' (' + inP.nextFixture.venue + ')' : '—'}</td></tr>
-          <tr><td>Avg difficulty (5-GW)</td><td>${outAvg5 != null ? outAvg5.toFixed(1) : '—'}</td><td>${inAvg5 != null ? inAvg5.toFixed(1) : '—'}</td></tr>
+          <tr><td>Avg difficulty (6-GW)</td><td>${outAvg5 != null ? outAvg5.toFixed(1) : '—'}</td><td>${inAvg5 != null ? inAvg5.toFixed(1) : '—'}</td></tr>
           <tr><td>ep_next</td><td>${out.epNext != null ? out.epNext.toFixed(1) : '—'}</td><td>${inP.epNext.toFixed(1)}</td></tr>
           <tr><td>Form</td><td>${out.form != null ? out.form.toFixed(1) : '—'}</td><td>${inP.form.toFixed(1)}</td></tr>
           <tr><td>Season xGI/90</td><td>${outXgiPer90.toFixed(2)}</td><td>${inXgiPer90.toFixed(2)}</td></tr>
@@ -2979,6 +3303,7 @@ async function syncFromScript(manual) {
     renderPlayerAnalysis();
     renderPlanner();
     renderCaptainChipsTab();
+    renderComparison();
     setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
   } catch (e) {
     console.error('Sync failed', e);
@@ -3022,6 +3347,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   await loadCaptaincyHistory();
   await loadHomeRankHistory();
   await loadTeamStructure();
+  await loadCmpSelected();
   render();
   renderCyprus();
   renderFH();
@@ -3035,6 +3361,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   renderPlayerAnalysis();
   renderPlanner();
   renderCaptainChipsTab();
+  renderComparison();
   noteStorageMode();
 
   document.getElementById('syncNowBtn').addEventListener('click', () => syncFromScript(true));
@@ -3048,6 +3375,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
   document.getElementById('sandboxInSearch').addEventListener('input', (e) => runSandboxSearch(e.target.value));
   document.getElementById('captainAddSearch').addEventListener('input', (e) => runCaptainAddSearch(e.target.value));
+  document.getElementById('cmpSearch').addEventListener('input', (e) => runCmpSearch(e.target.value));
+  document.getElementById('cmpPositionFilter').addEventListener('change', () => runCmpSearch(document.getElementById('cmpSearch').value));
   document.getElementById('rollFtBtn').addEventListener('click', () => {
     document.getElementById('rollFtNote').textContent = '✓ Noted — rolling your free transfer this gameweek.';
   });
