@@ -486,6 +486,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .lab-hit-reasons { margin-top: 6px; font-size: 12px; color: var(--text-dim); line-height: 1.5; }
 .lab-hit-reasons div { padding-left: 14px; position: relative; }
 .lab-hit-reasons div::before { content: '•'; position: absolute; left: 0; }
+.lab-needs-card{background:var(--bg-elev);border:1px solid var(--border);border-radius:4px;padding:14px;margin-bottom:12px}.lab-needs-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}.lab-needs-title{font-family:var(--font-display);font-size:15px;font-weight:700;text-transform:uppercase}.lab-auto-badge{font-family:var(--font-mono);font-size:9px;color:var(--lime);border:1px solid var(--lime-dim);padding:4px 7px;border-radius:3px;text-transform:uppercase}.lab-need-row{display:grid;grid-template-columns:72px 1fr;gap:9px;padding:8px 0;border-top:1px solid var(--border-soft);font-size:12px}.lab-need-row:first-of-type{border-top:0}.lab-need-priority{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;color:var(--gold)}.lab-need-priority.urgent{color:var(--red)}.lab-need-priority.hold{color:var(--lime)}.lab-need-main b{color:var(--text)}.lab-need-evidence{color:var(--text-dim);margin-top:3px;line-height:1.45}.lab-auto-note{font-size:11px;color:var(--text-faint);line-height:1.5;margin-top:8px}
 
 /* ---- 6-GW Planner ---- */
 .sixgw-plan-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -1385,7 +1386,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="section-label">🛡️ Hold current team <span style="font-weight:400">— the baseline</span></div>
     <div id="labHoldHeroWrap"></div>
 
-    <div class="section-label">Scenarios <span style="font-weight:400">— build up to 3, compared against HOLD</span></div>
+    <div class="section-label">🧭 Automatic team needs <span style="font-weight:400">— refreshed from every sync</span></div>
+    <div id="labNeedsWrap"></div>
+
+    <div class="section-label">Scenarios <span style="font-weight:400">— generated automatically, still editable</span></div>
     <div id="labScenarioBuilders"></div>
 
     <div class="section-label">Decision matrix</div>
@@ -2493,6 +2497,106 @@ function renderRivalEffectForScenario(metrics) {
   `;
 }
 
+function labSellingPrice(p) {
+  if (!p) return null;
+  const vals = [p.sellingPrice, p.selling_price, p.sellPrice, p.sell_price];
+  for (const v of vals) if (v != null && !isNaN(Number(v))) return Number(v);
+  return null;
+}
+function labAvailabilityConcern(p) {
+  if (!p) return true;
+  const status = String(p.status || p.official?.status || '').toLowerCase();
+  const chance = p.chanceOfPlaying ?? p.chance_of_playing_next_round ?? p.official?.chanceOfPlaying;
+  if (['i','s','u'].includes(status)) return true;
+  return chance != null && Number(chance) <= 25;
+}
+function labNeedAssessment() {
+  if (!gwPlanner) return [];
+  const needs = [], seen = new Set();
+  const analysisById = new Map((playerAnalysis || []).map(p => [Number(p.element), p]));
+  const add = (player, level, type, evidence, priority) => { if (!player || seen.has(player.element)) return; seen.add(player.element); needs.push({ player, level, type, evidence, priority }); };
+  gwPlanner.squad.forEach(sp => {
+    const pa = analysisById.get(Number(sp.element));
+    const bucket = pa ? aiEffectiveClassification(pa) : '';
+    const official = pa?.official || sp;
+    const chance = official?.chanceOfPlaying ?? sp.chanceOfPlaying;
+    const news = official?.news || sp.news || '';
+    const status = official?.status || sp.status || '';
+    if (['i','s','u'].includes(String(status).toLowerCase()) || (chance != null && Number(chance) <= 25)) add(sp,'URGENT','Availability',news || (chance != null ? chance+'% chance of playing' : 'Unavailable / suspended flag'),1);
+    else if (bucket === 'Sell') add(sp,'HIGH','Sell case',(pa?.heuristic?.reasons || []).join('; ') || 'Multiple sell signals detected',2);
+    else if (bucket === 'Possible Sell') add(sp,'MEDIUM','Possible sell',(pa?.heuristic?.reasons || []).join('; ') || 'Review replacement options',3);
+  });
+  (gwPlanner.squadProblems || []).forEach(prob => {
+    const sp = gwPlanner.squad.find(x => x.name === prob.player);
+    if (!sp || seen.has(sp.element)) return;
+    if (prob.type === 'blank' || prob.type === 'news') add(sp,'HIGH',prob.type === 'blank' ? 'Blank' : 'Team news',prob.detail,2);
+  });
+  gwPlanner.squad.forEach(sp => {
+    if (seen.has(sp.element)) return;
+    const pa = analysisById.get(Number(sp.element));
+    if (pa && aiEffectiveClassification(pa) === 'FIXTURE CONCERN / HOLD') add(sp,'HOLD','One-week fixture concern','Difficult immediate fixture only; no automatic sell case.',8);
+  });
+  needs.sort((a,b)=>a.priority-b.priority);
+  return needs;
+}
+function labCandidateComparison(outP,inP) {
+  const outFx=labPlayerFixtureAvg(outP), inFx=labPlayerFixtureAvg(inP);
+  const outEp=Number(outP.epNext ?? 0), inEp=Number(inP.epNext ?? 0);
+  const outForm=Number(outP.form ?? 0), inForm=Number(inP.form ?? 0);
+  const outXgi=labPlayerXgiPer90(outP), inXgi=labPlayerXgiPer90(inP);
+  const improvements=[];
+  if(inFx!=null&&outFx!=null&&inFx<outFx-0.2) improvements.push('better multi-GW fixtures');
+  if(inEp>outEp+0.3) improvements.push('higher official ep_next');
+  if(inForm>outForm+0.5) improvements.push('better form');
+  if(inXgi>outXgi+0.05) improvements.push('higher xGI/90');
+  return {improvements,count:improvements.length,inFx:inFx ?? 99,inEp,inForm,inXgi};
+}
+function labLegalReplacementCandidates(outP) {
+  if(!gwPlanner||!outP) return [];
+  const squadIds=new Set(gwPlanner.squad.map(p=>Number(p.element)));
+  const sell=labSellingPrice(outP);
+  const saleForScreen=sell!=null?sell:labPlayerPrice(outP);
+  const budget=Number(gwPlanner.bank||0)+Number(saleForScreen||0);
+  const teamCounts={};
+  gwPlanner.squad.forEach(p=>{teamCounts[p.team]=(teamCounts[p.team]||0)+1;});
+  teamCounts[outP.team]=Math.max(0,(teamCounts[outP.team]||1)-1);
+  return gwPlanner.allPlayers.filter(p=>p&&p.position===outP.position&&!squadIds.has(Number(p.id)))
+    .filter(p=>!labAvailabilityConcern(p)).filter(p=>Number(labPlayerPrice(p))<=budget+0.0001)
+    .filter(p=>(teamCounts[p.team]||0)<FPL_RULES.maxPlayersPerClub)
+    .map(p=>({player:p,cmp:labCandidateComparison(outP,p)})).filter(x=>x.cmp.count>=1)
+    .sort((a,b)=>b.cmp.count-a.cmp.count||a.cmp.inFx-b.cmp.inFx||b.cmp.inEp-a.cmp.inEp||b.cmp.inForm-a.cmp.inForm);
+}
+function buildAutomaticTransferScenarios() {
+  if(!gwPlanner||!gwPlanner.squad?.length||!gwPlanner.allPlayers?.length) return null;
+  const needs=labNeedAssessment(), actionable=needs.filter(n=>n.level!=='HOLD'), scenarios=[];
+  if(actionable.length){
+    const firstNeed=actionable[0], first=firstNeed.player, firstCandidates=labLegalReplacementCandidates(first);
+    if(firstCandidates[0]) scenarios.push({pairs:[{outId:first.element,inId:firstCandidates[0].player.id}],name:'Priority fix',reason:firstNeed.type,autoGenerated:true,autoWhy:firstCandidates[0].cmp.improvements});
+    if(firstCandidates[1]) scenarios.push({pairs:[{outId:first.element,inId:firstCandidates[1].player.id}],name:'Alternative fix',reason:firstNeed.type,autoGenerated:true,autoWhy:firstCandidates[1].cmp.improvements});
+    const ft=Number(gwPlanner.ftEstimate ?? 0);
+    if(ft>=2&&actionable.length>=2){
+      const secondNeed=actionable[1], c1=firstCandidates[0], c2=labLegalReplacementCandidates(secondNeed.player)[0];
+      if(c1&&c2&&c1.player.id!==c2.player.id){
+        const dbl={pairs:[{outId:first.element,inId:c1.player.id},{outId:secondNeed.player.element,inId:c2.player.id}],name:'Fix two needs',reason:'Team structure',autoGenerated:true,autoWhy:[...(c1.cmp.improvements||[]),...(c2.cmp.improvements||[])]};
+        const m=computeScenarioMetrics(dbl); if(m?.legal) scenarios.push(dbl);
+      }
+    }
+    if(scenarios.length<3&&actionable.length>=2){const n=actionable[1],c=labLegalReplacementCandidates(n.player)[0];if(c)scenarios.push({pairs:[{outId:n.player.element,inId:c.player.id}],name:'Second priority',reason:n.type,autoGenerated:true,autoWhy:c.cmp.improvements});}
+  }
+  while(scenarios.length<3) scenarios.push({pairs:[],name:scenarios.length===0?'HOLD / ROLL':'',reason:'',autoGenerated:true,autoWhy:[]});
+  return {needs,scenarios:scenarios.slice(0,3)};
+}
+async function autoUpdateTransferLab(){const built=buildAutomaticTransferScenarios();if(!built)return;transferScenarios=built.scenarios;await saveTransferLab();}
+function renderLabNeeds(){
+  const wrap=document.getElementById('labNeedsWrap'); if(!wrap)return;
+  if(!gwPlanner){wrap.innerHTML='<div class="empty-note">Waiting for first sync…</div>';return;}
+  const needs=labNeedAssessment(), actionable=needs.filter(n=>n.level!=='HOLD');
+  const headline=actionable.length?actionable.length+' actionable need'+(actionable.length===1?'':'s')+' detected':'No automatic transfer need detected';
+  const rows=needs.slice(0,6).map(n=>{const cls=n.level==='URGENT'?'urgent':(n.level==='HOLD'?'hold':'');return '<div class="lab-need-row"><div class="lab-need-priority '+cls+'">'+escapeHtml(n.level)+'</div><div class="lab-need-main"><b>'+escapeHtml(n.player.name)+'</b> · '+escapeHtml(n.type)+'<div class="lab-need-evidence">'+escapeHtml(n.evidence||'')+'</div></div></div>';}).join('');
+  const empty='<div class="lab-need-row"><div class="lab-need-priority hold">HOLD</div><div class="lab-need-main"><b>Current squad</b><div class="lab-need-evidence">No injury, blank, multi-signal sell case or structural trigger strong enough to force a transfer. HOLD/ROLL remains the baseline.</div></div></div>';
+  wrap.innerHTML='<div class="lab-needs-card"><div class="lab-needs-head"><div class="lab-needs-title">'+escapeHtml(headline)+'</div><div class="lab-auto-badge">AUTO · LAST SYNC</div></div>'+(rows||empty)+'<div class="lab-auto-note">Scenarios A/B/C are generated from actual squad flags, transfer legality, bank, same-position replacements and the available official/fixture data. One difficult fixture alone is never a sell trigger. Fresh press-conference, expected-minutes and price-predictor research remains an AI check before lock.</div></div>';
+}
+
 function renderLabScenarioBuilders() {
   const wrap = document.getElementById('labScenarioBuilders');
   if (!gwPlanner) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
@@ -2566,7 +2670,8 @@ function renderLabScenarioBuilders() {
           <option value="">Why am I considering this? (optional)</option>
           ${REASON_TAGS.map(r => `<option value="${r}" ${sc.reason === r ? 'selected' : ''}>${r}</option>`).join('')}
         </select>
-        ${pairsHtml || '<div class="empty-note" style="padding:8px 0">No transfers in this scenario yet.</div>'}
+        ${sc.autoGenerated && sc.autoWhy && sc.autoWhy.length ? '<div class="lab-auto-note"><b>Auto evidence:</b> ' + sc.autoWhy.map(x => escapeHtml(x)).join(' · ') + '</div>' : ''}
+        ${pairsHtml || '<div class="empty-note" style="padding:8px 0">No transfer automatically justified for this slot.</div>'}
         ${extraHtml}
       </div>
     `;
@@ -2574,13 +2679,13 @@ function renderLabScenarioBuilders() {
 
   wrap.querySelectorAll('.lab-scenario-name').forEach(inp => {
     inp.addEventListener('change', async () => {
-      transferScenarios[Number(inp.dataset.scenario)].name = inp.value;
+      transferScenarios[Number(inp.dataset.scenario)].name = inp.value; transferScenarios[Number(inp.dataset.scenario)].autoGenerated = false;
       await saveTransferLab();
     });
   });
   wrap.querySelectorAll('.lab-scenario-reason').forEach(sel => {
     sel.addEventListener('change', async () => {
-      transferScenarios[Number(sel.dataset.scenario)].reason = sel.value;
+      transferScenarios[Number(sel.dataset.scenario)].reason = sel.value; transferScenarios[Number(sel.dataset.scenario)].autoGenerated = false;
       await saveTransferLab();
     });
   });
@@ -2588,7 +2693,7 @@ function renderLabScenarioBuilders() {
     btn.addEventListener('click', async () => {
       const sIdx = Number(btn.dataset.addScenario);
       if (transferScenarios[sIdx].pairs.length < 2) {
-        transferScenarios[sIdx].pairs.push({ outId: null, inId: null });
+        transferScenarios[sIdx].pairs.push({ outId: null, inId: null }); transferScenarios[sIdx].autoGenerated = false;
         await saveTransferLab();
         renderTransferLab();
       }
@@ -2598,7 +2703,7 @@ function renderLabScenarioBuilders() {
     btn.addEventListener('click', async () => {
       const sIdx = Number(btn.dataset.removeScenario);
       const pIdx = Number(btn.dataset.removePair);
-      transferScenarios[sIdx].pairs.splice(pIdx, 1);
+      transferScenarios[sIdx].pairs.splice(pIdx, 1); transferScenarios[sIdx].autoGenerated = false;
       await saveTransferLab();
       renderTransferLab();
     });
@@ -2607,7 +2712,7 @@ function renderLabScenarioBuilders() {
     sel.addEventListener('change', async () => {
       const sIdx = Number(sel.dataset.scenario);
       const pIdx = Number(sel.dataset.pair);
-      transferScenarios[sIdx].pairs[pIdx].outId = sel.value ? Number(sel.value) : null;
+      transferScenarios[sIdx].pairs[pIdx].outId = sel.value ? Number(sel.value) : null; transferScenarios[sIdx].autoGenerated = false;
       transferScenarios[sIdx].pairs[pIdx].inId = null;
       await saveTransferLab();
       renderTransferLab();
@@ -2646,7 +2751,7 @@ function runLabInSearch(sIdx, pIdx, query) {
   `).join('');
   results.querySelectorAll('[data-id]').forEach(el => {
     el.addEventListener('click', async () => {
-      transferScenarios[sIdx].pairs[pIdx].inId = Number(el.dataset.id);
+      transferScenarios[sIdx].pairs[pIdx].inId = Number(el.dataset.id); transferScenarios[sIdx].autoGenerated = false;
       await saveTransferLab();
       renderTransferLab();
     });
@@ -2945,6 +3050,7 @@ function renderLabVerdict(allMetrics) {
 }
 
 function renderTransferLab() {
+  renderLabNeeds();
   renderLabScenarioBuilders();
   renderLabHoldHero();
   if (!gwPlanner) {
@@ -5441,6 +5547,7 @@ async function syncFromScript(manual) {
     phase5State.changes=phase5Compare(phase5SyncBaseline,phase5CurrentSnapshot);
     phase5SyncBaseline=phase5CurrentSnapshot;
     await savePhase5State(); await savePhase5Baseline();
+    await autoUpdateTransferLab();
     renderAllViews();
     setSyncBar('ok', `Synced ✓ ${lastSyncedAt.toLocaleTimeString()} (GW${gw})`);
   } catch (e) {
