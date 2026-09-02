@@ -6045,9 +6045,8 @@ function aiNextResearch(lines) {
     '- FINAL ACTION: DO NOW / WAIT / RECHECK'
   );
 
-  lines.push('', 'PHASE 5 DEADLINE CENTRE');
-  const p5Status = phase5AutoStatus();
-  lines.push(`Decision state: ${p5Status==='ready'?'READY TO LOCK':p5Status==='action'?'ACTION REQUIRED':'WAIT FOR NEWS'}`);
+  lines.push('', 'CURRENT DEADLINE RESEARCH STATE');
+  lines.push('Decision state: UNASSESSED — CURRENT RECOMMENDATION NOT SET');
   lines.push(`Saved scenario (NOT CURRENT RECOMMENDATION): ${phase5State.transfer || 'HOLD'} | Captain: ${phase5State.captain || '—'} | Vice: ${phase5State.vice || '—'} | Chip: ${phase5State.chip || 'HOLD'} | Hit: ${phase5State.hit ? '-'+phase5State.hit : '0'} | Source: SAVED OLD PLAN / TRACKER STATE`);
   lines.push('External research checklist: ' + PHASE5_RESEARCH_ITEMS.map(([k,l]) => `${l}=${(phase5State.research||{})[k]||'todo'}`).join(' | '));
   const p5Experts = (phase5State.experts||[]).filter(e => e.manager);
@@ -6183,7 +6182,6 @@ function aiExactSquad(lines) {
   const posCount={DEF:0,MID:0,FWD:0}; starters.forEach(p=>{if(posCount[p.position]!==undefined)posCount[p.position]++;});
   lines.push('Current starting XI: '+starters.map(p=>p.name+(p.isCaptain?' (C)':'')+(p.isVice?' (V)':'')).join(', '));
   lines.push('Current formation: '+posCount.DEF+'-'+posCount.MID+'-'+posCount.FWD);
-  lines.push('Bench order: '+bench.map((p,i)=>(i+1)+'. '+p.name).join(' | '));
   const benchGk = bench.find(p => p.position === 'GKP');
   const benchOutfield = bench.filter(p => p.position !== 'GKP');
   lines.push('Bench GK: ' + (benchGk ? benchGk.name : '—'));
@@ -6402,7 +6400,10 @@ function aiMiniLeagueFull(lines) {
 function aiRivalStrategy(lines) {
   aiSection(lines, '16. RIVAL STRATEGY');
   if (rivalVerdictState && rivalVerdictState.verdict) {
-    lines.push('Tracker observation: ' + rivalVerdictState.verdict);
+    const softened = rivalVerdictState.verdict === 'NO RIVAL RESPONSE NEEDED'
+      ? 'No obvious rival-driven structural issue detected.'
+      : rivalVerdictState.verdict;
+    lines.push('Tracker observation: ' + softened);
     (rivalVerdictState.reasons || []).forEach(r => lines.push('- ' + r));
   } else {
     lines.push('RIVAL CONTEXT: —');
@@ -6503,6 +6504,8 @@ function aiMachineState(lines) {
     freeTransfers:gwPlanner?.ftEstimate??h.freeTransfersEstimate??null,freeTransfersVerified:false,freeTransfersSource:'tracker calculation',bank:gwPlanner?.bank??h.bank??null,officialTeamValue:h.teamValue??null,currentMarketSquadValue:Number(((gwPlanner?.squad||[]).reduce((a,x)=>a+(aiSquadFinancials(x).current||0),0)).toFixed(1)),sellingSquadValue,sellingSquadValueSource:sellingSquadValue!=null?'verified owned-player selling prices':null,spendingPower:(sellingSquadValue!=null&&gwPlanner?.bank!=null)?Number((sellingSquadValue+Number(gwPlanner.bank)).toFixed(1)):null,
     squad:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp,fin=aiSquadFinancials(sp),pr=aiProjectionRecord(p);return {name:sp.name,club:sp.team,pos:sp.position,currentPrice:fin.current,currentPriceSource:'Official FPL API',purchasePrice:fin.purchase,purchasePriceSource:fin.purchase!=null?'Synced authenticated financial data':null,purchasePriceVerified:fin.purchasePriceVerified,sellingPrice:fin.selling,sellingPriceSource:fin.selling!=null?'Synced authenticated financial data':null,sellingPriceVerified:fin.sellingPriceVerified,profitLoss:fin.profit,cashReleased:fin.cashReleased,xpNext1:pr.xpNext1,xpNext3:pr.xpNext3,xpNext5:pr.xpNext5,xpNext8:pr.xpNext8,xpByGw:pr.xpByGw,projectionSource:pr.source,projectionUpdated:pr.updated,expectedMinutesNext:aiFirst(p,['expectedMinutes','expected_minutes'],null),expectedMinutesNext3:aiFirst(p,['expectedMinutesNext3','expected_minutes_next3'],null),rotationRisk:aiFirst(p,['rotationRisk'],null),fitnessRisk:aiFirst(p,['fitnessRisk','injuryRisk'],null),tacticalRole:aiFirst(p,['tacticalRole'],null),penaltyRole:aiFirst(p,['penaltyRole'],null),setPieceRole:aiFirst(p,['setPieceRole','cornerRole','freeKickRole'],null),priceRiseRisk:aiFirst(p,['priceRiseRisk'],null),priceFallRisk:aiFirst(p,['priceFallRisk'],null),captain:!!sp.isCaptain,vice:!!sp.isVice,bench:!!sp.isBench};}),
     captain:squad.find(p=>p.isCaptain)?.name||null,vice:squad.find(p=>p.isVice)?.name||null,
+    benchGoalkeeper:squad.filter(p=>p.isBench).find(p=>p.position==='GKP')?.name||null,
+    outfieldBenchOrder:squad.filter(p=>p.isBench&&p.position!=='GKP').map(p=>p.name),
     currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,chanceOfPlaying:aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],null),news:p.news,source:'Official FPL/tracker sync',updated:lastSyncedAt?lastSyncedAt.toISOString():null}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
     savedScenario:{transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0,source:'SAVED OLD PLAN / TRACKER STATE',isCurrentRecommendation:false},currentRecommendation:null,
@@ -6547,7 +6550,12 @@ function aiExactInstructions(lines) {
 
 function aiNormalizeExportText(value){
   if(value==null)return '';
-  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').replace(/Ø/g,'O').replace(/ø/g,'o').replace(/Đ/g,'D').replace(/đ/g,'d').replace(/Ł/g,'L').replace(/ł/g,'l').replace(/Æ/g,'AE').replace(/æ/g,'ae').replace(/Œ/g,'OE').replace(/œ/g,'oe').replace(/→/g,'->').replace(/[–—]/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g,"'");
+  // Player-name policy: preserve official Unicode spelling (OPTION A). Only punctuation
+  // that could render oddly in plain text is normalized here -- no diacritic-stripping.
+  // (PDF export has its own separate, stricter ASCII-only normalizer, because jsPDF's
+  // built-in core fonts genuinely cannot render extended Unicode glyphs without an
+  // embedded custom font -- a real technical constraint, not a policy inconsistency.)
+  return String(value).replace(/\u2192/g,'->').replace(/[\u2013\u2014]/g,'-').replace(/[\u201c\u201d]/g,'"').replace(/[\u2018\u2019]/g,"'");
 }
 
 function buildAiHandoffReport() {
@@ -6605,7 +6613,7 @@ function buildAiHandoffReport() {
   aiExactInstructions(lines);
   aiSection(lines,'APPENDIX A — PERMANENT PROJECT OPERATING RULES');
   aiPermanentInstructions(lines);
-  aiSection(lines,'APPENDIX B — CURRENT PHASE 5 DEADLINE / RESEARCH STATE');
+  aiSection(lines,'APPENDIX B — CURRENT DEADLINE / RESEARCH STATE');
   aiNextResearch(lines);
   lines.push('', 'END OF REPORT', 'Generated '+new Date().toLocaleString()+' | Tracker synced '+(lastSyncedAt?lastSyncedAt.toLocaleString():'—')+' | GW'+(homeData?.gw??gwDecision?.gw??'—'));
   return aiNormalizeExportText(lines.join('\n'));
@@ -6656,7 +6664,15 @@ function downloadAiPdfReport() {
     // PDF-safe text normalizer. Keep export dependency-free and avoid unsupported glyphs in jsPDF core fonts.
     function aiSanitizePdfText(value) {
       if (value === null || value === undefined) return '';
+      // jsPDF core fonts cannot render extended Unicode glyphs without an embedded
+      // custom font, so this path transliterates accented letters to their closest
+      // ASCII equivalent (Joao, not Jo) rather than silently deleting them.
+      // TXT/JSON exports do NOT go through this transliteration step -- they
+      // preserve official Unicode spelling (OPTION A policy).
       return aiNormalizeExportText(value)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/ß/g,'ss').replace(/Ø/g,'O').replace(/ø/g,'o').replace(/Đ/g,'D').replace(/đ/g,'d')
+        .replace(/Ł/g,'L').replace(/ł/g,'l').replace(/Æ/g,'AE').replace(/æ/g,'ae').replace(/Œ/g,'OE').replace(/œ/g,'oe')
         .replace(/[→⇒]/g, '->')
         .replace(/[←⇐]/g, '<-')
         .replace(/[–—]/g, '-')
