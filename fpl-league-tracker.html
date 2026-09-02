@@ -1011,17 +1011,17 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button id="syncNowBtn" class="sync-btn">↻ Sync now</button>
   </div>
 
-  <div class="system-health-card" id="systemHealthCard">
-    <div class="system-health-head">
-      <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
-      <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
-    </div>
-    <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
-  </div>
-
   <!-- ================= ALMOST CHAMPIONS TAB ================= -->
   <!-- ================= HOME COMMAND CENTRE TAB ================= -->
   <div class="tab-panel active" id="tab-home">
+
+    <div class="system-health-card" id="systemHealthCard">
+      <div class="system-health-head">
+        <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
+        <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
+      </div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
+    </div>
 
     <div class="home-strip" id="homeStrip">
       <div class="empty-note">Waiting for first sync…</div>
@@ -5235,8 +5235,10 @@ function runSystemDiagnostics() {
   else {
     add(gwPlanner.squad.length===FPL_RULES.squadSize?'ok':'err','Current squad',`${gwPlanner.squad.length}/${FPL_RULES.squadSize} players`);
     const all=Array.isArray(gwPlanner.allPlayers)?gwPlanner.allPlayers:[];
-    const missing=gwPlanner.squad.filter(p=>!p||!all.some(a=>a.id===p.id));
-    add(missing.length?'err':'ok','Squad/player source consistency',missing.length?`${missing.length} squad player(s) missing from allPlayers`:'Every squad player resolves to the shared player pool');
+    // Squad rows use `element` (official FPL element id); the shared player pool uses `id`.
+    // Compare those canonical identifiers rather than `p.id`, which does not exist on squad rows.
+    const missing=gwPlanner.squad.filter(p=>!p||p.element==null||!all.some(a=>String(a.id)===String(p.element)));
+    add(missing.length?'err':'ok','Squad/player source consistency',missing.length?`${missing.length} squad player(s) missing from allPlayers: ${missing.filter(Boolean).map(p=>p.name||p.element||'?').join(', ')}`:'Every squad player resolves to the shared player pool');
     const counts={}; gwPlanner.squad.forEach(p=>{if(p&&p.team) counts[p.team]=(counts[p.team]||0)+1;});
     const over=Object.entries(counts).filter(([,n])=>n>FPL_RULES.maxPlayersPerClub);
     add(over.length?'err':'ok','Club exposure legality',over.length?over.map(([t,n])=>`${t} ${n}`).join(', '):'No club exceeds the 3-player limit');
