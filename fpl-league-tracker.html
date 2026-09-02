@@ -610,6 +610,63 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .rw-line { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
 .rw-goto-btn { margin-top: 10px; background: var(--gold); color: #0a1410; border: none; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 3px; cursor: pointer; }
 
+/* ---- Transfer Lab Decision-Lab upgrade ---- */
+.lab-hold-card { background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 4px; padding: 16px; }
+.lab-hold-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.lab-hold-stat { background: var(--bg-elev-2); border-radius: 3px; padding: 10px 14px; flex: 1; min-width: 100px; }
+.lab-hold-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.lab-hold-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--lime); margin-top: 4px; }
+.lab-hold-val.warn { color: var(--gold); }
+.lab-hold-verdict { font-size: 13px; color: var(--text-dim); border-top: 1px solid var(--border-soft); padding-top: 10px; }
+
+.lab-scenario-title-row { display: flex; align-items: center; gap: 8px; }
+.lab-scenario-name {
+  background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body);
+  padding: 5px 8px; border-radius: 3px; font-size: 12px; width: 160px;
+}
+.lab-scenario-reason {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-dim);
+  font-family: var(--font-body); padding: 7px 9px; border-radius: 3px; font-size: 12px; margin-bottom: 10px;
+}
+
+.lab-pair-compare { background: var(--bg-elev-2); border-radius: 3px; padding: 10px; margin: -4px 0 8px; }
+.lab-pair-compare-title { font-family: var(--font-mono); font-size: 11px; color: var(--lime); margin-bottom: 6px; }
+.lab-compare-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: var(--font-body);
+  font-size: 11px; padding: 6px 10px; border-radius: 3px; cursor: pointer; margin-bottom: 10px;
+}
+.lab-compare-btn:hover { border-color: var(--lime-dim); color: var(--lime); }
+
+.lab-what-changes { background: var(--bg-elev-2); border-radius: 3px; padding: 10px 12px; margin-top: 8px; }
+.lab-wc-title { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 6px; }
+.lab-wc-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+
+.lab-solves { background: var(--bg-elev-2); border-radius: 3px; padding: 10px 12px; margin-top: 8px; }
+.lab-solves-row { font-size: 12px; padding: 3px 0; }
+.lab-solves-row.solves { color: var(--lime); }
+.lab-solves-row.not-solves { color: var(--text-faint); }
+.lab-solves-row.creates { color: var(--gold); }
+
+.lab-rival-effect { background: var(--bg-elev-2); border-radius: 3px; padding: 10px 12px; margin-top: 8px; }
+.lab-rival-effect-row { font-size: 12px; color: var(--text-dim); padding: 3px 0; }
+
+.lab-add-plan-card { background: var(--bg-elev); border: 1px solid var(--gold); border-radius: 4px; padding: 14px 16px; margin-top: 10px; }
+.lab-add-plan-title { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.lab-add-plan-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.lab-add-plan-row select {
+  background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body);
+  padding: 8px 10px; border-radius: 3px; font-size: 13px;
+}
+
+.lab-alt-block { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text-dim); }
+.lab-alt-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 4px; }
+.lab-alt-block.avoid .lab-alt-title { color: var(--red); }
+
+@media (min-width: 900px) {
+  #labScenarioBuilders { display: flex; gap: 12px; align-items: flex-start; }
+  #labScenarioBuilders .lab-scenario-card { flex: 1; min-width: 0; }
+}
+
 .targets-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .target-card {
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; flex: 1; min-width: 150px;
@@ -1236,6 +1293,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
     <div class="section-label">🧪 Transfer lab verdict</div>
     <div id="labVerdictWrap"></div>
+    <div id="labAddToPlanWrap"></div>
 
     <div class="section-label">🛡️ Hold current team <span style="font-weight:400">— the baseline</span></div>
     <div id="labHoldHeroWrap"></div>
@@ -1398,7 +1456,8 @@ let homeRankHistory = [];
 let teamStructure = null;
 let cmpSelectedIds = [];
 // Transfer Lab: 3 fixed scenario slots (A, B, C), each up to 2 OUT/IN pairs.
-let transferScenarios = [{ pairs: [] }, { pairs: [] }, { pairs: [] }];
+let transferScenarios = [{ pairs: [], name: '', reason: '' }, { pairs: [], name: '', reason: '' }, { pairs: [], name: '', reason: '' }];
+let labPreferredScenario = null; // set by renderLabVerdict when a clear SCENARIO X PREFERRED verdict is reached
 // 6-GW Planner state
 let plannerPlans = [{ id: 'plan-default', name: 'Plan A', actions: {} }];
 let plannerActivePlanId = 'plan-default';
@@ -2222,6 +2281,99 @@ function computeScenarioMetrics(scenario) {
   };
 }
 
+const REASON_TAGS = ['Fixture swing', 'Injury', 'Upgrade', 'Downgrade / release funds', 'Team structure', 'Captaincy', 'Price pressure', 'Rival protection', 'Differential', 'Other'];
+
+function renderPairLiveComparison(outP, inP) {
+  const outFx = outP.next5 && outP.next5[0];
+  const inFx = inP.nextFixture;
+  const rows = [
+    ['Price', `£${labPlayerPrice(outP).toFixed(1)}m`, `£${labPlayerPrice(inP).toFixed(1)}m`],
+    ['Form', (outP.form ?? 0).toFixed(1), (inP.form ?? 0).toFixed(1)],
+    ['xGI/90', labPlayerXgiPer90(outP).toFixed(2), labPlayerXgiPer90(inP).toFixed(2)],
+    ['Minutes', outP.seasonMinutes ?? '\u2014', inP.seasonMinutes ?? '\u2014'],
+    ['ep_next', (outP.epNext ?? 0).toFixed(1), (inP.epNext ?? 0).toFixed(1)],
+    ['Next fixture', outFx ? escapeHtml(outFx.opponent) + ' (' + outFx.venue + ')' : '\u2014', inFx ? escapeHtml(inFx.opponent) + ' (' + inFx.venue + ')' : '\u2014']
+  ];
+  return `
+    <div class="lab-pair-compare-title">${escapeHtml(outP.name)} \u2192 ${escapeHtml(inP.name)}</div>
+    <table class="cmp-table"><thead><tr><th></th><th>OUT</th><th>IN</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td class="cmp-row-label">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}
+    </tbody></table>
+  `;
+}
+
+function renderWhatChanges(metrics) {
+  return `
+    <div class="lab-what-changes">
+      <div class="lab-wc-title">What changes</div>
+      <div class="lab-wc-row"><span>Bank</span><span>£${gwPlanner.bank.toFixed(1)}m \u2192 £${metrics.bankAfter.toFixed(1)}m</span></div>
+      ${metrics.exposureChanges.length ? metrics.exposureChanges.map(c => `<div class="lab-wc-row"><span>Exposure</span><span>${escapeHtml(c)}</span></div>`).join('') : '<div class="lab-wc-row"><span>Exposure</span><span>No change</span></div>'}
+      <div class="lab-wc-row"><span>FT</span><span>${metrics.ftAvailable} \u2192 ${metrics.ftAfter}</span></div>
+      <div class="lab-wc-row"><span>Hit</span><span>${metrics.hitCost > 0 ? '-' + metrics.hitCost : 'None'}</span></div>
+      <div class="lab-wc-row"><span>Fixture run</span><span class="${metrics.fixtureCls}">${metrics.fixtureEffect}</span></div>
+    </div>
+  `;
+}
+
+function renderWhatProblemSolves(metrics) {
+  const solves = [], doesntSolve = [], creates = [];
+  const outNames = new Set(metrics.outPlayers.map(p => p.name));
+
+  (gwPlanner.squadProblems || []).forEach(prob => {
+    if (outNames.has(prob.player)) solves.push(`Removes flagged player: ${prob.player} (${prob.detail})`);
+    else doesntSolve.push(`${prob.player} \u2014 ${prob.detail}`);
+  });
+
+  metrics.exposureChanges.forEach(c => {
+    const m = c.match(/^(\S+) (\d+)\u2192(\d+)$/);
+    if (m) {
+      const team = m[1], before = Number(m[2]), after = Number(m[3]);
+      const wasHeavy = teamStructure && teamStructure.heavyExposure.some(e => e.team === team);
+      if (wasHeavy && after < before) solves.push(`Reduces ${team} concentration (${before}\u2192${after})`);
+      if (after > before && !wasHeavy) solves.push(`Adds ${team} coverage (${before}\u2192${after})`);
+    }
+  });
+
+  const bankDrop = gwPlanner.bank - metrics.bankAfter;
+  if (bankDrop > 0.05) creates.push(`Less money in bank (-£${bankDrop.toFixed(1)}m)`);
+  if (metrics.hitCost > 0) creates.push(`Requires a -${metrics.hitCost} hit`);
+  if (gwDecision && gwDecision.myDifferentials) {
+    metrics.outPlayers.forEach(p => {
+      if (gwDecision.myDifferentials.some(d => d.name === p.name)) creates.push(`Removes differential: ${p.name}`);
+    });
+  }
+
+  return { solves, doesntSolve: doesntSolve.slice(0, 3), creates };
+}
+
+function renderRivalEffectForScenario(metrics) {
+  if (!rivalIntel) return '';
+  const ownership = computeLeagueOwnership();
+  const total = rivalIntel.managers.length;
+  const R = RIVAL_HEURISTIC_RULES.protection;
+  const lines = [];
+  metrics.outPlayers.forEach((outP, i) => {
+    const inP = metrics.inPlayers[i];
+    if (!inP) return;
+    const outOwn = ownership.find(e => e.id === outP.element);
+    const inOwn = ownership.find(e => e.id === inP.id);
+    const outFrac = outOwn ? outOwn.owned / total : 0;
+    const inFrac = inOwn ? inOwn.owned / total : 0;
+    let effect = 'No significant shift';
+    if (inFrac >= R.protectionMin && outFrac < R.protectionMin) effect = 'Increases protection';
+    else if (inFrac <= R.attackMax && outFrac > R.attackMax) effect = 'Moves toward attack/differential';
+    else if (outFrac <= R.attackMax && inFrac >= R.protectionMin) effect = 'Moves from attack toward protection';
+    lines.push(`<div class="lab-rival-effect-row">${escapeHtml(outP.name)} owned by ${outOwn ? outOwn.owned : 0}/${total} \u00b7 ${escapeHtml(inP.name)} owned by ${inOwn ? inOwn.owned : 0}/${total} \u2014 <b>${effect}</b></div>`);
+  });
+  if (!lines.length) return '';
+  return `
+    <div class="lab-rival-effect">
+      <div class="lab-wc-title">Rival effect <span style="font-weight:400">(context only \u2014 never changes the verdict)</span></div>
+      ${lines.join('')}
+    </div>
+  `;
+}
+
 function renderLabScenarioBuilders() {
   const wrap = document.getElementById('labScenarioBuilders');
   if (!gwPlanner) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
@@ -2234,6 +2386,16 @@ function renderLabScenarioBuilders() {
       if (pr.inId) {
         const inP = labGetAnyPlayer(pr.inId);
         if (inP) inLabel = `${inP.name} (${escapeHtml(inP.team)}, £${labPlayerPrice(inP).toFixed(1)}m)`;
+      }
+      let liveCompareHtml = '';
+      let compareBtnHtml = '';
+      if (pr.outId && pr.inId) {
+        const outP = labGetSquadPlayer(pr.outId);
+        const inP = labGetAnyPlayer(pr.inId);
+        if (outP && inP) {
+          liveCompareHtml = `<div class="lab-pair-compare">${renderPairLiveComparison(outP, inP)}</div>`;
+          compareBtnHtml = `<button class="lab-compare-btn" data-compare-out="${pr.outId}" data-compare-in="${pr.inId}">\ud83d\udd00 Full Comparison</button>`;
+        }
       }
       return `
         <div class="lab-pair-row" data-scenario="${sIdx}" data-pair="${pIdx}">
@@ -2251,20 +2413,58 @@ function renderLabScenarioBuilders() {
           </div>
           <button class="lab-remove-pair" data-remove-scenario="${sIdx}" data-remove-pair="${pIdx}">\u2715</button>
         </div>
+        ${liveCompareHtml}
+        ${compareBtnHtml}
       `;
     }).join('');
+
+    let extraHtml = '';
+    const metrics = computeScenarioMetrics(sc);
+    if (metrics) {
+      extraHtml += renderWhatChanges(metrics);
+      const pw = renderWhatProblemSolves(metrics);
+      extraHtml += `
+        <div class="lab-solves">
+          <div class="lab-wc-title">What problem does this solve?</div>
+          ${pw.solves.length ? pw.solves.map(s => `<div class="lab-solves-row solves">\u2713 ${escapeHtml(s)}</div>`).join('') : '<div class="lab-solves-row solves">\u2713 No specific flagged issue addressed</div>'}
+          ${pw.doesntSolve.map(s => `<div class="lab-solves-row not-solves">\u2715 ${escapeHtml(s)}</div>`).join('')}
+          ${pw.creates.map(s => `<div class="lab-solves-row creates">\u26a0 ${escapeHtml(s)}</div>`).join('')}
+        </div>
+      `;
+      extraHtml += renderRivalEffectForScenario(metrics);
+    }
 
     return `
       <div class="lab-scenario-card ${hasPairs ? 'has-pairs' : ''}">
         <div class="lab-scenario-head">
-          <div class="lab-scenario-title">Scenario ${SCENARIO_LABELS[sIdx]}</div>
+          <div class="lab-scenario-title-row">
+            <span class="lab-scenario-title">${SCENARIO_LABELS[sIdx]}</span>
+            <input type="text" class="lab-scenario-name" data-scenario="${sIdx}" placeholder="Optional name\u2026" value="${escapeHtml(sc.name || '')}">
+          </div>
           <button class="lab-add-pair-btn" data-add-scenario="${sIdx}" ${sc.pairs.length >= 2 ? 'disabled' : ''}>+ Add transfer pair</button>
         </div>
+        <select class="lab-scenario-reason" data-scenario="${sIdx}">
+          <option value="">Why am I considering this? (optional)</option>
+          ${REASON_TAGS.map(r => `<option value="${r}" ${sc.reason === r ? 'selected' : ''}>${r}</option>`).join('')}
+        </select>
         ${pairsHtml || '<div class="empty-note" style="padding:8px 0">No transfers in this scenario yet.</div>'}
+        ${extraHtml}
       </div>
     `;
   }).join('');
 
+  wrap.querySelectorAll('.lab-scenario-name').forEach(inp => {
+    inp.addEventListener('change', async () => {
+      transferScenarios[Number(inp.dataset.scenario)].name = inp.value;
+      await saveTransferLab();
+    });
+  });
+  wrap.querySelectorAll('.lab-scenario-reason').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      transferScenarios[Number(sel.dataset.scenario)].reason = sel.value;
+      await saveTransferLab();
+    });
+  });
   wrap.querySelectorAll('[data-add-scenario]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const sIdx = Number(btn.dataset.addScenario);
@@ -2296,6 +2496,16 @@ function renderLabScenarioBuilders() {
   });
   wrap.querySelectorAll('.lab-in-search').forEach(inp => {
     inp.addEventListener('input', () => runLabInSearch(Number(inp.dataset.scenario), Number(inp.dataset.pair), inp.value));
+  });
+  wrap.querySelectorAll('.lab-compare-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const outId = Number(btn.dataset.compareOut);
+      const inId = Number(btn.dataset.compareIn);
+      cmpSelectedIds = [outId, inId];
+      await saveCmpSelected();
+      document.querySelector('.tab-btn[data-tab="compare"]').click();
+      renderComparison();
+    });
   });
 }
 
@@ -2437,9 +2647,76 @@ function renderLabHitAnalysis(allMetrics) {
   }).join('');
 }
 
+function renderLabHoldHero() {
+  const wrap = document.getElementById('labHoldHeroWrap');
+  if (!gwPlanner) { wrap.innerHTML = ''; return; }
+
+  const squadIssues = (gwPlanner.squadProblems || []).length;
+  const flagged = (playerAnalysis || []).filter(p => p.heuristic && (p.heuristic.bucket === 'Possible Sell' || p.heuristic.bucket === 'Sell')).length;
+  const concentration = teamStructure ? teamStructure.heavyExposure.length : 0;
+
+  let verdictText;
+  if (squadIssues === 0 && flagged === 0 && concentration === 0) {
+    verdictText = 'Current squad has no flagged issues. Rolling remains a fully viable option.';
+  } else {
+    const bits = [];
+    if (squadIssues > 0) bits.push(`${squadIssues} squad issue(s) flagged`);
+    if (flagged > 0) bits.push(`${flagged} player(s) flagged Possible Sell/Sell`);
+    if (concentration > 0) bits.push(`${concentration} club concentration warning(s)`);
+    verdictText = bits.join(', ') + ' \u2014 review before assuming HOLD is the best route.';
+  }
+
+  wrap.innerHTML = `
+    <div class="lab-hold-card">
+      <div class="lab-hold-grid">
+        <div class="lab-hold-stat"><div class="lab-hold-label">Free transfers</div><div class="lab-hold-val">${gwPlanner.ftEstimate ?? '\u2014'}</div></div>
+        <div class="lab-hold-stat"><div class="lab-hold-label">Bank</div><div class="lab-hold-val">£${gwPlanner.bank.toFixed(1)}m</div></div>
+        <div class="lab-hold-stat"><div class="lab-hold-label">Hit</div><div class="lab-hold-val">£0</div></div>
+        <div class="lab-hold-stat"><div class="lab-hold-label">Squad issues</div><div class="lab-hold-val ${squadIssues > 0 ? 'warn' : ''}">${squadIssues}</div></div>
+        <div class="lab-hold-stat"><div class="lab-hold-label">Flagged players</div><div class="lab-hold-val ${flagged > 0 ? 'warn' : ''}">${flagged}</div></div>
+        <div class="lab-hold-stat"><div class="lab-hold-label">Concentration warnings</div><div class="lab-hold-val ${concentration > 0 ? 'warn' : ''}">${concentration}</div></div>
+      </div>
+      <div class="lab-hold-verdict">${escapeHtml(verdictText)}</div>
+    </div>
+  `;
+}
+
+function renderLabAddToPlanWidget() {
+  const wrap = document.getElementById('labAddToPlanWrap');
+  if (!wrap) return;
+  if (!labPreferredScenario) { wrap.innerHTML = ''; return; }
+  const gws = plannerGwList();
+  if (!gws.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <div class="lab-add-plan-card">
+      <div class="lab-add-plan-title">\ud83d\udcc5 Add Scenario ${escapeHtml(labPreferredScenario.label)} to 6-GW Plan</div>
+      <div class="lab-add-plan-row">
+        <select id="labAddPlanSelect">${plannerPlans.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select>
+        <select id="labAddGwSelect">${gws.map((gw, idx) => `<option value="${idx}">GW${gw}</option>`).join('')}</select>
+        <button class="lab-add-pair-btn" id="labAddToPlanBtn">Add</button>
+      </div>
+      <div class="msg" id="labAddToPlanMsg"></div>
+    </div>
+  `;
+  document.getElementById('labAddToPlanBtn').addEventListener('click', async () => {
+    const planId = document.getElementById('labAddPlanSelect').value;
+    const gwIdx = Number(document.getElementById('labAddGwSelect').value);
+    const gw = gws[gwIdx];
+    const plan = plannerPlans.find(p => p.id === planId);
+    const msg = document.getElementById('labAddToPlanMsg');
+    if (!plan) return;
+    const pairs = labPreferredScenario.metrics.pairs.map(pr => ({ outId: pr.outId, inId: pr.inId }));
+    plan.actions[gw] = { type: pairs.length > 1 ? 'double' : 'transfer', pairs };
+    await savePlannerPlans();
+    msg.textContent = `Added to "${plan.name}" at GW${gw}.`;
+    msg.className = 'msg ok';
+  });
+}
+
 function renderLabVerdict(allMetrics) {
   const wrap = document.getElementById('labVerdictWrap');
   const built = allMetrics.filter(m => m.metrics);
+  labPreferredScenario = null;
 
   if (!built.length) {
     const problems = gwPlanner ? gwPlanner.squadProblems : [];
@@ -2455,12 +2732,14 @@ function renderLabVerdict(allMetrics) {
       reasons.push('No scenarios built yet -- add a transfer above to compare against holding');
     }
     wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">${verdict}</div><div class="cmp-verdict-why">${reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div></div>`;
+    renderLabAddToPlanWidget();
     return;
   }
 
   const legalScenarios = built.filter(b => b.metrics.legal);
   if (!legalScenarios.length) {
     wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">NO LEGAL SCENARIO</div><div class="cmp-verdict-why"><div>Every built scenario is currently illegal -- check the comparison table above.</div></div></div>`;
+    renderLabAddToPlanWidget();
     return;
   }
 
@@ -2501,6 +2780,7 @@ function renderLabVerdict(allMetrics) {
     tradeoffLines.push('No sufficiently strong evidence to prefer one yet — check the comparison table for the factor that matters most to you');
   } else {
     verdict = `SCENARIO ${top.label} PREFERRED`;
+    labPreferredScenario = top;
     whyLines.push(`Scenario ${top.label} is legal`);
     if (top.metrics.hitCost > 0) whyLines.push(`Hit of -${top.metrics.hitCost} judged justified based on incoming vs outgoing comparison`);
     else whyLines.push('No hit required');
@@ -2515,18 +2795,39 @@ function renderLabVerdict(allMetrics) {
     if (top.metrics.ftAfter < gwPlanner.ftEstimate) tradeoffLines.push('HOLD preserves greater flexibility into next gameweek');
   }
 
+  const squadIssuesCount = (gwPlanner.squadProblems || []).length;
+  const altHoldLine = squadIssuesCount === 0
+    ? 'Holding remains reasonable — no urgent squad issue currently flagged.'
+    : `Holding still leaves ${squadIssuesCount} flagged squad issue(s) unaddressed.`;
+
+  const worst = ranked[ranked.length - 1];
+  let avoidHtml = '';
+  if (ranked.length > 1 && worst.label !== (labPreferredScenario ? labPreferredScenario.label : null)) {
+    const avoidReasons = [];
+    if (worst.metrics.hitCost > 0 && !worst.hitOk) avoidReasons.push(`requires -${worst.metrics.hitCost} and the evidence does not currently justify paying it`);
+    if (worst.metrics.fixtureEffect === 'Worse') avoidReasons.push('has a worse upcoming fixture run than the alternatives');
+    if (!worst.metrics.legal) avoidReasons.push(worst.metrics.illegalReason || 'is currently illegal');
+    if (avoidReasons.length) {
+      avoidHtml = `<div class="lab-alt-block avoid"><div class="lab-alt-title">AVOID: Scenario ${worst.label}</div><div>${escapeHtml(avoidReasons.join('; '))}.</div></div>`;
+    }
+  }
+
   wrap.innerHTML = `
     <div class="cmp-verdict-card">
       <div class="cmp-verdict-label">${escapeHtml(verdict)}</div>
       <div class="pm-position-label" style="margin-top:10px">Why</div>
       <div class="cmp-verdict-why">${whyLines.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div>
       ${tradeoffLines.length ? `<div class="pm-position-label" style="margin-top:10px">Trade-off</div><div class="cmp-tradeoff">${tradeoffLines.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div>` : ''}
+      <div class="lab-alt-block"><div class="lab-alt-title">ALTERNATIVE: HOLD</div><div>${escapeHtml(altHoldLine)}</div></div>
+      ${avoidHtml}
     </div>
   `;
+  renderLabAddToPlanWidget();
 }
 
 function renderTransferLab() {
   renderLabScenarioBuilders();
+  renderLabHoldHero();
   if (!gwPlanner) {
     document.getElementById('labComparisonWrap').innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>';
     document.getElementById('labVerdictWrap').innerHTML = '';
@@ -3597,6 +3898,7 @@ function renderPlayerAnalysis() {
           </div>
           <div class="pa-bucket ${bucketCls}">${h.emoji} ${h.bucket}</div>
         </div>
+        ${(h.bucket === 'Possible Sell' || h.bucket === 'Sell') ? `<button class="lab-compare-btn" data-send-to-lab="${p.element}" style="margin:8px 0 0">\ud83e\uddea Send to Transfer Lab</button>` : ''}
 
         <div class="pa-section-tag official">Official data — this gameweek</div>
         <div class="pa-stat-grid">
@@ -3633,6 +3935,16 @@ function renderPlayerAnalysis() {
       </div>
     `;
   }).join('');
+
+  wrap.querySelectorAll('[data-send-to-lab]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const outId = Number(btn.dataset.sendToLab);
+      transferScenarios[0] = { pairs: [{ outId, inId: null }], name: '', reason: '' };
+      await saveTransferLab();
+      document.querySelector('.tab-btn[data-tab="translab"]').click();
+      renderTransferLab();
+    });
+  });
 }
 
 /* ---- GW Planner (Phase 3B) rendering ---- */
@@ -5001,6 +5313,14 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   document.getElementById('sixgwRenamePlan').addEventListener('click', plannerRenamePlan);
   document.getElementById('sixgwDeletePlan').addEventListener('click', plannerDeletePlan);
   document.getElementById('sixgwResetPlan').addEventListener('click', plannerResetPlan);
+
+  document.getElementById('labDetailsToggle').addEventListener('click', () => {
+    const section = document.getElementById('labDetailsSection');
+    const btn = document.getElementById('labDetailsToggle');
+    const isOpen = section.style.display !== 'none';
+    section.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? '▸ Show detailed data (fixtures, hit analysis)' : '▾ Hide detailed data';
+  });
   document.getElementById('rollFtBtn').addEventListener('click', () => {
     document.getElementById('rollFtNote').textContent = '✓ Noted — rolling your free transfer this gameweek.';
   });
