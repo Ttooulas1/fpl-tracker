@@ -330,6 +330,65 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 }
 .home-chip-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
 .home-chip-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--lime); margin-top: 3px; }
+.home-chip-move { font-family: var(--font-mono); font-size: 10px; margin-top: 3px; }
+.home-chip-move.up { color: var(--lime); }
+.home-chip-move.down { color: var(--red); }
+.home-chip-move.same { color: var(--text-faint); }
+
+/* ---- Manager Verdict ---- */
+.verdict-card {
+  background: var(--bg-elev); border-radius: 4px; padding: 18px 20px; margin-bottom: 4px;
+  border: 1px solid var(--border);
+}
+.verdict-card.verdict-hold { border-color: var(--border); }
+.verdict-card.verdict-action { border-color: var(--red); background: linear-gradient(135deg, rgba(255,107,92,0.06), var(--bg-elev)); }
+.verdict-card.verdict-wait { border-color: var(--gold); background: linear-gradient(135deg, rgba(232,185,79,0.06), var(--bg-elev)); }
+.verdict-card.verdict-roll { border-color: var(--lime-dim); background: linear-gradient(135deg, rgba(198,255,61,0.06), var(--bg-elev)); }
+.verdict-label {
+  font-family: var(--font-display); font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.verdict-hold .verdict-label { color: var(--text-dim); }
+.verdict-action .verdict-label { color: var(--red); }
+.verdict-wait .verdict-label { color: var(--gold); }
+.verdict-roll .verdict-label { color: var(--lime); }
+.verdict-reasons { margin-top: 10px; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+.verdict-reasons div { padding-left: 14px; position: relative; }
+.verdict-reasons div::before { content: '•'; position: absolute; left: 0; }
+
+/* ---- Home rival snapshot ---- */
+.home-rival-row {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 10px 14px; margin-bottom: 6px;
+}
+.hr-name { font-weight: 600; font-size: 13px; }
+.hr-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; }
+.hr-gap { font-family: var(--font-mono); font-size: 15px; font-weight: 700; }
+.hr-gap.ahead { color: var(--red); }
+.hr-gap.behind { color: var(--lime); }
+
+/* ---- Team structure ---- */
+.ts-row {
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 3px; padding: 10px 14px; margin-bottom: 6px;
+}
+.ts-row.heavy { border-color: var(--gold); }
+.ts-head { display: flex; justify-content: space-between; align-items: center; }
+.ts-team { font-weight: 700; font-size: 14px; font-family: var(--font-display); text-transform: uppercase; }
+.ts-count { font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); }
+.ts-players { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+.ts-run { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+.ts-warn { font-size: 12px; color: var(--gold); margin-top: 6px; }
+.ts-zero-row {
+  background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px;
+}
+
+/* ---- Transfer pressure (FPL Info tab) ---- */
+.pressure-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--border-soft); padding: 9px 12px; margin-bottom: 6px; border-radius: 3px;
+}
+.pressure-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+.pressure-badge.Rising { background: rgba(198,255,61,0.12); color: var(--lime); border: 1px solid var(--lime-dim); }
+.pressure-badge.Falling { background: rgba(255,107,92,0.12); color: var(--red); border: 1px solid var(--red); }
 
 .targets-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .target-card {
@@ -636,6 +695,11 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       <div class="empty-note">Waiting for first sync…</div>
     </div>
 
+    <div class="section-label">Manager verdict <span style="font-weight:400">— heuristic, not a prediction</span></div>
+    <div class="verdict-card" id="verdictCard">
+      <div class="empty-note">Waiting for first sync…</div>
+    </div>
+
     <div class="section-label">Targets</div>
     <div class="targets-row" id="targetsRow"></div>
 
@@ -647,6 +711,12 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
     <div class="section-label">Upcoming</div>
     <div class="gw-status-card" id="upcomingCard"></div>
+
+    <div class="section-label">Rivals — Almost Champions</div>
+    <div id="homeRivalWrap"></div>
+
+    <div class="section-label">Team structure <span style="font-weight:400">— club exposure, not a recommendation</span></div>
+    <div id="teamStructureWrap"></div>
 
   </div>
 
@@ -745,6 +815,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
     <div class="section-label">Price changes today</div>
     <div id="priceWrap"></div>
+
+    <div class="section-label">Transfer pressure <span style="font-weight:400">— net transfers, not a prediction</span></div>
+    <div class="heuristic-note">📊 Rising/Falling = net transfers ≥2% of that player's current owner count. This is a factual description of direction, not a probability that price will actually change.</div>
+    <div id="pressureWrap"></div>
 
     <div class="section-label">Injuries &amp; fitness</div>
     <div id="injuryWrap"></div>
@@ -899,6 +973,8 @@ const RIVAL_INTEL_KEY = 'rival-intel';
 const PLAYER_ANALYSIS_KEY = 'player-analysis';
 const GW_PLANNER_KEY = 'gw-planner';
 const CAPTAINCY_HISTORY_KEY = 'captaincy-history';
+const HOME_RANK_HISTORY_KEY = 'home-rank-history';
+const TEAM_STRUCTURE_KEY = 'team-structure';
 const MY_ENTRY = 5580812;
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMDnOjV441p8yKzc_yAs4u35-4TQYA72CF85dnGoOx8qZq9yM2vUhizb9AhBkl6T50/exec';
 let lastSyncedAt = null;
@@ -970,6 +1046,8 @@ let gwPlanner = null;
 let sandboxOutElement = null;
 let sandboxInElement = null;
 let captaincyHistory = null;
+let homeRankHistory = [];
+let teamStructure = null;
 let captainCandidates = [];
 let countdownInterval = null;
 let chartInstance = null;
@@ -1163,6 +1241,24 @@ async function saveCaptaincyHistory() {
   await storageSet(CAPTAINCY_HISTORY_KEY, JSON.stringify(captaincyHistory));
 }
 
+async function loadHomeRankHistory() {
+  const val = await storageGet(HOME_RANK_HISTORY_KEY);
+  if (val) { homeRankHistory = JSON.parse(val); return; }
+  homeRankHistory = [];
+}
+async function saveHomeRankHistory() {
+  await storageSet(HOME_RANK_HISTORY_KEY, JSON.stringify(homeRankHistory));
+}
+
+async function loadTeamStructure() {
+  const val = await storageGet(TEAM_STRUCTURE_KEY);
+  if (val) { teamStructure = JSON.parse(val); return; }
+  teamStructure = null;
+}
+async function saveTeamStructure() {
+  await storageSet(TEAM_STRUCTURE_KEY, JSON.stringify(teamStructure));
+}
+
 function parseContextJson(raw) {
   const parsed = JSON.parse(raw);
   const results = parsed?.standings?.results;
@@ -1177,6 +1273,17 @@ function parseContextJson(raw) {
 }
 
 /* ---- Home Command Centre rendering ---- */
+function computeRankMovement() {
+  if (!homeRankHistory.length) return null;
+  const sorted = [...homeRankHistory].sort((a, b) => a.gw - b.gw);
+  if (sorted.length < 2) return null;
+  const latest = sorted[sorted.length - 1];
+  const previous = sorted[sorted.length - 2];
+  if (latest.overallRank == null || previous.overallRank == null) return null;
+  const diff = previous.overallRank - latest.overallRank; // positive = improved (lower rank number)
+  return { diff, fromGw: previous.gw, toGw: latest.gw };
+}
+
 function renderHome() {
   const strip = document.getElementById('homeStrip');
   const targetsRow = document.getElementById('targetsRow');
@@ -1190,16 +1297,26 @@ function renderHome() {
     squadWrap.innerHTML = '';
     gwStatusCard.innerHTML = '';
     upcomingCard.innerHTML = '';
+    renderVerdict();
+    renderHomeRivals();
+    renderTeamStructureSection();
     return;
   }
 
   const h = homeData;
+  const movement = computeRankMovement();
+  let moveHtml = '';
+  if (movement) {
+    if (movement.diff > 0) moveHtml = `<div class="home-chip-move up">▲ up ${movement.diff.toLocaleString()} since GW${movement.fromGw}</div>`;
+    else if (movement.diff < 0) moveHtml = `<div class="home-chip-move down">▼ down ${Math.abs(movement.diff).toLocaleString()} since GW${movement.fromGw}</div>`;
+    else moveHtml = `<div class="home-chip-move same">No change since GW${movement.fromGw}</div>`;
+  }
 
   strip.innerHTML = `
     <div class="home-chip"><div class="home-chip-label">Gameweek</div><div class="home-chip-val">GW${h.gw}</div></div>
     <div class="home-chip"><div class="home-chip-label">Live points</div><div class="home-chip-val">${h.livePoints ?? '—'}</div></div>
     <div class="home-chip"><div class="home-chip-label">GW rank</div><div class="home-chip-val">${h.gwRank != null ? h.gwRank.toLocaleString() : '—'}</div></div>
-    <div class="home-chip"><div class="home-chip-label">Overall rank</div><div class="home-chip-val">${h.overallRank != null ? h.overallRank.toLocaleString() : '—'}</div></div>
+    <div class="home-chip"><div class="home-chip-label">Overall rank</div><div class="home-chip-val">${h.overallRank != null ? h.overallRank.toLocaleString() : '—'}</div>${moveHtml}</div>
   `;
 
   const cy = h.targets.cyprus;
@@ -1258,9 +1375,130 @@ function renderHome() {
     <div class="gw-status-item"><div class="gw-status-label">Free transfers<span class="estimate-tag">est.</span></div><div class="gw-status-val">${h.freeTransfersEstimate ?? '—'}</div></div>
     <div class="gw-status-item"><div class="gw-status-label">Bank</div><div class="gw-status-val">£${h.bank != null ? h.bank.toFixed(1) : '—'}m</div></div>
     <div class="gw-status-item"><div class="gw-status-label">Team value</div><div class="gw-status-val">£${h.teamValue != null ? h.teamValue.toFixed(1) : '—'}m</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Transfers made</div><div class="gw-status-val">${h.transfersMade ?? '—'}</div></div>
+    <div class="gw-status-item"><div class="gw-status-label">Hits taken</div><div class="gw-status-val ${h.hitsTaken > 0 ? 'warn' : ''}">${h.hitsTaken != null ? (h.hitsTaken > 0 ? '-' + (h.hitsTaken * 4) : '0') : '—'}</div></div>
     <div class="gw-status-item" style="min-width:200px"><div class="gw-status-label">Blanks next GW</div><div style="margin-top:4px">${blanksHtml}</div></div>
     <div class="gw-status-item" style="min-width:200px"><div class="gw-status-label">Doubles next GW</div><div style="margin-top:4px">${doublesHtml}</div></div>
   `;
+
+  renderVerdict();
+  renderHomeRivals();
+  renderTeamStructureSection();
+}
+
+/* ---- Manager Verdict — transparent rule engine, no invented confidence ---- */
+function renderVerdict() {
+  const card = document.getElementById('verdictCard');
+  if (!homeData || !gwPlanner) { card.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; card.className = 'verdict-card'; return; }
+
+  const reasons = [];
+  let verdict = 'HOLD';
+  let cls = 'verdict-hold';
+
+  // Rule 1: unavailable/doubtful squad player with real news -> ACTION or WAIT depending on severity
+  const injuryFlags = (playerAnalysis || []).filter(p => p.heuristic && p.heuristic.bucket === 'Injury/Availability Risk' && !p.isBench);
+  if (injuryFlags.length) {
+    const severe = injuryFlags.some(p => p.official.status === 'i' || p.official.status === 's' || (p.official.chanceOfPlaying != null && p.official.chanceOfPlaying <= 25));
+    if (severe) {
+      verdict = 'ACTION'; cls = 'verdict-action';
+      injuryFlags.forEach(p => reasons.push(`${p.name} flagged unavailable/high-doubt in your starting XI — bench cover may be needed`));
+    } else {
+      verdict = 'WAIT'; cls = 'verdict-wait';
+      injuryFlags.forEach(p => reasons.push(`${p.name} flagged as a doubt — worth waiting for clearer news before deciding`));
+    }
+  }
+
+  // Rule 2: blank gameweek affecting squad
+  if (homeData.upcoming.blanks.length) {
+    if (verdict === 'HOLD') { verdict = 'WAIT'; cls = 'verdict-wait'; }
+    reasons.push(`${homeData.upcoming.blanks.join(', ')} blank next gameweek — affects players you own`);
+  }
+
+  // Rule 3: possible-sell/sell flagged players present, but no urgent injury/blank
+  const sellFlags = (playerAnalysis || []).filter(p => p.heuristic && (p.heuristic.bucket === 'Possible Sell' || p.heuristic.bucket === 'Sell'));
+  if (sellFlags.length && verdict === 'HOLD') {
+    verdict = 'WAIT'; cls = 'verdict-wait';
+    reasons.push(`${sellFlags.length} squad player(s) flagged Possible Sell/Sell in Analysis — worth reviewing before your transfer`);
+  }
+
+  // Rule 4: heavy team exposure into a difficult run
+  if (teamStructure && teamStructure.heavyExposure && teamStructure.heavyExposure.length && verdict === 'HOLD') {
+    const worst = teamStructure.heavyExposure.find(e => e.fixtureRun && e.fixtureRun.avgDifficulty >= 3.2);
+    if (worst) {
+      reasons.push(`${worst.count} players from ${worst.team} face a tougher fixture run (avg FDR ${worst.fixtureRun.avgDifficulty.toFixed(1)}) — awareness only, not an automatic sell signal`);
+    }
+  }
+
+  // Rule 5: nothing flagged, FT banking available -> ROLL
+  if (verdict === 'HOLD' && homeData.freeTransfersEstimate != null && homeData.freeTransfersEstimate >= 2) {
+    verdict = 'ROLL TRANSFER'; cls = 'verdict-roll';
+    reasons.push(`No flagged issues found and you're banking ${homeData.freeTransfersEstimate} free transfers — rolling keeps flexibility for next gameweek`);
+  }
+
+  if (!reasons.length) {
+    reasons.push('No injury, blank, or squad-status signals detected this gameweek');
+    reasons.push('No strong transfer trigger identified by current rules');
+  }
+
+  card.className = 'verdict-card ' + cls;
+  card.innerHTML = `
+    <div class="verdict-label">${verdict}</div>
+    <div class="verdict-reasons">${reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div>
+  `;
+}
+
+/* ---- Home rival snapshot ---- */
+function renderHomeRivals() {
+  const wrap = document.getElementById('homeRivalWrap');
+  if (!rivalIntel || !rivalIntel.managers.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
+
+  const me = rivalIntel.managers.find(m => m.entry === MY_ENTRY);
+  const rivals = rivalIntel.managers.filter(m => m.entry !== MY_ENTRY);
+  const sorted = [...rivals].sort((a, b) => (b.gwPoints ?? -1) - (a.gwPoints ?? -1));
+
+  wrap.innerHTML = sorted.map(r => {
+    const gap = me && r.gwPoints != null && me.gwPoints != null ? r.gwPoints - me.gwPoints : null;
+    return `
+      <div class="home-rival-row">
+        <div>
+          <div class="hr-name">${escapeHtml(r.entry_name)}</div>
+          <div class="hr-meta">C: ${r.captainName ? escapeHtml(r.captainName) : '—'}${r.chipActive ? ' · ' + r.chipActive.toUpperCase() : ''} · ${r.transfersMade ?? 0} transfer(s)${r.hitsTaken ? ' · -' + (r.hitsTaken * 4) + ' hit' : ''}</div>
+        </div>
+        ${gap != null ? `<div class="hr-gap ${gap > 0 ? 'ahead' : 'behind'}">${gap > 0 ? '+' + gap : gap}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---- Team structure ---- */
+function renderTeamStructureSection() {
+  const wrap = document.getElementById('teamStructureWrap');
+  if (!teamStructure) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
+
+  let html = '';
+  teamStructure.exposures.forEach(e => {
+    const isHeavy = e.count >= 3;
+    html += `
+      <div class="ts-row ${isHeavy ? 'heavy' : ''}">
+        <div class="ts-head">
+          <div class="ts-team">${escapeHtml(e.team)}</div>
+          <div class="ts-count">${e.count} player${e.count > 1 ? 's' : ''}</div>
+        </div>
+        <div class="ts-players">${e.players.map(escapeHtml).join(', ')}</div>
+        ${e.fixtureRun && e.fixtureRun.avgDifficulty != null ? `<div class="ts-run">Upcoming avg fixture difficulty: ${e.fixtureRun.avgDifficulty.toFixed(1)}</div>` : ''}
+        ${isHeavy ? `<div class="ts-warn">⚠️ ${teamStructure.rule}</div>` : ''}
+      </div>
+    `;
+  });
+
+  if (teamStructure.zeroExposureStrongRun.length) {
+    html += '<div class="pm-position-label" style="margin-top:12px">No exposure, but a strong upcoming run</div>';
+    html += teamStructure.zeroExposureStrongRun.map(z => `
+      <div class="ts-zero-row">${escapeHtml(z.team)} — avg fixture difficulty ${z.fixtureRun.avgDifficulty.toFixed(1)} — this doesn't automatically mean buy, just worth being aware of.</div>
+    `).join('');
+  }
+
+  wrap.innerHTML = html || '<div class="empty-note">No structure data yet.</div>';
 }
 
 /* ---- Rival Intelligence rendering ---- */
@@ -1407,7 +1645,7 @@ function renderRivalCompare() {
 
 /* ---- Player Analysis (Phase 3A) rendering ---- */
 const BUCKET_CLASS = {
-  'Strong': 'strong', 'Hold': 'hold', 'Monitor': 'monitor', 'Concern': 'concern', 'Sell candidate': 'sell'
+  'Keep': 'strong', 'Monitor': 'monitor', 'Possible Sell': 'concern', 'Sell': 'sell', 'Injury/Availability Risk': 'concern'
 };
 
 function renderPlayerAnalysis() {
@@ -1478,7 +1716,7 @@ function renderPlayerAnalysis() {
         ${o.news ? `<div class="pa-news">⚠️ ${escapeHtml(o.news)}${o.chanceOfPlaying != null ? ' (' + o.chanceOfPlaying + '% chance)' : ''}</div>` : ''}
 
         <div class="pa-section-tag heuristic">Heuristic — our model opinion</div>
-        <div class="pa-heuristic-note">${escapeHtml(h.factorsNote)}</div>
+        <div class="pa-heuristic-note">${(h.reasons || []).map(r => '• ' + escapeHtml(r)).join('<br>')}</div>
       </div>
     `;
   }).join('');
@@ -1901,7 +2139,7 @@ function renderChipCentre() {
   const myTeams = playerAnalysis ? [...new Set(playerAnalysis.map(p => p.team))] : [];
   const affectedBlank = gwPlanner.futureWatch.blanksAhead.find(b => myTeams.includes(b.team));
   const affectedDouble = gwPlanner.futureWatch.doublesAhead.find(d => myTeams.includes(d.team));
-  const concernCount = (playerAnalysis || []).filter(p => p.heuristic && (p.heuristic.bucket === 'Concern' || p.heuristic.bucket === 'Sell candidate')).length;
+  const concernCount = (playerAnalysis || []).filter(p => p.heuristic && (p.heuristic.bucket === 'Possible Sell' || p.heuristic.bucket === 'Sell')).length;
 
   wrap.innerHTML = CHIP_TYPES.map(ct => {
     const status = chipHalfStatus(ct.key, myChips, currentGw);
@@ -2149,12 +2387,14 @@ function renderFplInfo() {
     document.getElementById('fdrWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
     document.getElementById('priceWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
     document.getElementById('injuryWrap').innerHTML = '<div class="empty-note">Waiting for first sync…</div>';
+    renderTransferPressure();
     return;
   }
   renderDeadline(fplInfo.deadline);
   renderFdr(fplInfo.fixtureDifficulty);
   renderPriceChanges(fplInfo.priceChanges);
   renderInjuries(fplInfo.injuries);
+  renderTransferPressure();
 }
 
 function renderDeadline(deadline) {
@@ -2247,6 +2487,40 @@ function renderInjuries(injuries) {
       <span class="injury-status ${cls}">${label}</span>
     </div>`;
   }).join('');
+}
+
+/* ---- Transfer pressure (Phase 1 upgrade) ---- */
+function renderTransferPressure() {
+  const wrap = document.getElementById('pressureWrap');
+  if (!gwPlanner || !gwPlanner.allPlayers) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync…</div>'; return; }
+
+  const rising = gwPlanner.allPlayers
+    .filter(p => p.transferPressure === 'Rising')
+    .sort((a, b) => b.netTransfers - a.netTransfers)
+    .slice(0, 8);
+  const falling = gwPlanner.allPlayers
+    .filter(p => p.transferPressure === 'Falling')
+    .sort((a, b) => a.netTransfers - b.netTransfers)
+    .slice(0, 8);
+
+  const row = p => `
+    <div class="pressure-row">
+      <div>
+        <div class="price-name">${escapeHtml(p.name)}</div>
+        <div class="price-meta">${escapeHtml(p.team)} · £${p.price.toFixed(1)}m · In ${p.transfersInEvent.toLocaleString()} / Out ${p.transfersOutEvent.toLocaleString()} · Net ${p.netTransfers >= 0 ? '+' : ''}${p.netTransfers.toLocaleString()}</div>
+      </div>
+      <span class="pressure-badge ${p.transferPressure}">${p.transferPressure}</span>
+    </div>
+  `;
+
+  let html = '';
+  if (rising.length) {
+    html += '<div class="pm-position-label">Rising pressure</div>' + rising.map(row).join('');
+  }
+  if (falling.length) {
+    html += '<div class="pm-position-label" style="margin-top:12px">Falling pressure</div>' + falling.map(row).join('');
+  }
+  wrap.innerHTML = html || '<div class="empty-note">No notable transfer pressure right now.</div>';
 }
 
 function currentStandings() {
@@ -2640,6 +2914,18 @@ async function syncFromScript(manual) {
     if (data.home) {
       homeData = data.home;
       await saveHomeData();
+
+      if (homeData.overallRank != null && homeData.gw != null) {
+        homeRankHistory = homeRankHistory.filter(r => r.gw !== homeData.gw);
+        homeRankHistory.push({ gw: homeData.gw, overallRank: homeData.overallRank });
+        homeRankHistory.sort((a, b) => a.gw - b.gw);
+        await saveHomeRankHistory();
+      }
+    }
+
+    if (data.teamStructure) {
+      teamStructure = data.teamStructure;
+      await saveTeamStructure();
     }
 
     if (data.cyprusDetail) {
@@ -2734,6 +3020,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   await loadPlayerAnalysis();
   await loadGwPlanner();
   await loadCaptaincyHistory();
+  await loadHomeRankHistory();
+  await loadTeamStructure();
   render();
   renderCyprus();
   renderFH();
