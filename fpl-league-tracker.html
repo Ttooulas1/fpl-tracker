@@ -637,6 +637,55 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .swing-tag.improving { background: rgba(198,255,61,0.10); color: var(--lime); }
 .swing-tag.worsening { background: rgba(255,107,92,0.10); color: var(--red); }
 
+/* ---- Pitch view ---- */
+.pitch-toggle { display: flex; gap: 8px; margin-bottom: 10px; }
+.pitch-toggle-btn {
+  background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--font-body);
+  font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 3px; cursor: pointer;
+}
+.pitch-toggle-btn.active { border-color: var(--lime); color: var(--lime); background: rgba(198,255,61,0.08); }
+.pitch-container {
+  background: linear-gradient(180deg, #0f2e1a 0%, #163b22 50%, #0f2e1a 100%);
+  border: 1px solid var(--border); border-radius: 6px; padding: 16px 10px; position: relative; overflow: hidden;
+}
+.pitch-container::before {
+  content: ''; position: absolute; inset: 8px; border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; pointer-events: none;
+}
+.pitch-container::after {
+  content: ''; position: absolute; top: 50%; left: 8px; right: 8px; height: 1px; background: rgba(255,255,255,0.1); pointer-events: none;
+}
+.pitch-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; position: relative; z-index: 1; flex-wrap: nowrap; }
+.pitch-card {
+  flex: 1; max-width: 130px; min-width: 68px; background: rgba(10,20,16,0.88); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 5px; padding: 6px 5px; text-align: center; backdrop-filter: blur(2px);
+}
+.pitch-jersey {
+  width: 26px; height: 26px; margin: 0 auto 4px; border-radius: 4px; position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+}
+.pitch-jersey.gk { border: 2px dashed rgba(255,255,255,0.6); }
+.pitch-badges { position: absolute; top: -4px; right: -4px; display: flex; gap: 2px; }
+.pitch-badge { width: 14px; height: 14px; border-radius: 50%; font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: #0a1410; }
+.pitch-badge.c { background: var(--gold); }
+.pitch-badge.v { background: #7fd4ff; }
+.pitch-name { font-family: var(--font-body); font-weight: 700; font-size: 10px; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pitch-extra { font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.65); margin-top: 1px; }
+.pitch-news-flag { font-size: 9px; }
+.pitch-fx-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.pitch-fx-pill { font-family: var(--font-mono); font-size: 8px; font-weight: 700; padding: 1px 3px; border-radius: 2px; }
+.pitch-bench-wrap { margin-top: 12px; padding: 10px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 5px; }
+.pitch-bench-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 8px; }
+.pitch-bench-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.pitch-bench-row .pitch-card { max-width: 110px; background: var(--bg-elev-2); border-color: var(--border-soft); }
+.pitch-bench-row .pitch-name { color: var(--text); }
+.pitch-bench-row .pitch-extra { color: var(--text-faint); }
+.pitch-formation-label { text-align: center; font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 10px; position: relative; z-index: 1; }
+@media (max-width: 480px) {
+  .pitch-card { min-width: 56px; padding: 5px 3px; }
+  .pitch-name { font-size: 9px; }
+  .pitch-fx-pill { font-size: 7px; }
+}
+
 /* ---- Transfer Lab Decision-Lab upgrade ---- */
 .lab-hold-card { background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 4px; padding: 16px; }
 .lab-hold-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -1522,6 +1571,69 @@ const PLANNING_HORIZON = FPL_RULES.planningHorizon;
 
 // One source of truth for the forward fixture window.
 // Backwards-compatible with legacy field names still returned by the data layer.
+// ---- Team colors: approximate real club primary shirt colors, not kit graphics/logos ----
+const TEAM_COLORS = {
+  ARS: '#EF0107', AVL: '#95BFE5', BOU: '#DA291C', BRE: '#e30613', BHA: '#0057B8',
+  BUR: '#6C1D45', CHE: '#034694', CRY: '#1B458F', EVE: '#003399', FUL: '#000000',
+  LEE: '#1D428A', LIV: '#C8102E', MCI: '#6CABDD', MUN: '#DA291C', NEW: '#241F20',
+  NFO: '#DD0000', SUN: '#e3161c', TOT: '#132257', WHU: '#7A263A', WOL: '#FDB913'
+};
+function teamColor(short) { return TEAM_COLORS[short] || '#555'; }
+
+/* ---- Shared pitch-view renderer -- used by Home, Planner (squad outlook), and 6-GW Plan ---- */
+function pitchCard(p) {
+  const badges = (p.isCaptain || p.isVice)
+    ? `<div class="pitch-badges">${p.isCaptain ? '<div class="pitch-badge c">C</div>' : ''}${p.isVice ? '<div class="pitch-badge v">V</div>' : ''}</div>`
+    : '';
+  const fxHtml = (p.fixtures || []).slice(0, p.fixtureCount || 3).map(f =>
+    `<div class="pitch-fx-pill fdr-${f.difficulty}">${escapeHtml(f.opponent)} ${f.venue}</div>`
+  ).join('') || '<div class="pitch-fx-pill" style="background:var(--bg-elev-2);color:var(--text-faint)">—</div>';
+  return `
+    <div class="pitch-card">
+      <div style="position:relative">
+        <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)}"></div>
+        ${badges}
+      </div>
+      <div class="pitch-name">${escapeHtml(p.name)}${p.news ? ' <span class="pitch-news-flag">⚠️</span>' : ''}</div>
+      <div class="pitch-extra">${p.extra || ''}</div>
+      <div class="pitch-fx-list">${fxHtml}</div>
+    </div>
+  `;
+}
+
+function renderPitchView(containerId, players, opts) {
+  opts = opts || {};
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  if (!players || !players.length) { wrap.innerHTML = `<div class="empty-note">${opts.emptyMessage || 'No squad data yet.'}</div>`; return; }
+
+  const starters = players.filter(p => !p.isBench);
+  const bench = players.filter(p => p.isBench);
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const rowsMap = { GKP: [], DEF: [], MID: [], FWD: [] };
+  starters.forEach(p => { if (rowsMap[p.position]) rowsMap[p.position].push(p); });
+
+  const formation = `${rowsMap.DEF.length}-${rowsMap.MID.length}-${rowsMap.FWD.length}`;
+
+  let html = `<div class="pitch-formation-label">Formation ${formation}</div><div class="pitch-container">`;
+  ['GKP', 'DEF', 'MID', 'FWD'].forEach(pos => {
+    if (!rowsMap[pos].length) return;
+    html += `<div class="pitch-row">${rowsMap[pos].map(pitchCard).join('')}</div>`;
+  });
+  html += '</div>';
+
+  if (bench.length) {
+    html += `
+      <div class="pitch-bench-wrap">
+        <div class="pitch-bench-label">Bench</div>
+        <div class="pitch-bench-row">${bench.map(pitchCard).join('')}</div>
+      </div>
+    `;
+  }
+
+  wrap.innerHTML = html;
+}
+
 function getPlanningFixtures(player) {
   if (!player) return [];
   const run = player.fixtureRun6 || player.next6 || player.fixtureRun5 || player.next5 || [];
@@ -2001,22 +2113,10 @@ function renderHome() {
     </div>
   `;
 
-  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
-  const starters = h.squad.filter(p => !p.isBench).sort((a, b) => (order[a.position] || 9) - (order[b.position] || 9));
-  const bench = h.squad.filter(p => p.isBench);
-  squadWrap.innerHTML = [...starters, ...bench].map(p => `
-    <div class="squad-row ${p.isBench ? 'bench' : ''}">
-      <div>
-        <div class="squad-name-block">
-          ${p.isCaptain ? '<span class="squad-badge c">C</span>' : ''}${p.isVice ? '<span class="squad-badge v">V</span>' : ''}
-          <span class="squad-name">${escapeHtml(p.name)}</span>
-          ${p.news ? '<span class="squad-flag" title="' + escapeHtml(p.news) + '">⚠️</span>' : ''}
-        </div>
-        <div class="squad-meta">${escapeHtml(p.team || '')} · ${p.position} ${fixtureBadge(p.nextFixture)}</div>
-      </div>
-      <div class="squad-pts">${p.contribution}</div>
-    </div>
-  `).join('');
+  renderPitchView('squadWrap', h.squad.map(p => ({
+    name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
+    news: p.news, extra: p.contribution + ' pts', fixtures: p.nextFixture ? [p.nextFixture] : [], fixtureCount: 1
+  })), { emptyMessage: 'No squad data yet.' });
 
   gwStatusCard.innerHTML = `
     <div class="gw-status-item"><div class="gw-status-label">Points</div><div class="gw-status-val ok">${h.livePoints ?? '—'}</div></div>
@@ -3246,6 +3346,10 @@ function computePlanSimulation(plan) {
   if (!gws.length || !gwPlanner) return [];
 
   let squadIds = gwPlanner.squad.map(p => p.element);
+  // Roles are tracked per squad SLOT (same index as squadIds), so a transferred-in
+  // player inherits the outgoing player's bench/captain/vice slot. Only a wildcard
+  // resets this, since the whole squad is rebuilt at once.
+  let roles = gwPlanner.squad.map(p => ({ isBench: p.isBench, isCaptain: p.isCaptain, isVice: p.isVice }));
   let ftIn = gwPlanner.ftEstimate != null ? gwPlanner.ftEstimate : 1;
   let bank = gwPlanner.bank;
   const results = [];
@@ -3254,6 +3358,7 @@ function computePlanSimulation(plan) {
     const action = (plan.actions && plan.actions[gw]) || { type: 'roll' };
     let transfersUsed = 0, hitCost = 0, incoming = [], outgoing = [];
     let illegal = null;
+    let wildcardThisGw = false;
 
     if (action.type === 'wildcard' && action.wildcardSquad && action.wildcardSquad.length === FPL_RULES.squadSize) {
       const beforeValue = squadIds.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
@@ -3263,12 +3368,33 @@ function computePlanSimulation(plan) {
       bank = round1(bank + beforeValue - afterValue);
       squadIds = [...action.wildcardSquad];
       hitCost = 0;
+      wildcardThisGw = true;
+
+      // No real bench-order or captaincy intent exists for a fresh wildcard squad --
+      // assign a simple, clearly-heuristic starting XI (highest price per position,
+      // respecting valid formation limits) and leave captain/vice unset rather than guess.
+      const wcPlayers = squadIds.map(plannerGetPlayer).filter(Boolean);
+      const byPos = { GKP: [], DEF: [], MID: [], FWD: [] };
+      wcPlayers.forEach(p => { if (byPos[p.position]) byPos[p.position].push(p); });
+      Object.keys(byPos).forEach(pos => byPos[pos].sort((a, b) => b.price - a.price));
+      const startIds = new Set();
+      if (byPos.GKP[0]) startIds.add(byPos.GKP[0].id);
+      byPos.DEF.slice(0, 4).forEach(p => startIds.add(p.id));
+      byPos.MID.slice(0, 4).forEach(p => startIds.add(p.id));
+      byPos.FWD.slice(0, 2).forEach(p => startIds.add(p.id));
+      // Top up to 11 starters if the 4-4-2 defaults left us short (e.g. 3-5-2 squads)
+      const remaining = [...byPos.DEF, ...byPos.MID, ...byPos.FWD].filter(p => !startIds.has(p.id)).sort((a, b) => b.price - a.price);
+      let i = 0;
+      while (startIds.size < 11 && i < remaining.length) { startIds.add(remaining[i].id); i++; }
+
+      roles = squadIds.map(id => ({ isBench: !startIds.has(id), isCaptain: false, isVice: false }));
     } else if (action.type === 'transfer' || action.type === 'double') {
       const pairs = (action.pairs || []).filter(pr => pr.outId && pr.inId);
       transfersUsed = pairs.length;
       pairs.forEach(pr => {
         const idx = squadIds.indexOf(pr.outId);
         if (idx > -1) { squadIds[idx] = pr.inId; outgoing.push(pr.outId); incoming.push(pr.inId); }
+        // roles array is untouched -- the incoming player inherits the same slot/role
       });
       const outSum = pairs.reduce((s, pr) => { const p = plannerGetPlayer(pr.outId); return s + (p ? p.price : 0); }, 0);
       const inSum = pairs.reduce((s, pr) => { const p = plannerGetPlayer(pr.inId); return s + (p ? p.price : 0); }, 0);
@@ -3285,7 +3411,12 @@ function computePlanSimulation(plan) {
       ? Math.min(FPL_RULES.maxFreeTransfers, ftIn)
       : Math.min(FPL_RULES.maxFreeTransfers, ftOut + 1);
 
-    const squadFull = squadIds.map(plannerGetPlayer).filter(Boolean);
+    const squadFull = squadIds.map((id, idx) => {
+      const p = plannerGetPlayer(id);
+      if (!p) return null;
+      const role = roles[idx] || { isBench: false, isCaptain: false, isVice: false };
+      return { ...p, isBench: role.isBench, isCaptain: role.isCaptain, isVice: role.isVice };
+    }).filter(Boolean);
     const teamValue = round1(squadFull.reduce((s, p) => s + p.price, 0) + bank);
     const exposures = {};
     squadFull.forEach(p => { exposures[p.team] = (exposures[p.team] || 0) + 1; });
@@ -3293,7 +3424,7 @@ function computePlanSimulation(plan) {
     if (!teamCountsOk && !illegal) illegal = 'Squad would exceed 3 players from one club';
 
     results.push({
-      gw, action: action.type, transfersUsed, hitCost, bank, ftIn, ftOut, illegal,
+      gw, action: action.type, transfersUsed, hitCost, bank, ftIn, ftOut, illegal, wildcardThisGw,
       squadIds: [...squadIds], squadFull, incoming, outgoing, teamValue, exposures
     });
 
@@ -3606,31 +3737,26 @@ function renderSixGwSquad(results) {
     const outNames = r.outgoing.map(id => { const p = plannerGetPlayer(id); return p ? p.name : '?'; }).join(', ');
     ioHtml = `<div class="sixgw-io-line">${r.incoming.length ? `<span class="in">IN: ${escapeHtml(inNames)}</span>` : ''}${r.incoming.length && r.outgoing.length ? ' &nbsp; ' : ''}${r.outgoing.length ? `<span class="out">OUT: ${escapeHtml(outNames)}</span>` : ''}</div>`;
   }
-
+  if (r.wildcardThisGw) {
+    ioHtml += `<div class="heuristic-note" style="margin-bottom:10px">Starting XI shown is a default suggestion (highest price per position, valid formation) — no captain assumed for a fresh wildcard squad.</div>`;
+  }
   if (r.illegal) {
     ioHtml += `<div class="warning-banner">\u26a0\ufe0f ${escapeHtml(r.illegal)}</div>`;
   }
 
-  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
-  const sorted = [...r.squadFull].sort((a, b) => (order[a.position] || 9) - (order[b.position] || 9));
   const gw = r.gw;
+  const pitchPlayers = r.squadFull.map(p => {
+    const allFx = getPlanningFixtures(p);
+    const idx = allFx.findIndex(f => f.gw === gw);
+    const fixturesFromHere = idx > -1 ? allFx.slice(idx, idx + 3) : [];
+    return {
+      name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
+      news: p.news, extra: `£${p.price.toFixed(1)}m`, fixtures: fixturesFromHere, fixtureCount: 3
+    };
+  });
 
-  const squadHtml = sorted.map(p => {
-    const fx = getPlanningFixtures(p).find(f => f.gw === gw);
-    return `
-      <div class="planner-squad-row">
-        <div class="planner-squad-head">
-          <div>
-            <div class="planner-squad-name">${escapeHtml(p.name)}</div>
-            <div class="planner-squad-meta">${escapeHtml(p.team)} \u00b7 ${p.position} \u00b7 £${p.price.toFixed(1)}m</div>
-          </div>
-          ${fx ? fixtureBadge(fx) : '<span class="chip-none">no fixture GW' + gw + '</span>'}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  wrap.innerHTML = ioHtml + squadHtml;
+  wrap.innerHTML = ioHtml + '<div id="sixgwPitchInner"></div>';
+  renderPitchView('sixgwPitchInner', pitchPlayers, { emptyMessage: 'No fixture in GW' + gw + ' window.' });
 }
 
 function renderSixGwWarnings(results) {
@@ -4507,32 +4633,15 @@ function renderPlanner() {
 }
 
 function renderPlannerSquad() {
-  const wrap = document.getElementById('plannerSquadWrap');
-  if (!gwPlanner || !gwPlanner.squad.length) { wrap.innerHTML = '<div class="empty-note">No squad data yet.</div>'; return; }
-  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
-  const sorted = [...gwPlanner.squad].sort((a, b) => {
-    if (a.isBench !== b.isBench) return a.isBench ? 1 : -1;
-    return (order[a.position] || 9) - (order[b.position] || 9);
-  });
-  wrap.innerHTML = sorted.map(pl => {
+  if (!gwPlanner || !gwPlanner.squad.length) { document.getElementById('plannerSquadWrap').innerHTML = '<div class="empty-note">No squad data yet.</div>'; return; }
+  renderPitchView('plannerSquadWrap', gwPlanner.squad.map(pl => {
     const effectiveBucket = pl.heuristic ? aiEffectiveClassification(pl) : '';
-    const bucketCls = effectiveBucket === 'FIXTURE CONCERN / HOLD' ? 'monitor' : (BUCKET_CLASS[effectiveBucket] || 'monitor');
-    return `
-      <div class="planner-squad-row">
-        <div class="planner-squad-head">
-          <div>
-            <div class="planner-squad-name">${pl.isCaptain ? '<span class="squad-badge c">C</span> ' : ''}${pl.isVice ? '<span class="squad-badge v">V</span> ' : ''}${escapeHtml(pl.name)}</div>
-            <div class="planner-squad-meta">${escapeHtml(pl.team || '')} · ${pl.position} · £${pl.price != null ? pl.price.toFixed(1) : '—'}m · ep_next ${pl.epNext != null ? pl.epNext.toFixed(1) : '—'} · form ${pl.form != null ? pl.form.toFixed(1) : '—'}</div>
-          </div>
-          ${pl.heuristic ? `<div class="pa-bucket ${bucketCls}">${effectiveBucket === 'FIXTURE CONCERN / HOLD' ? '⚠️' : pl.heuristic.emoji} ${effectiveBucket}</div>` : ''}
-        </div>
-        ${pl.news ? `<div class="pa-news">⚠️ ${escapeHtml(pl.news)}</div>` : ''}
-        <div class="planner-fx-row">
-          ${getPlanningFixtures(pl).map(f => `<div class="planner-fx-cell fdr-${f.difficulty}">GW${f.gw}: ${escapeHtml(f.opponent)} (${f.venue})</div>`).join('') || '<span class="chip-none">no fixtures in window</span>'}
-        </div>
-      </div>
-    `;
-  }).join('');
+    return {
+      name: pl.name, team: pl.team, position: pl.position, isCaptain: pl.isCaptain, isVice: pl.isVice, isBench: pl.isBench,
+      news: pl.news, extra: `£${pl.price != null ? pl.price.toFixed(1) : '—'}m${effectiveBucket ? ' · ' + effectiveBucket : ''}`,
+      fixtures: getPlanningFixtures(pl), fixtureCount: PLANNING_HORIZON
+    };
+  }), { emptyMessage: 'No squad data yet.' });
 }
 
 function renderSquadProblems() {
