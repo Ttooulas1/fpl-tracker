@@ -500,6 +500,16 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .lab-candidate-reasons b, .lab-candidate-tradeoffs b { display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 4px; }
 .lab-candidate-tradeoffs { font-size: 12px; color: var(--gold); margin-bottom: 10px; }
 .lab-candidate-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lab-hold-player-card { background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 8px; padding: 16px; margin-bottom: 10px; }
+.lab-hold-player-title { font-family: var(--font-mono); font-size: 11px; color: var(--lime); text-transform: uppercase; margin-bottom: 6px; }
+.lab-hold-player-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.lab-hold-player-meta { font-size: 12px; color: var(--text-dim); margin: 2px 0 10px; }
+.lab-hold-player-why b { display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 4px; }
+.lab-hold-player-why div { font-size: 12px; color: var(--text-dim); }
+.lab-hold-squad-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 8px; }
+@media (min-width: 1024px) {
+  .lab-candidate-stats { flex-wrap: nowrap; }
+}
 
 /* ---- Phase 2: planned lineup banner + toast + substitute sheet ---- */
 .planned-banner {
@@ -4323,6 +4333,30 @@ function renderLabHoldHero() {
   const wrap = document.getElementById('labHoldHeroWrap');
   if (!gwPlanner) { wrap.innerHTML = ''; return; }
 
+  let playerCardHtml = '';
+  const handoffActive = transferLabContext && transferLabContext.active;
+  if (handoffActive) {
+    const p = labGetSquadPlayer(transferLabContext.outPlayerId);
+    if (p) {
+      const fxRun = getPlanningFixtures(p).slice(0, 3).map(f => escapeHtml(f.opponent) + ' (' + f.venue + ')').join(', ');
+      ensurePlannedLineup();
+      const isStarting = plannedLineup && plannedLineup.starters.includes(p.element);
+      const availableText = p.status === 'a' ? 'Available' : escapeHtml(p.news || p.status || 'Check status');
+      playerCardHtml = `
+        <div class="lab-hold-player-card">
+          <div class="lab-hold-player-title">HOLD BASELINE</div>
+          <div class="lab-hold-player-name">${escapeHtml(p.name)}</div>
+          <div class="lab-hold-player-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 CURRENT PRICE \u00a3${p.price != null ? p.price.toFixed(1) : '\u2014'}m</div>
+          <div class="lab-hold-player-why"><b>Why HOLD is the baseline</b>
+            <div>\u2022 ${isStarting ? 'Starting XI player (planned)' : 'Bench player (planned)'}</div>
+            <div>\u2022 Current availability: ${availableText}</div>
+            <div>\u2022 Upcoming fixture run: ${fxRun || '\u2014'}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   const squadIssues = (gwPlanner.squadProblems || []).length;
   const flagged = (playerAnalysis || []).filter(p => ['Possible Sell','Sell'].includes(aiEffectiveClassification(p))).length;
   const concentration = teamStructure ? teamStructure.heavyExposure.length : 0;
@@ -4339,7 +4373,9 @@ function renderLabHoldHero() {
   }
 
   wrap.innerHTML = `
+    ${playerCardHtml}
     <div class="lab-hold-card">
+      ${handoffActive ? '<div class="lab-hold-squad-label">Squad context</div>' : ''}
       <div class="lab-hold-grid">
         <div class="lab-hold-stat"><div class="lab-hold-label">Free transfers</div><div class="lab-hold-val">${gwPlanner.ftEstimate ?? '\u2014'}</div></div>
         <div class="lab-hold-stat"><div class="lab-hold-label">Bank</div><div class="lab-hold-val">£${gwPlanner.bank.toFixed(1)}m</div></div>
@@ -4397,6 +4433,12 @@ function renderLabVerdict(allMetrics) {
     if (newsProblems.length) {
       verdict = 'WAIT FOR NEWS';
       newsProblems.forEach(p => reasons.push(`${p.player} -- ${p.detail}`));
+    } else if (transferLabContext && transferLabContext.active) {
+      const outP = labGetSquadPlayer(transferLabContext.outPlayerId);
+      verdict = 'HOLD / NO MOVE SELECTED';
+      reasons.push('No replacement scenario has been selected yet.');
+      if (gwPlanner) reasons.push(`${gwPlanner.ftEstimate} free transfer(s) available.`);
+      reasons.push(`Review ${outP ? outP.name : 'this player'} against the shortlist above before deciding whether to move.`);
     } else if (gwPlanner && gwPlanner.ftEstimate >= 2) {
       verdict = 'ROLL FT';
       reasons.push(`Banking ${gwPlanner.ftEstimate} free transfers keeps flexibility -- no scenario built yet to compare against it`);
@@ -4513,13 +4555,27 @@ function labAvgFixtureDifficulty(player, count) {
   return fx.reduce((s, f) => s + f.difficulty, 0) / fx.length;
 }
 
+// Evidence-based, not a vibes label: shows actual starts/matches-played and
+// minutes rather than declaring "Regular starter" from a couple of games.
 function labStarterTier(p) {
   const gws = labCurrentGwNumber();
-  const avgMins = gws > 0 ? (p.seasonMinutes || 0) / gws : 0;
-  if (avgMins >= 60) return { tier: 2, label: 'Regular starter' };
-  if (avgMins >= 30) return { tier: 1, label: 'Rotation risk' };
-  if (avgMins > 0) return { tier: 0, label: 'Limited minutes' };
-  return { tier: -1, label: 'Unknown / no minutes yet' };
+  const starts = p.starts || 0;
+  const mins = p.seasonMinutes || 0;
+  if (mins === 0) return { tier: -1, label: 'No minutes', starts, mins, gws };
+  const startRatio = gws > 0 ? starts / gws : 0;
+  const avgMins = gws > 0 ? mins / gws : 0;
+  let tier, label;
+  if (startRatio >= 0.75 && avgMins >= 60) { tier = 2; label = `Started ${starts}/${gws} \u00b7 ${mins} min`; }
+  else if (startRatio >= 0.4 || avgMins >= 30) { tier = 1; label = `Started ${starts}/${gws} \u00b7 ${mins} min`; }
+  else if (mins > 0) { tier = 0; label = 'Limited minutes'; }
+  else { tier = -1; label = 'Role evidence limited'; }
+  return { tier, label, starts, mins, gws };
+}
+
+// A tiny early-season sample must not be treated as equivalent evidence to a
+// full season. This gates how much ranking weight recent Form carries.
+function labIsEarlySeason() {
+  return labCurrentGwNumber() <= 5;
 }
 
 // Filters to same-position, not-owned, not-the-OUT-player, and club-legal
@@ -4546,15 +4602,18 @@ function getLegalReplacementCandidates(outPlayerId) {
 function labCandidateAffordability(outPlayer, candidate) {
   const sellingP = labSellingPrice(outPlayer);
   const bank = gwPlanner ? gwPlanner.bank : null;
-  if (sellingP == null || bank == null) return { status: 'unverified', label: '? UNVERIFIED' };
+  if (sellingP == null || bank == null) return { status: 'unverified', label: 'AFFORDABILITY UNVERIFIED' };
   const budget = sellingP + bank;
   return candidate.price <= budget
     ? { status: 'affordable', label: '\u2713 AFFORDABLE' }
     : { status: 'expensive', label: '\u2715 TOO EXPENSIVE' };
 }
 
+// Deterministic multi-key sort, not a blended score. Order changes by season
+// stage: early on, actual minutes/starts/fixtures/price outrank recent Form,
+// since two matches of Form 10.0 is not comparable evidence to a full season.
 function rankReplacementCandidates(outPlayerId, candidates) {
-  const outPlayer = labGetSquadPlayer(outPlayerId);
+  const early = labIsEarlySeason();
   const enriched = candidates.map(c => {
     const starter = labStarterTier(c);
     const xgi90 = c.seasonMinutes > 0 ? (c.seasonXGI / (c.seasonMinutes / 90)) : 0;
@@ -4565,9 +4624,16 @@ function rankReplacementCandidates(outPlayerId, candidates) {
   enriched.sort((a, b) => {
     if (a.available !== b.available) return a.available ? -1 : 1;
     if (a.starter.tier !== b.starter.tier) return b.starter.tier - a.starter.tier;
+    const aFdr = a.avgFdr3 ?? 3, bFdr = b.avgFdr3 ?? 3;
+    if (early) {
+      if (aFdr !== bFdr) return aFdr - bFdr;
+      if (b.xgi90 !== a.xgi90) return b.xgi90 - a.xgi90;
+      if ((a.player.price || 0) !== (b.player.price || 0)) return (a.player.price || 0) - (b.player.price || 0);
+      if ((b.player.form || 0) !== (a.player.form || 0)) return (b.player.form || 0) - (a.player.form || 0);
+      return (b.player.totalPoints || 0) - (a.player.totalPoints || 0);
+    }
     if ((b.player.form || 0) !== (a.player.form || 0)) return (b.player.form || 0) - (a.player.form || 0);
     if (b.xgi90 !== a.xgi90) return b.xgi90 - a.xgi90;
-    const aFdr = a.avgFdr3 ?? 3, bFdr = b.avgFdr3 ?? 3;
     if (aFdr !== bFdr) return aFdr - bFdr;
     return (b.player.totalPoints || 0) - (a.player.totalPoints || 0);
   });
@@ -4576,12 +4642,19 @@ function rankReplacementCandidates(outPlayerId, candidates) {
 
 function labCandidateReasons(outPlayer, entry) {
   const c = entry.player;
+  const early = labIsEarlySeason();
   const reasons = [];
-  if ((c.form || 0) >= 5) reasons.push('Strong recent form (' + c.form.toFixed(1) + ')');
-  if (entry.starter.tier === 2) reasons.push('Regular starting role');
+  if (entry.starter.mins > 0 && entry.starter.tier >= 1) reasons.push(`Started ${entry.starter.starts}/${entry.starter.gws} \u00b7 ${entry.starter.mins} minutes`);
   const outFdr3 = labAvgFixtureDifficulty(outPlayer, 3);
-  if (entry.avgFdr3 != null && outFdr3 != null && entry.avgFdr3 < outFdr3 - 0.3) reasons.push('Favourable next 3 fixtures vs ' + outPlayer.name);
-  if (outPlayer.price != null && c.price <= outPlayer.price - 0.5) reasons.push('£' + (outPlayer.price - c.price).toFixed(1) + 'm cheaper');
+  if (entry.avgFdr3 != null && outFdr3 != null && entry.avgFdr3 < outFdr3 - 0.3) reasons.push(`Favourable next 3 fixtures (${entry.avgFdr3.toFixed(1)} vs ${outFdr3.toFixed(1)} for ${outPlayer.name})`);
+  if (outPlayer.price != null && c.price <= outPlayer.price - 0.5) reasons.push('\u00a3' + (outPlayer.price - c.price).toFixed(1) + 'm lower current price');
+  if (c.position === 'DEF' || c.position === 'GKP') {
+    if (c.defensiveContribution != null && c.defensiveContribution > 0) reasons.push('Defensive contribution: ' + c.defensiveContribution);
+    if (entry.xgi90 >= 0.15) reasons.push(`Attacking involvement for a ${c.position} (xGI/90 ${entry.xgi90.toFixed(2)})`);
+  } else {
+    if (!early && (c.form || 0) >= 5) reasons.push('Strong recent form (' + c.form.toFixed(1) + ')');
+    if (entry.xgi90 >= 0.4) reasons.push(`Strong underlying involvement (xGI/90 ${entry.xgi90.toFixed(2)})`);
+  }
   if (!reasons.length) reasons.push('Same-position legal candidate with available data');
   return reasons.slice(0, 4);
 }
@@ -4589,10 +4662,13 @@ function labCandidateReasons(outPlayer, entry) {
 function labCandidateTradeoffs(outPlayer, entry) {
   const c = entry.player;
   const tradeoffs = [];
-  if ((outPlayer.totalPoints || 0) > 0 && (c.totalPoints || 0) < (outPlayer.totalPoints || 0) * 0.7) tradeoffs.push('Lower total points than ' + outPlayer.name + ' so far this season');
-  if (entry.starter.tier === 1) tradeoffs.push('Rotation risk');
+  const outStarter = labStarterTier(outPlayer);
+  if (outStarter.starts > entry.starter.starts + 2 && outStarter.gws >= 3) {
+    tradeoffs.push(`Candidate has a much smaller current sample than ${outPlayer.name} (${entry.starter.starts} vs ${outStarter.starts} starts)`);
+  }
+  if (entry.starter.tier <= 0) tradeoffs.push('Role evidence limited so far this season');
   const nextFx = c.nextFixture;
-  if (nextFx && nextFx.difficulty >= 4) tradeoffs.push('Difficult next fixture (' + nextFx.opponent + ' ' + nextFx.venue + ')');
+  if (nextFx && nextFx.difficulty >= 4) tradeoffs.push(`Difficult next fixture (${nextFx.opponent} ${nextFx.venue})`);
   return tradeoffs.slice(0, 3);
 }
 
@@ -4631,14 +4707,15 @@ function renderLabSuitableReplacements() {
     return `
       <div class="lab-candidate-card">
         <div class="lab-candidate-head">
-          <div><div class="lab-candidate-name">${escapeHtml(c.name)}</div><div class="lab-candidate-meta">${escapeHtml(c.team)} \u00b7 ${c.position} \u00b7 \u00a3${c.price.toFixed(1)}m</div></div>
-          <div class="lab-candidate-badges"><span class="lab-legal-badge">LEGAL \u2713</span><span class="lab-afford-badge ${afford.status}">${afford.label}</span></div>
+          <div><div class="lab-candidate-name">${escapeHtml(c.name)}</div><div class="lab-candidate-meta">${escapeHtml(c.team)} \u00b7 ${c.position} \u00b7 CURRENT PRICE \u00a3${c.price.toFixed(1)}m</div></div>
+          <div class="lab-candidate-badges"><span class="lab-legal-badge">SQUAD LEGAL \u2713</span><span class="lab-afford-badge ${afford.status}">${afford.label}</span></div>
         </div>
         <div class="lab-candidate-stats">
           <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Form</div><div class="lab-candidate-stat-val">${(c.form||0).toFixed(1)}</div></div>
+          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Starts</div><div class="lab-candidate-stat-val">${entry.starter.starts}/${entry.starter.gws}</div></div>
+          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Minutes</div><div class="lab-candidate-stat-val">${entry.starter.mins}</div></div>
           <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">xGI/90</div><div class="lab-candidate-stat-val">${entry.xgi90.toFixed(2)}</div></div>
           <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Next 3 FDR</div><div class="lab-candidate-stat-val">${entry.avgFdr3 != null ? entry.avgFdr3.toFixed(1) : '\u2014'}</div></div>
-          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Minutes</div><div class="lab-candidate-stat-val" style="font-size:11px">${entry.starter.label}</div></div>
         </div>
         <div class="lab-candidate-reasons"><b>Why on shortlist</b>${reasons.map(r => `<div>\u2022 ${escapeHtml(r)}</div>`).join('')}</div>
         ${tradeoffs.length ? `<div class="lab-candidate-tradeoffs"><b>Trade-off</b>${tradeoffs.map(r => `<div>\u2022 ${escapeHtml(r)}</div>`).join('')}</div>` : ''}
@@ -4654,9 +4731,10 @@ function renderLabSuitableReplacements() {
 
   wrap.innerHTML = `
     <div class="section-label">Suitable replacements</div>
-    <div class="heuristic-note">Based on: FPL form \u00b7 fixtures \u00b7 minutes \u00b7 xGI \u00b7 price \u00b7 availability. ${sellingP == null ? 'AFFORDABILITY UNVERIFIED -- selling price unavailable.' : 'Replacement budget: \u00a3' + (sellingP + (gwPlanner.bank||0)).toFixed(1) + 'm (selling price + bank).'}</div>
+    <div class="heuristic-note">Based on: FPL form \u00b7 fixtures \u00b7 minutes/starts \u00b7 xGI \u00b7 current price \u00b7 availability. ${sellingP == null ? 'AFFORDABILITY UNVERIFIED -- selling price unavailable.' : 'Replacement budget: \u00a3' + (sellingP + (gwPlanner.bank||0)).toFixed(1) + 'm (selling price + bank).'}</div>
+    ${labIsEarlySeason() ? '<div class="heuristic-note" style="border-color:var(--gold)">EARLY-SEASON DATA (GW' + labCurrentGwNumber() + ') -- small sample, recent Form has reduced ranking influence in favour of minutes, starts, fixtures and price.</div>' : ''}
     ${displayList.map(cardHtml).join('')}
-    ${totalLegalCandidates > shortlist.length ? `<button class="lab-add-pair-btn" id="labShortlistViewAllBtn">${labShortlistViewAll ? '\u25b8 Show top 6 only' : '\u25b8 View all ' + totalLegalCandidates + ' ' + outPlayer.position + ' replacements'}</button>` : ''}
+    ${totalLegalCandidates > shortlist.length ? `<button class="lab-add-pair-btn" id="labShortlistViewAllBtn">${labShortlistViewAll ? '\u25b8 Show top 6 only' : '\u25b8 Explore all ' + outPlayer.position + ' replacements'}</button>` : ''}
   `;
 
   const viewAllBtn = document.getElementById('labShortlistViewAllBtn');
