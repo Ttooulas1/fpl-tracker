@@ -481,6 +481,26 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .lab-saved-scenario-line { font-size: 12px; color: var(--text-dim); }
 .lab-restore-btn { background: none; border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--font-body); font-size: 11px; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-top: 8px; }
 
+/* ---- Suitable replacements shortlist ---- */
+.lab-candidate-card { background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+.lab-candidate-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.lab-candidate-name { font-weight: 700; font-size: 15px; }
+.lab-candidate-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.lab-candidate-badges { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.lab-legal-badge { font-family: var(--font-mono); font-size: 9px; color: var(--lime); }
+.lab-afford-badge { font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 3px; }
+.lab-afford-badge.affordable { color: var(--lime); border: 1px solid var(--lime-dim); }
+.lab-afford-badge.expensive { color: var(--red); border: 1px solid var(--red); }
+.lab-afford-badge.unverified { color: var(--gold); border: 1px solid var(--gold); }
+.lab-candidate-stats { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.lab-candidate-stat { background: var(--bg-elev-2); border-radius: 4px; padding: 6px 10px; flex: 1; min-width: 70px; }
+.lab-candidate-stat-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.lab-candidate-stat-val { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-top: 2px; }
+.lab-candidate-reasons { font-size: 12px; color: var(--lime); margin-bottom: 6px; }
+.lab-candidate-reasons b, .lab-candidate-tradeoffs b { display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 4px; }
+.lab-candidate-tradeoffs { font-size: 12px; color: var(--gold); margin-bottom: 10px; }
+.lab-candidate-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
 /* ---- Phase 2: planned lineup banner + toast + substitute sheet ---- */
 .planned-banner {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(198,255,61,0.08);
@@ -1759,6 +1779,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
     <div class="section-label">🛡️ Hold current team <span style="font-weight:400">— the baseline</span></div>
     <div id="labHoldHeroWrap"></div>
+
+    <div id="labShortlistWrap"></div>
 
     <div class="section-label">🧭 Automatic team needs <span style="font-weight:400">— refreshed from every sync</span></div>
     <div id="labNeedsWrap"></div>
@@ -4475,6 +4497,210 @@ function renderLabVerdict(allMetrics) {
   renderLabAddToPlanWidget();
 }
 
+/* ============================================================
+   REPLACEMENT SHORTLIST -- reusable helpers, shared by Transfer Lab
+   now and the Phase 3 Replacement Browser later. Transparent
+   deterministic ranking, never a single blended "score".
+   ============================================================ */
+
+function labCurrentGwNumber() {
+  return gwPlanner ? Math.max(1, (gwPlanner.nextGw || 1) - 1) : 1;
+}
+
+function labAvgFixtureDifficulty(player, count) {
+  const fx = getPlanningFixtures(player).slice(0, count);
+  if (!fx.length) return null;
+  return fx.reduce((s, f) => s + f.difficulty, 0) / fx.length;
+}
+
+function labStarterTier(p) {
+  const gws = labCurrentGwNumber();
+  const avgMins = gws > 0 ? (p.seasonMinutes || 0) / gws : 0;
+  if (avgMins >= 60) return { tier: 2, label: 'Regular starter' };
+  if (avgMins >= 30) return { tier: 1, label: 'Rotation risk' };
+  if (avgMins > 0) return { tier: 0, label: 'Limited minutes' };
+  return { tier: -1, label: 'Unknown / no minutes yet' };
+}
+
+// Filters to same-position, not-owned, not-the-OUT-player, and club-legal
+// AFTER removing the OUT player from the squad (so selling a 3rd Arsenal
+// player correctly re-opens an Arsenal slot).
+function getLegalReplacementCandidates(outPlayerId) {
+  if (!gwPlanner) return [];
+  const outPlayer = labGetSquadPlayer(outPlayerId);
+  if (!outPlayer) return [];
+  const ownedIds = new Set(gwPlanner.squad.map(p => p.element));
+  const clubCountsAfterSale = {};
+  gwPlanner.squad.forEach(p => {
+    if (p.element === outPlayerId) return;
+    clubCountsAfterSale[p.team] = (clubCountsAfterSale[p.team] || 0) + 1;
+  });
+  return gwPlanner.allPlayers.filter(p =>
+    p.position === outPlayer.position &&
+    p.id !== outPlayerId &&
+    !ownedIds.has(p.id) &&
+    (clubCountsAfterSale[p.team] || 0) < FPL_RULES.maxPlayersPerClub
+  );
+}
+
+function labCandidateAffordability(outPlayer, candidate) {
+  const sellingP = labSellingPrice(outPlayer);
+  const bank = gwPlanner ? gwPlanner.bank : null;
+  if (sellingP == null || bank == null) return { status: 'unverified', label: '? UNVERIFIED' };
+  const budget = sellingP + bank;
+  return candidate.price <= budget
+    ? { status: 'affordable', label: '\u2713 AFFORDABLE' }
+    : { status: 'expensive', label: '\u2715 TOO EXPENSIVE' };
+}
+
+function rankReplacementCandidates(outPlayerId, candidates) {
+  const outPlayer = labGetSquadPlayer(outPlayerId);
+  const enriched = candidates.map(c => {
+    const starter = labStarterTier(c);
+    const xgi90 = c.seasonMinutes > 0 ? (c.seasonXGI / (c.seasonMinutes / 90)) : 0;
+    const avgFdr3 = labAvgFixtureDifficulty(c, 3);
+    const available = c.status === 'a';
+    return { player: c, starter, xgi90, avgFdr3, available };
+  });
+  enriched.sort((a, b) => {
+    if (a.available !== b.available) return a.available ? -1 : 1;
+    if (a.starter.tier !== b.starter.tier) return b.starter.tier - a.starter.tier;
+    if ((b.player.form || 0) !== (a.player.form || 0)) return (b.player.form || 0) - (a.player.form || 0);
+    if (b.xgi90 !== a.xgi90) return b.xgi90 - a.xgi90;
+    const aFdr = a.avgFdr3 ?? 3, bFdr = b.avgFdr3 ?? 3;
+    if (aFdr !== bFdr) return aFdr - bFdr;
+    return (b.player.totalPoints || 0) - (a.player.totalPoints || 0);
+  });
+  return enriched;
+}
+
+function labCandidateReasons(outPlayer, entry) {
+  const c = entry.player;
+  const reasons = [];
+  if ((c.form || 0) >= 5) reasons.push('Strong recent form (' + c.form.toFixed(1) + ')');
+  if (entry.starter.tier === 2) reasons.push('Regular starting role');
+  const outFdr3 = labAvgFixtureDifficulty(outPlayer, 3);
+  if (entry.avgFdr3 != null && outFdr3 != null && entry.avgFdr3 < outFdr3 - 0.3) reasons.push('Favourable next 3 fixtures vs ' + outPlayer.name);
+  if (outPlayer.price != null && c.price <= outPlayer.price - 0.5) reasons.push('£' + (outPlayer.price - c.price).toFixed(1) + 'm cheaper');
+  if (!reasons.length) reasons.push('Same-position legal candidate with available data');
+  return reasons.slice(0, 4);
+}
+
+function labCandidateTradeoffs(outPlayer, entry) {
+  const c = entry.player;
+  const tradeoffs = [];
+  if ((outPlayer.totalPoints || 0) > 0 && (c.totalPoints || 0) < (outPlayer.totalPoints || 0) * 0.7) tradeoffs.push('Lower total points than ' + outPlayer.name + ' so far this season');
+  if (entry.starter.tier === 1) tradeoffs.push('Rotation risk');
+  const nextFx = c.nextFixture;
+  if (nextFx && nextFx.difficulty >= 4) tradeoffs.push('Difficult next fixture (' + nextFx.opponent + ' ' + nextFx.venue + ')');
+  return tradeoffs.slice(0, 3);
+}
+
+function buildReplacementShortlist(outPlayerId) {
+  const outPlayer = labGetSquadPlayer(outPlayerId);
+  if (!outPlayer || !gwPlanner) return { outPlayer: null, shortlist: [], totalLegalCandidates: 0 };
+  const candidates = getLegalReplacementCandidates(outPlayerId);
+  const ranked = rankReplacementCandidates(outPlayerId, candidates);
+  return { outPlayer, shortlist: ranked.slice(0, 6), totalLegalCandidates: ranked.length, allRanked: ranked };
+}
+
+let labShortlistViewAll = false;
+
+function renderLabSuitableReplacements() {
+  const wrap = document.getElementById('labShortlistWrap');
+  if (!wrap) return;
+  if (!transferLabContext || !transferLabContext.active || !gwPlanner) { wrap.innerHTML = ''; return; }
+  const { outPlayer, shortlist, totalLegalCandidates, allRanked } = buildReplacementShortlist(transferLabContext.outPlayerId);
+  if (!outPlayer) { wrap.innerHTML = ''; return; }
+  const sellingP = labSellingPrice(outPlayer);
+  const displayList = labShortlistViewAll ? allRanked : shortlist;
+
+  if (!totalLegalCandidates) {
+    wrap.innerHTML = `
+      <div class="section-label">Suitable replacements</div>
+      <div class="empty-note">NO CLEAR REPLACEMENT SHORTLIST -- no legal same-position players found (position, ownership and club-limit filters applied).</div>
+    `;
+    return;
+  }
+
+  const cardHtml = (entry) => {
+    const c = entry.player;
+    const afford = labCandidateAffordability(outPlayer, c);
+    const reasons = labCandidateReasons(outPlayer, entry);
+    const tradeoffs = labCandidateTradeoffs(outPlayer, entry);
+    return `
+      <div class="lab-candidate-card">
+        <div class="lab-candidate-head">
+          <div><div class="lab-candidate-name">${escapeHtml(c.name)}</div><div class="lab-candidate-meta">${escapeHtml(c.team)} \u00b7 ${c.position} \u00b7 \u00a3${c.price.toFixed(1)}m</div></div>
+          <div class="lab-candidate-badges"><span class="lab-legal-badge">LEGAL \u2713</span><span class="lab-afford-badge ${afford.status}">${afford.label}</span></div>
+        </div>
+        <div class="lab-candidate-stats">
+          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Form</div><div class="lab-candidate-stat-val">${(c.form||0).toFixed(1)}</div></div>
+          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">xGI/90</div><div class="lab-candidate-stat-val">${entry.xgi90.toFixed(2)}</div></div>
+          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Next 3 FDR</div><div class="lab-candidate-stat-val">${entry.avgFdr3 != null ? entry.avgFdr3.toFixed(1) : '\u2014'}</div></div>
+          <div class="lab-candidate-stat"><div class="lab-candidate-stat-label">Minutes</div><div class="lab-candidate-stat-val" style="font-size:11px">${entry.starter.label}</div></div>
+        </div>
+        <div class="lab-candidate-reasons"><b>Why on shortlist</b>${reasons.map(r => `<div>\u2022 ${escapeHtml(r)}</div>`).join('')}</div>
+        ${tradeoffs.length ? `<div class="lab-candidate-tradeoffs"><b>Trade-off</b>${tradeoffs.map(r => `<div>\u2022 ${escapeHtml(r)}</div>`).join('')}</div>` : ''}
+        <div class="lab-candidate-actions">
+          <button class="lab-restore-btn" data-candidate-select="${c.id}">Select</button>
+          <button class="lab-compare-btn" data-candidate-compare="${c.id}">\ud83d\udd00 Compare</button>
+          <button class="lab-compare-btn" data-candidate-info="${c.id}">Player Info</button>
+          <button class="lab-compare-btn" data-candidate-watch="${c.id}">Watchlist</button>
+        </div>
+      </div>
+    `;
+  };
+
+  wrap.innerHTML = `
+    <div class="section-label">Suitable replacements</div>
+    <div class="heuristic-note">Based on: FPL form \u00b7 fixtures \u00b7 minutes \u00b7 xGI \u00b7 price \u00b7 availability. ${sellingP == null ? 'AFFORDABILITY UNVERIFIED -- selling price unavailable.' : 'Replacement budget: \u00a3' + (sellingP + (gwPlanner.bank||0)).toFixed(1) + 'm (selling price + bank).'}</div>
+    ${displayList.map(cardHtml).join('')}
+    ${totalLegalCandidates > shortlist.length ? `<button class="lab-add-pair-btn" id="labShortlistViewAllBtn">${labShortlistViewAll ? '\u25b8 Show top 6 only' : '\u25b8 View all ' + totalLegalCandidates + ' ' + outPlayer.position + ' replacements'}</button>` : ''}
+  `;
+
+  const viewAllBtn = document.getElementById('labShortlistViewAllBtn');
+  if (viewAllBtn) viewAllBtn.addEventListener('click', () => { labShortlistViewAll = !labShortlistViewAll; renderLabSuitableReplacements(); });
+
+  wrap.querySelectorAll('[data-candidate-select]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const inId = Number(btn.dataset.candidateSelect);
+      transferScenarios[0].pairs[0] = { outId: transferLabContext.outPlayerId, inId };
+      await saveTransferLab();
+      renderTransferLab();
+      showToast('Scenario A updated');
+    });
+  });
+  wrap.querySelectorAll('[data-candidate-compare]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const inId = Number(btn.dataset.candidateCompare);
+      cmpSelectedIds = [transferLabContext.outPlayerId, inId];
+      await saveCmpSelected();
+      document.querySelector('.tab-btn[data-tab="compare"]').click();
+      renderComparison();
+    });
+  });
+  wrap.querySelectorAll('[data-candidate-watch]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.candidateWatch);
+      const c = labGetAnyPlayer(id);
+      await toggleWatchlist(id, c ? c.name : '');
+      renderWatchlist();
+      showToast('Watchlist updated');
+    });
+  });
+  wrap.querySelectorAll('[data-candidate-info]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.candidateInfo);
+      const c = labGetAnyPlayer(id);
+      if (!c) return;
+      const infoPlayer = { id: c.id, name: c.name, team: c.team, position: c.position, isCaptain: false, isVice: false, isBench: false, news: c.news, extra: '', fixtures: getPlanningFixtures(c) };
+      sheetStack = [{ view: 'info', player: infoPlayer }];
+      renderSheetView();
+    });
+  });
+}
+
 function renderLabCurrentAnalysis() {
   const wrap = document.getElementById('labCurrentAnalysisWrap');
   if (!wrap) return;
@@ -4549,6 +4775,7 @@ function renderTransferLab() {
   renderLabNeeds();
   renderLabScenarioBuilders();
   renderLabHoldHero();
+  renderLabSuitableReplacements();
   if (!gwPlanner) {
     document.getElementById('labComparisonWrap').innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>';
     document.getElementById('labVerdictWrap').innerHTML = '';
