@@ -483,6 +483,13 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
 /* ---- Suitable replacements shortlist ---- */
 .lab-candidate-card { background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+@media (min-width: 900px) {
+  .rb-candidate-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; }
+  .rb-candidate-grid .lab-candidate-card { margin-bottom: 0; }
+}
+@media (min-width: 1400px) {
+  .rb-candidate-grid { grid-template-columns: repeat(3, 1fr); }
+}
 .lab-candidate-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 .lab-candidate-name { font-weight: 700; font-size: 15px; }
 .lab-candidate-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
@@ -500,6 +507,26 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .lab-candidate-reasons b, .lab-candidate-tradeoffs b { display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 4px; }
 .lab-candidate-tradeoffs { font-size: 12px; color: var(--gold); margin-bottom: 10px; }
 .lab-candidate-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.rb-financial-bar { background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; }
+.rb-fin-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+.rb-fin-row.warn { color: var(--gold); }
+.rb-fin-row.manual { color: var(--gold); font-weight: 700; border-top: 1px solid var(--border-soft); margin-top: 4px; padding-top: 8px; }
+.rb-filters-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.rb-filters-row select, .rb-filters-row input { background: var(--bg-elev); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body); font-size: 12px; padding: 8px 10px; border-radius: 6px; }
+.rb-fx-strip { display: flex; flex-wrap: wrap; gap: 4px; }
+.rb-evidence-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.rb-evidence-stat { background: var(--bg-elev-2); border-radius: 4px; padding: 6px 10px; flex: 1; min-width: 70px; }
+.rb-evidence-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.rb-evidence-val { font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-top: 2px; }
+.lab-candidate-card.rb-selected { border-color: var(--lime); background: rgba(198,255,61,0.05); }
+.rb-sticky-bar {
+  position: sticky; bottom: 70px; z-index: 40; display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elev); border: 1px solid var(--lime); border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+  font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+@media (min-width: 1024px) {
+  .rb-evidence-grid { flex-wrap: nowrap; }
+}
 .lab-hold-player-card { background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 8px; padding: 16px; margin-bottom: 10px; }
 .lab-hold-player-title { font-family: var(--font-mono); font-size: 11px; color: var(--lime); text-transform: uppercase; margin-bottom: 6px; }
 .lab-hold-player-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
@@ -1295,6 +1322,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="landing-card" data-open-tab="compare"><div class="landing-card-icon">🔀</div><div><div class="landing-card-title">Compare Players</div><div class="landing-card-desc">Compare 2–4 players side by side</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="translab"><div class="landing-card-icon">🧪</div><div><div class="landing-card-title">Transfer Lab</div><div class="landing-card-desc">Analyse saved OUT → IN scenarios vs HOLD</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="sixgw"><div class="landing-card-icon">📅</div><div><div class="landing-card-title">6-GW Plan</div><div class="landing-card-desc">Future squad planning across gameweeks</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="replacementbrowser"><div class="landing-card-icon">🔍</div><div><div class="landing-card-title">Replacement Browser</div><div class="landing-card-desc">Explore same-position replacements for a squad player</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="watchlist"><div class="landing-card-icon">⭐</div><div><div class="landing-card-title">Watchlist</div><div class="landing-card-desc">Players you've flagged to track</div></div><div class="landing-card-chevron">›</div></div>
   </div>
 
@@ -1338,6 +1366,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="aihandoff" data-section="more">🧠 AI Handoff</button>
     <button class="tab-btn" data-tab="systemdata" data-section="more">⚙️ System &amp; Data</button>
     <button class="tab-btn" data-tab="watchlist" data-section="transfers">⭐ Watchlist</button>
+    <button class="tab-btn" data-tab="replacementbrowser" data-section="transfers">🔍 Replacement Browser</button>
   </div>
 
   <div class="bottom-nav" id="bottomNav">
@@ -1428,6 +1457,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <div class="tab-panel" id="tab-watchlist">
     <div class="section-label">Watchlist</div>
     <div id="watchlistWrap"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-replacementbrowser">
+    <div id="rbBody"></div>
   </div>
 
   <div class="tab-panel" id="tab-league">
@@ -2690,14 +2723,17 @@ function scenariosHaveData(scenarios) {
 // Single entry point for every "send this player to Transfer Lab" action in the app.
 // Stashes any genuinely populated prior scenarios (never deletes them), resets A/B/C
 // to a clean slate for the new player, and records why we're here.
-async function enterTransferLabHandoff(outId, source) {
+// inId is optional. Passing it (e.g. from the Replacement Browser, where a
+// candidate is already selected) pre-fills Scenario A as OUT -> IN in one
+// step instead of requiring a second manual search inside Transfer Lab.
+async function enterTransferLabHandoff(outId, inId, source) {
   if (scenariosHaveData(transferScenarios) && !(transferLabContext && transferLabContext.active && transferLabContext.outPlayerId === outId)) {
     savedTransferScenarios.push({ scenarios: transferScenarios, savedAt: new Date().toISOString() });
     await saveSavedTransferScenarios();
   }
   const outPlayer = plannedPlayerLookup(outId) || (gwPlanner ? gwPlanner.allPlayers.find(p => p.id === outId) : null);
   transferScenarios = [
-    { pairs: [{ outId, inId: null }], name: '', reason: '' },
+    { pairs: [{ outId, inId: inId || null }], name: '', reason: '' },
     { pairs: [], name: '', reason: '' },
     { pairs: [], name: '', reason: '' }
   ];
@@ -3091,7 +3127,8 @@ function renderSheetView() {
       ${captainRow}
       ${viceRow}
       <div class="ps-action-row" data-ps-action="sub">${subLabel}</div>
-      <div class="ps-action-row" data-ps-action="transferout">Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Opens Transfer Lab</span></div>
+      <div class="ps-action-row" data-ps-action="transferout">Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Replacement Browser</span></div>
+      <div class="ps-action-row" data-ps-action="sendtolab">Send to Transfer Lab <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Quick shortlist</span></div>
       <div class="ps-action-row disabled" data-ps-action="recommend">Recommend Transfer <span class="ps-action-phase-tag">Phase 4</span></div>
       <div class="ps-action-row" data-ps-action="compare">Compare</div>
       <div class="ps-action-row" data-ps-action="info">See Player Info</div>
@@ -3247,7 +3284,12 @@ async function handleSheetAction(action, p) {
   }
   if (action === 'transferout') {
     closePlayerSheet();
-    await enterTransferLabHandoff(p.id, 'player-handoff');
+    await openReplacementBrowser(p.id, 'my-team');
+    return;
+  }
+  if (action === 'sendtolab') {
+    closePlayerSheet();
+    await enterTransferLabHandoff(p.id, null, 'player-handoff');
     activeSection = 'transfers';
     document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'transfers'));
     openFeature('translab', 'transfers');
@@ -4734,11 +4776,11 @@ function renderLabSuitableReplacements() {
     <div class="heuristic-note">Based on: FPL form \u00b7 fixtures \u00b7 minutes/starts \u00b7 xGI \u00b7 current price \u00b7 availability. ${sellingP == null ? 'AFFORDABILITY UNVERIFIED -- selling price unavailable.' : 'Replacement budget: \u00a3' + (sellingP + (gwPlanner.bank||0)).toFixed(1) + 'm (selling price + bank).'}</div>
     ${labIsEarlySeason() ? '<div class="heuristic-note" style="border-color:var(--gold)">EARLY-SEASON DATA (GW' + labCurrentGwNumber() + ') -- small sample, recent Form has reduced ranking influence in favour of minutes, starts, fixtures and price.</div>' : ''}
     ${displayList.map(cardHtml).join('')}
-    ${totalLegalCandidates > shortlist.length ? `<button class="lab-add-pair-btn" id="labShortlistViewAllBtn">${labShortlistViewAll ? '\u25b8 Show top 6 only' : '\u25b8 Explore all ' + outPlayer.position + ' replacements'}</button>` : ''}
+    ${totalLegalCandidates > shortlist.length ? `<button class="lab-add-pair-btn" id="labShortlistViewAllBtn">\u25b8 Explore all ${outPlayer.position} replacements</button>` : ''}
   `;
 
   const viewAllBtn = document.getElementById('labShortlistViewAllBtn');
-  if (viewAllBtn) viewAllBtn.addEventListener('click', () => { labShortlistViewAll = !labShortlistViewAll; renderLabSuitableReplacements(); });
+  if (viewAllBtn) viewAllBtn.addEventListener('click', async () => { await openReplacementBrowser(outPlayer.id, 'transfer-lab'); });
 
   wrap.querySelectorAll('[data-candidate-select]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -4776,6 +4818,436 @@ function renderLabSuitableReplacements() {
       sheetStack = [{ view: 'info', player: infoPlayer }];
       renderSheetView();
     });
+  });
+}
+
+/* ============================================================
+   PHASE 3 -- REPLACEMENT BROWSER
+   Deep exploration tool. Reuses getLegalReplacementCandidates(),
+   rankReplacementCandidates() and the shortlist evidence helpers --
+   never a second ranking engine.
+   ============================================================ */
+const RB_CONTEXT_KEY = 'fpl-replacement-browser-context';
+let replacementBrowserContext = null;
+
+function rbDefaultContext() {
+  return {
+    source: null, outPlayerId: null, selectedCandidateId: null,
+    view: 'fixtures', sort: 'shortlist', fixtureHorizon: 3,
+    filters: { maxPrice: null, club: 'all', availability: 'all', minutesTier: 'all', ownershipRange: 'all' },
+    manualBudget: null, search: '', openedAt: null
+  };
+}
+async function loadReplacementBrowserContext() {
+  try {
+    const val = await storageGet(RB_CONTEXT_KEY);
+    replacementBrowserContext = val ? JSON.parse(val) : rbDefaultContext();
+  } catch (err) {
+    replacementBrowserContext = rbDefaultContext();
+  }
+}
+async function saveReplacementBrowserContext() {
+  await storageSet(RB_CONTEXT_KEY, JSON.stringify(replacementBrowserContext));
+}
+
+async function openReplacementBrowser(outPlayerId, source) {
+  const ctx = rbDefaultContext();
+  ctx.outPlayerId = outPlayerId || null;
+  ctx.source = source;
+  ctx.openedAt = new Date().toISOString();
+  replacementBrowserContext = ctx;
+  await saveReplacementBrowserContext();
+  activeSection = 'transfers';
+  document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'transfers'));
+  openFeature('replacementbrowser', 'transfers');
+  renderReplacementBrowser();
+}
+
+function rbRevalidate() {
+  if (!replacementBrowserContext || !replacementBrowserContext.outPlayerId || !gwPlanner) return;
+  const stillOwned = gwPlanner.squad.some(p => p.element === replacementBrowserContext.outPlayerId);
+  if (!stillOwned) {
+    replacementBrowserContext = rbDefaultContext();
+    saveReplacementBrowserContext();
+    showToast('Replacement context reset because official squad changed');
+    return;
+  }
+  if (replacementBrowserContext.selectedCandidateId) {
+    const ownedIds = new Set(gwPlanner.squad.map(p => p.element));
+    const cand = gwPlanner.allPlayers.find(p => p.id === replacementBrowserContext.selectedCandidateId);
+    if (!cand || ownedIds.has(cand.id)) {
+      replacementBrowserContext.selectedCandidateId = null;
+      saveReplacementBrowserContext();
+    }
+  }
+}
+
+function rbFilterCandidates(entries) {
+  const ctx = replacementBrowserContext;
+  let list = entries;
+  if (ctx.search && ctx.search.length >= 2) {
+    const q = ctx.search.toLowerCase();
+    list = list.filter(e => e.player.name.toLowerCase().includes(q) || e.player.team.toLowerCase().includes(q));
+  }
+  const budget = ctx.manualBudget != null ? ctx.manualBudget : ctx.filters.maxPrice;
+  if (budget != null) list = list.filter(e => e.player.price <= budget);
+  if (ctx.filters.club !== 'all') list = list.filter(e => e.player.team === ctx.filters.club);
+  if (ctx.filters.availability === 'available') list = list.filter(e => e.available);
+  if (ctx.filters.availability === 'doubtful') list = list.filter(e => !e.available && e.player.status !== 'i' && e.player.status !== 's');
+  if (ctx.filters.availability === 'unavailable') list = list.filter(e => e.player.status === 'i' || e.player.status === 's');
+  if (ctx.filters.minutesTier === 'every') list = list.filter(e => e.starter.tier === 2 && e.starter.gws > 0 && e.starter.starts >= e.starter.gws);
+  if (ctx.filters.minutesTier === 'most') list = list.filter(e => e.starter.tier >= 1);
+  if (ctx.filters.minutesTier === 'limited') list = list.filter(e => e.starter.tier <= 0);
+  if (ctx.filters.ownershipRange !== 'all') {
+    const ranges = { '<5': [0,5], '5-15': [5,15], '15-30': [15,30], '30+': [30,101] };
+    const r = ranges[ctx.filters.ownershipRange];
+    if (r) list = list.filter(e => (e.player.ownership||0) >= r[0] && (e.player.ownership||0) < r[1]);
+  }
+  return list;
+}
+
+function rbSortCandidates(entries, outPlayer) {
+  const sort = replacementBrowserContext.sort;
+  const arr = [...entries];
+  if (sort === 'shortlist') return arr; // already ranked by rankReplacementCandidates
+  if (sort === 'form') return arr.sort((a,b) => (b.player.form||0) - (a.player.form||0));
+  if (sort === 'points') return arr.sort((a,b) => (b.player.totalPoints||0) - (a.player.totalPoints||0));
+  if (sort === 'price') return arr.sort((a,b) => (a.player.price||0) - (b.player.price||0));
+  if (sort === 'xgi') return arr.sort((a,b) => b.xgi90 - a.xgi90);
+  if (sort === 'minutes') return arr.sort((a,b) => (b.starter.mins||0) - (a.starter.mins||0));
+  if (sort === 'ownership') return arr.sort((a,b) => (b.player.ownership||0) - (a.player.ownership||0));
+  if (sort === 'fixtures') return arr.sort((a,b) => (a.avgFdr3??3) - (b.avgFdr3??3));
+  return arr;
+}
+
+function rbFinancialBarHtml(outPlayer) {
+  const sellingP = labSellingPrice(outPlayer);
+  const bank = gwPlanner ? gwPlanner.bank : null;
+  const verifiedBudget = (sellingP != null && bank != null) ? sellingP + bank : null;
+  const manual = replacementBrowserContext.manualBudget;
+  return `
+    <div class="rb-financial-bar">
+      <div class="rb-fin-row"><span>Current price</span><span>\u00a3${outPlayer.price != null ? outPlayer.price.toFixed(1) : '\u2014'}m</span></div>
+      <div class="rb-fin-row ${sellingP == null ? 'warn' : ''}"><span>Selling price</span><span>${sellingP != null ? '\u00a3' + sellingP.toFixed(1) + 'm' : 'NOT AVAILABLE'}</span></div>
+      <div class="rb-fin-row"><span>Bank</span><span>${bank != null ? '\u00a3' + bank.toFixed(1) + 'm' : '\u2014'}</span></div>
+      <div class="rb-fin-row ${verifiedBudget == null ? 'warn' : ''}"><span>Verified replacement budget</span><span>${verifiedBudget != null ? '\u00a3' + verifiedBudget.toFixed(1) + 'm' : 'UNAVAILABLE'}</span></div>
+      ${manual != null ? `<div class="rb-fin-row manual"><span>MANUAL BUDGET ACTIVE</span><span>\u00a3${manual.toFixed(1)}m</span></div>` : ''}
+      <div class="rb-fin-row"><span>Affordability</span><span>${manual != null ? 'MANUAL ANALYSIS BUDGET' : (verifiedBudget != null ? 'Can be verified' : 'UNVERIFIED')}</span></div>
+    </div>
+  `;
+}
+
+function rbCandidateEvidenceHtml(entry, outPlayer, view) {
+  const c = entry.player;
+  if (view === 'stats') {
+    const rows = [];
+    rows.push(['Total pts', c.totalPoints ?? '\u2014']);
+    rows.push(['Starts', entry.starter.starts + '/' + entry.starter.gws]);
+    rows.push(['Minutes', entry.starter.mins || '\u2014']);
+    if (c.position !== 'GKP') rows.push(['Goals', c.goalsScored ?? '\u2014']);
+    if (c.position !== 'GKP') rows.push(['Assists', c.assists ?? '\u2014']);
+    if (c.position === 'DEF' || c.position === 'GKP') rows.push(['Clean sheets', c.cleanSheets ?? '\u2014']);
+    if (c.position === 'DEF' || c.position === 'GKP') rows.push(['Def. contribution', c.defensiveContribution ?? '\u2014']);
+    if (c.position === 'MID' || c.position === 'FWD') { rows.push(['xG', c.seasonXG != null ? c.seasonXG.toFixed(1) : '\u2014']); rows.push(['xA', c.seasonXA != null ? c.seasonXA.toFixed(1) : '\u2014']); }
+    rows.push(['xGI', c.seasonXGI != null ? c.seasonXGI.toFixed(1) : '\u2014']);
+    rows.push(['Bonus', c.bonus ?? '\u2014']);
+    rows.push(['BPS', c.bps ?? '\u2014']);
+    return `<div class="rb-evidence-grid">${rows.map(r => `<div class="rb-evidence-stat"><div class="rb-evidence-label">${r[0]}</div><div class="rb-evidence-val">${r[1]}</div></div>`).join('')}</div>`;
+  }
+  if (view === 'form') {
+    return `<div class="rb-evidence-grid">
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Form</div><div class="rb-evidence-val">${(c.form||0).toFixed(1)}</div></div>
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Starts</div><div class="rb-evidence-val">${entry.starter.starts}/${entry.starter.gws}</div></div>
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Minutes</div><div class="rb-evidence-val">${entry.starter.mins}</div></div>
+    </div>`;
+  }
+  if (view === 'ownership') {
+    const leagueOwn = (typeof computeLeagueOwnership === 'function' && rivalIntel) ? computeLeagueOwnership().find(e => e.id === c.id) : null;
+    return `<div class="rb-evidence-grid">
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Global ownership</div><div class="rb-evidence-val">${c.ownership != null ? c.ownership.toFixed(1) + '%' : '\u2014'}</div></div>
+      ${leagueOwn ? `<div class="rb-evidence-stat"><div class="rb-evidence-label">Mini-league</div><div class="rb-evidence-val">${leagueOwn.owned}/${leagueOwn.totalManagers}</div></div>` : ''}
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Transfer pressure</div><div class="rb-evidence-val" style="font-size:11px">${c.transferPressure || '\u2014'}</div></div>
+    </div>`;
+  }
+  // fixtures (default)
+  const fx = getPlanningFixtures(c).slice(0, replacementBrowserContext.fixtureHorizon);
+  return `
+    <div class="rb-fx-strip">${fx.map(f => `<div class="pitch-fdr-band fdr-${f.difficulty}" style="display:inline-block;margin-right:4px">${escapeHtml(f.opponent)} ${f.venue}</div>`).join('') || '<span class="chip-none">no fixtures</span>'}</div>
+    <div class="rb-evidence-grid" style="margin-top:8px">
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Avg FDR</div><div class="rb-evidence-val">${entry.avgFdr3 != null ? entry.avgFdr3.toFixed(1) : '\u2014'}</div></div>
+      <div class="rb-evidence-stat"><div class="rb-evidence-label">Starts</div><div class="rb-evidence-val">${entry.starter.starts}/${entry.starter.gws}</div></div>
+    </div>
+  `;
+}
+
+function rbCandidateCardHtml(outPlayer, entry) {
+  const c = entry.player;
+  const afford = labCandidateAffordability(outPlayer, c);
+  const reasons = labCandidateReasons(outPlayer, entry);
+  const isSelected = replacementBrowserContext.selectedCandidateId === c.id;
+  const inWatchlist = watchlist.some(w => w.id === c.id);
+  return `
+    <div class="lab-candidate-card ${isSelected ? 'rb-selected' : ''}">
+      <div class="lab-candidate-head">
+        <div><div class="lab-candidate-name">${escapeHtml(c.name)}</div><div class="lab-candidate-meta">${escapeHtml(c.team)} \u00b7 ${c.position} \u00b7 CURRENT PRICE \u00a3${c.price.toFixed(1)}m</div></div>
+        <div class="lab-candidate-badges"><span class="lab-legal-badge">SQUAD LEGAL \u2713</span><span class="lab-afford-badge ${afford.status}">${afford.label}</span></div>
+      </div>
+      ${rbCandidateEvidenceHtml(entry, outPlayer, replacementBrowserContext.view)}
+      <div class="lab-candidate-reasons"><b>Why worth reviewing</b>${reasons.map(r => `<div>\u2022 ${escapeHtml(r)}</div>`).join('')}</div>
+      <div class="lab-candidate-actions">
+        <button class="lab-restore-btn" data-rb-select="${c.id}">${isSelected ? 'Selected \u2713' : 'Select'}</button>
+        <button class="lab-compare-btn" data-rb-compare="${c.id}">\ud83d\udd00 Compare</button>
+        <button class="lab-compare-btn" data-rb-info="${c.id}">Player Info</button>
+        <button class="lab-compare-btn" data-rb-watch="${c.id}">${inWatchlist ? 'In Watchlist \u2713' : 'Watchlist'}</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderChoosePlayerToReplace() {
+  const body = document.getElementById('rbBody');
+  if (!gwPlanner || !gwPlanner.squad.length) { body.innerHTML = '<div class="empty-note">PLAYER DATA UNAVAILABLE -- sync FPL data before browsing replacements.</div>'; return; }
+  const order = { GKP: 'Goalkeepers', DEF: 'Defenders', MID: 'Midfielders', FWD: 'Forwards' };
+  let html = '<div class="section-label">Replacement Browser</div><div class="heuristic-note">Choose a squad player to explore replacements for.</div>';
+  Object.keys(order).forEach(pos => {
+    const players = gwPlanner.squad.filter(p => p.position === pos);
+    if (!players.length) return;
+    html += `<div class="pm-position-label" style="margin-top:14px">${order[pos]}</div>`;
+    html += players.map(p => `
+      <div class="ml-table-row" data-choose-out="${p.element}" style="cursor:pointer">
+        <div class="pitch-jersey ${pos === 'GKP' ? 'gk' : ''}" style="width:28px;height:26px;margin:0 10px 0 0;background:${teamColor(p.team)}"></div>
+        <div><div class="ml-table-name">${escapeHtml(p.name)}</div><div class="ml-table-manager">${escapeHtml(p.team)} \u00b7 \u00a3${p.price != null ? p.price.toFixed(1) : '\u2014'}m ${p.isBench ? '\u00b7 Bench' : '\u00b7 Starting'}</div></div>
+      </div>
+    `).join('');
+  });
+  body.innerHTML = html;
+  body.querySelectorAll('[data-choose-out]').forEach(row => {
+    row.addEventListener('click', async () => {
+      replacementBrowserContext.outPlayerId = Number(row.dataset.chooseOut);
+      replacementBrowserContext.source = 'browser-select';
+      await saveReplacementBrowserContext();
+      renderReplacementBrowser();
+    });
+  });
+}
+
+function renderReplacementBrowser() {
+  if (!replacementBrowserContext) return;
+  rbRevalidate();
+  const body = document.getElementById('rbBody');
+  if (!body) return;
+  if (!replacementBrowserContext.outPlayerId) { renderChoosePlayerToReplace(); return; }
+  if (!gwPlanner) { body.innerHTML = '<div class="empty-note">PLAYER DATA UNAVAILABLE -- sync FPL data before browsing replacements.</div>'; return; }
+
+  const outPlayer = labGetSquadPlayer(replacementBrowserContext.outPlayerId);
+  if (!outPlayer) { body.innerHTML = '<div class="empty-note">Replacement context reset because official squad changed.</div>'; return; }
+
+  ensurePlannedLineup();
+  const isStarting = plannedLineup && plannedLineup.starters.includes(outPlayer.element);
+  const nextFx = getNextPlanningFixture(outPlayer);
+
+  const candidates = getLegalReplacementCandidates(outPlayer.element);
+  const ranked = rankReplacementCandidates(outPlayer.element, candidates);
+  const filtered = rbFilterCandidates(ranked);
+  const sorted = rbSortCandidates(filtered, outPlayer);
+
+  const clubs = [...new Set(candidates.map(p => p.team))].sort();
+  const early = labIsEarlySeason();
+
+  let html = `
+    <div class="section-label">Replacement Browser</div>
+    <div class="lab-hold-player-card">
+      <div class="lab-hold-player-title">TRANSFER OUT</div>
+      <div class="lab-hold-player-name">${escapeHtml(outPlayer.name)}</div>
+      <div class="lab-hold-player-meta">${escapeHtml(outPlayer.team || '')} \u00b7 ${outPlayer.position || ''}</div>
+      <div class="ps-row"><span>Planned status</span><span>${isStarting ? 'Starting XI' : 'Bench'}</span></div>
+      <div class="ps-row"><span>Next fixture</span><span>${nextFx ? escapeHtml(nextFx.opponent) + ' (' + nextFx.venue + ')' : '\u2014'}</span></div>
+      <button class="lab-clear-context-btn" id="rbChangePlayerBtn">Change player</button>
+    </div>
+    ${rbFinancialBarHtml(outPlayer)}
+    <input type="text" id="rbSearchInput" class="ml-select" placeholder="Search ${outPlayer.position} replacements..." value="${escapeHtml(replacementBrowserContext.search || '')}" style="margin-top:10px">
+    <div class="rb-filters-row">
+      <select id="rbFilterClub"><option value="all">All clubs</option>${clubs.map(c => `<option value="${c}" ${replacementBrowserContext.filters.club===c?'selected':''}>${c}</option>`).join('')}</select>
+      <select id="rbFilterAvailability">
+        <option value="all" ${replacementBrowserContext.filters.availability==='all'?'selected':''}>All availability</option>
+        <option value="available" ${replacementBrowserContext.filters.availability==='available'?'selected':''}>Available</option>
+        <option value="doubtful" ${replacementBrowserContext.filters.availability==='doubtful'?'selected':''}>Doubtful</option>
+        <option value="unavailable" ${replacementBrowserContext.filters.availability==='unavailable'?'selected':''}>Unavailable</option>
+      </select>
+      <select id="rbFilterMinutes">
+        <option value="all" ${replacementBrowserContext.filters.minutesTier==='all'?'selected':''}>All minutes</option>
+        <option value="every" ${replacementBrowserContext.filters.minutesTier==='every'?'selected':''}>Started every match</option>
+        <option value="most" ${replacementBrowserContext.filters.minutesTier==='most'?'selected':''}>Started most</option>
+        <option value="limited" ${replacementBrowserContext.filters.minutesTier==='limited'?'selected':''}>Limited minutes</option>
+      </select>
+      <select id="rbFilterOwnership">
+        <option value="all" ${replacementBrowserContext.filters.ownershipRange==='all'?'selected':''}>All ownership</option>
+        <option value="<5" ${replacementBrowserContext.filters.ownershipRange==='<5'?'selected':''}>&lt;5%</option>
+        <option value="5-15" ${replacementBrowserContext.filters.ownershipRange==='5-15'?'selected':''}>5-15%</option>
+        <option value="15-30" ${replacementBrowserContext.filters.ownershipRange==='15-30'?'selected':''}>15-30%</option>
+        <option value="30+" ${replacementBrowserContext.filters.ownershipRange==='30+'?'selected':''}>30%+</option>
+      </select>
+      <input type="number" id="rbManualBudget" placeholder="Manual budget £m" value="${replacementBrowserContext.manualBudget != null ? replacementBrowserContext.manualBudget : ''}" step="0.1" style="width:130px">
+      ${replacementBrowserContext.manualBudget != null ? '<button class="lab-clear-context-btn" id="rbClearManualBudget">Clear manual budget</button>' : ''}
+      <button class="lab-clear-context-btn" id="rbClearFilters">Clear filters</button>
+    </div>
+    <div class="pitch-view-toggle" id="rbViewToggle">
+      <button class="pv-toggle-btn ${replacementBrowserContext.view==='fixtures'?'active':''}" data-rb-view="fixtures">Fixtures</button>
+      <button class="pv-toggle-btn ${replacementBrowserContext.view==='stats'?'active':''}" data-rb-view="stats">Stats</button>
+      <button class="pv-toggle-btn ${replacementBrowserContext.view==='form'?'active':''}" data-rb-view="form">Form</button>
+      <button class="pv-toggle-btn ${replacementBrowserContext.view==='ownership'?'active':''}" data-rb-view="ownership">Ownership</button>
+    </div>
+    ${replacementBrowserContext.view === 'fixtures' ? `
+    <div class="pitch-view-toggle" id="rbHorizonToggle">
+      <button class="pv-toggle-btn ${replacementBrowserContext.fixtureHorizon===3?'active':''}" data-rb-horizon="3">Next 3</button>
+      <button class="pv-toggle-btn ${replacementBrowserContext.fixtureHorizon===5?'active':''}" data-rb-horizon="5">Next 5</button>
+      <button class="pv-toggle-btn ${replacementBrowserContext.fixtureHorizon===6?'active':''}" data-rb-horizon="6">Next 6</button>
+    </div>` : ''}
+    <select id="rbSortSelect" class="ml-select">
+      <option value="shortlist" ${replacementBrowserContext.sort==='shortlist'?'selected':''}>Sort: Shortlist order</option>
+      <option value="form" ${replacementBrowserContext.sort==='form'?'selected':''}>Sort: Form</option>
+      <option value="points" ${replacementBrowserContext.sort==='points'?'selected':''}>Sort: Total points</option>
+      <option value="price" ${replacementBrowserContext.sort==='price'?'selected':''}>Sort: Price</option>
+      <option value="xgi" ${replacementBrowserContext.sort==='xgi'?'selected':''}>Sort: xGI</option>
+      <option value="minutes" ${replacementBrowserContext.sort==='minutes'?'selected':''}>Sort: Minutes</option>
+      <option value="ownership" ${replacementBrowserContext.sort==='ownership'?'selected':''}>Sort: Ownership</option>
+      <option value="fixtures" ${replacementBrowserContext.sort==='fixtures'?'selected':''}>Sort: Fixtures</option>
+    </select>
+    ${replacementBrowserContext.sort === 'shortlist' && early ? `<div class="heuristic-note" style="border-color:var(--gold)">EARLY-SEASON DATA (GW${labCurrentGwNumber()}) -- small sample, recent Form has reduced ranking influence.</div>` : ''}
+    <div class="pm-position-label" style="margin-top:12px">${sorted.length} of ${ranked.length} legal ${outPlayer.position} replacement(s)</div>
+  `;
+
+  if (!ranked.length) {
+    html += '<div class="empty-note">NO LEGAL SAME-POSITION REPLACEMENTS FOUND.</div>';
+  } else if (!sorted.length) {
+    html += '<div class="empty-note">NO REPLACEMENTS MATCH THESE FILTERS.<br><br></div><button class="lab-clear-context-btn" id="rbClearFilters2">Clear filters</button>';
+  } else {
+    html += '<div class="rb-candidate-grid">' + sorted.map(entry => rbCandidateCardHtml(outPlayer, entry)).join('') + '</div>';
+  }
+
+  if (replacementBrowserContext.selectedCandidateId) {
+    const selP = plannerGetPlayer(replacementBrowserContext.selectedCandidateId);
+    if (selP) {
+      html += `
+        <div class="rb-sticky-bar">
+          <div>SELECTED REPLACEMENT<br><b>${escapeHtml(outPlayer.name)} \u2192 ${escapeHtml(selP.name)}</b></div>
+          <div style="display:flex;gap:8px">
+            <button class="lab-compare-btn" id="rbStickyCompare">Compare</button>
+            <button class="lab-restore-btn" id="rbStickyToLab">Transfer Lab</button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  body.innerHTML = html;
+  rbWireEvents(outPlayer);
+}
+
+function rbWireEvents(outPlayer) {
+  const body = document.getElementById('rbBody');
+  const rerender = () => renderReplacementBrowser();
+
+  const changeBtn = document.getElementById('rbChangePlayerBtn');
+  if (changeBtn) changeBtn.addEventListener('click', async () => {
+    replacementBrowserContext = rbDefaultContext();
+    await saveReplacementBrowserContext();
+    rerender();
+  });
+
+  const searchInput = document.getElementById('rbSearchInput');
+  if (searchInput) searchInput.addEventListener('input', async () => {
+    replacementBrowserContext.search = searchInput.value;
+    await saveReplacementBrowserContext();
+    rerender();
+  });
+
+  const clubSel = document.getElementById('rbFilterClub');
+  if (clubSel) clubSel.addEventListener('change', async () => { replacementBrowserContext.filters.club = clubSel.value; await saveReplacementBrowserContext(); rerender(); });
+  const availSel = document.getElementById('rbFilterAvailability');
+  if (availSel) availSel.addEventListener('change', async () => { replacementBrowserContext.filters.availability = availSel.value; await saveReplacementBrowserContext(); rerender(); });
+  const minsSel = document.getElementById('rbFilterMinutes');
+  if (minsSel) minsSel.addEventListener('change', async () => { replacementBrowserContext.filters.minutesTier = minsSel.value; await saveReplacementBrowserContext(); rerender(); });
+  const ownSel = document.getElementById('rbFilterOwnership');
+  if (ownSel) ownSel.addEventListener('change', async () => { replacementBrowserContext.filters.ownershipRange = ownSel.value; await saveReplacementBrowserContext(); rerender(); });
+  const manualBudgetInput = document.getElementById('rbManualBudget');
+  if (manualBudgetInput) manualBudgetInput.addEventListener('change', async () => {
+    const v = parseFloat(manualBudgetInput.value);
+    replacementBrowserContext.manualBudget = isNaN(v) ? null : v;
+    await saveReplacementBrowserContext();
+    rerender();
+  });
+  const clearManual = document.getElementById('rbClearManualBudget');
+  if (clearManual) clearManual.addEventListener('click', async () => { replacementBrowserContext.manualBudget = null; await saveReplacementBrowserContext(); rerender(); });
+  [document.getElementById('rbClearFilters'), document.getElementById('rbClearFilters2')].forEach(btn => {
+    if (btn) btn.addEventListener('click', async () => {
+      replacementBrowserContext.filters = rbDefaultContext().filters;
+      replacementBrowserContext.search = '';
+      await saveReplacementBrowserContext();
+      rerender();
+    });
+  });
+
+  body.querySelectorAll('[data-rb-view]').forEach(btn => {
+    btn.addEventListener('click', async () => { replacementBrowserContext.view = btn.dataset.rbView; await saveReplacementBrowserContext(); rerender(); });
+  });
+  body.querySelectorAll('[data-rb-horizon]').forEach(btn => {
+    btn.addEventListener('click', async () => { replacementBrowserContext.fixtureHorizon = Number(btn.dataset.rbHorizon); await saveReplacementBrowserContext(); rerender(); });
+  });
+  const sortSel = document.getElementById('rbSortSelect');
+  if (sortSel) sortSel.addEventListener('change', async () => { replacementBrowserContext.sort = sortSel.value; await saveReplacementBrowserContext(); rerender(); });
+
+  body.querySelectorAll('[data-rb-select]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.rbSelect);
+      replacementBrowserContext.selectedCandidateId = replacementBrowserContext.selectedCandidateId === id ? null : id;
+      await saveReplacementBrowserContext();
+      rerender();
+    });
+  });
+  body.querySelectorAll('[data-rb-compare]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.rbCompare);
+      cmpSelectedIds = [outPlayer.element, id];
+      await saveCmpSelected();
+      document.querySelector('.tab-btn[data-tab="compare"]').click();
+      renderComparison();
+    });
+  });
+  body.querySelectorAll('[data-rb-watch]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.rbWatch);
+      const c = labGetAnyPlayer(id);
+      await toggleWatchlist(id, c ? c.name : '');
+      renderWatchlist();
+      rerender();
+    });
+  });
+  body.querySelectorAll('[data-rb-info]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.rbInfo);
+      const c = labGetAnyPlayer(id);
+      if (!c) return;
+      const infoPlayer = { id: c.id, name: c.name, team: c.team, position: c.position, isCaptain: false, isVice: false, isBench: false, news: c.news, extra: '', fixtures: getPlanningFixtures(c) };
+      sheetStack = [{ view: 'info', player: infoPlayer }];
+      renderSheetView();
+    });
+  });
+  const stickyCompare = document.getElementById('rbStickyCompare');
+  if (stickyCompare) stickyCompare.addEventListener('click', async () => {
+    cmpSelectedIds = [outPlayer.element, replacementBrowserContext.selectedCandidateId];
+    await saveCmpSelected();
+    document.querySelector('.tab-btn[data-tab="compare"]').click();
+    renderComparison();
+  });
+  const stickyToLab = document.getElementById('rbStickyToLab');
+  if (stickyToLab) stickyToLab.addEventListener('click', async () => {
+    await enterTransferLabHandoff(outPlayer.element, replacementBrowserContext.selectedCandidateId, 'replacement-browser');
+    activeSection = 'transfers';
+    document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'transfers'));
+    openFeature('translab', 'transfers');
+    renderTransferLab();
+    showToast('Sent to Transfer Lab');
   });
 }
 
@@ -6031,7 +6503,7 @@ function renderPlayerAnalysis() {
   wrap.querySelectorAll('[data-send-to-lab]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const outId = Number(btn.dataset.sendToLab);
-      await enterTransferLabHandoff(outId, 'recommend-transfer');
+      await enterTransferLabHandoff(outId, null, 'recommend-transfer');
       document.querySelector('.tab-btn[data-tab="translab"]').click();
       renderTransferLab();
     });
@@ -6934,6 +7406,17 @@ function render() {
 }
 
 function renderChart() {
+  if (typeof Chart === 'undefined') {
+    // Chart.js failed to load from CDN (network issue, ad-blocker, firewall).
+    // A missing chart library must never crash the rest of the sync/render
+    // pipeline -- everything downstream (including the Replacement Browser)
+    // still needs to render.
+    const canvas = document.getElementById('chart');
+    const emptyNote = document.getElementById('chartEmpty');
+    if (canvas) canvas.style.display = 'none';
+    if (emptyNote) { emptyNote.style.display = 'block'; emptyNote.textContent = 'Chart library failed to load — points chart unavailable this session.'; }
+    return;
+  }
   const canvas = document.getElementById('chart');
   const emptyNote = document.getElementById('chartEmpty');
   const legend = document.getElementById('legend');
@@ -7048,6 +7531,7 @@ function renderCyprus() {
 function renderCyprusChart(sorted) {
   const canvas = document.getElementById('cyprusChart');
   const emptyNote = document.getElementById('cyprusChartEmpty');
+  if (typeof Chart === 'undefined') { if (canvas) canvas.style.display = 'none'; if (emptyNote) { emptyNote.style.display = 'block'; emptyNote.textContent = 'Chart library failed to load — chart unavailable this session.'; } return; }
   if (sorted.length < 2) {
     canvas.style.display = 'none'; emptyNote.style.display = 'block'; return;
   }
@@ -7138,6 +7622,7 @@ function renderFH() {
 function renderFHChart(sorted) {
   const canvas = document.getElementById('fhChart');
   const emptyNote = document.getElementById('fhChartEmpty');
+  if (typeof Chart === 'undefined') { if (canvas) canvas.style.display = 'none'; if (emptyNote) { emptyNote.style.display = 'block'; emptyNote.textContent = 'Chart library failed to load — chart unavailable this session.'; } return; }
   if (sorted.length < 2) {
     canvas.style.display = 'none'; emptyNote.style.display = 'block'; return;
   }
@@ -7198,7 +7683,7 @@ function renderAllViews() {
   renderLeaguePositionContext(); renderLeagueMovement(); renderGwBattle(); renderRivalsOverview();
   renderRivalCompare(); renderCaptainOwnership(); renderMiniLeagueOwnership(); renderThreatAnalysis();
   renderRivalWatchHome(); renderPlayerAnalysis(); renderPlanner(); renderCaptainChipsTab(); renderComparison();
-  renderTransferLab(); renderSixGwPlanner(); renderGlobalTop(); renderMiniLeagues(); renderWatchlist(); renderSystemHealth();
+  renderTransferLab(); renderSixGwPlanner(); renderGlobalTop(); renderMiniLeagues(); renderWatchlist(); renderReplacementBrowser(); renderSystemHealth();
 }
 function phase7Audit() {
   const out=[]; const add=(level,label,detail='')=>out.push({level,label,detail});
@@ -7282,6 +7767,20 @@ function runSystemDiagnostics() {
     add(viceOk?'ok':'err','Planned vice',viceOk?(viceP?viceP.name:'In starting XI'):'Vice is not in the planned starting XI');
     add(plannedLineup.captain!==plannedLineup.viceCaptain?'ok':'err','Captain != vice',plannedLineup.captain!==plannedLineup.viceCaptain?'Distinct players':'Captain and vice are the same player');
     add(plannedLineupValid()?'ok':'warn','Planned state compatibility',plannedLineupValid()?'Matches current 15-player squad and GW':'Stale — will reset from official on next render');
+  }
+  if (replacementBrowserContext && replacementBrowserContext.outPlayerId && gwPlanner) {
+    const outP = labGetSquadPlayer(replacementBrowserContext.outPlayerId);
+    add(outP?'ok':'err','Replacement Browser OUT player',outP?`${outP.name} \u2014 valid, belongs to official squad`:'OUT player no longer in official squad');
+    if (outP) {
+      const cands = getLegalReplacementCandidates(outP.element);
+      add(cands.length?'ok':'warn','Replacement Browser candidate pool',cands.length+' legal candidates generated');
+      if (replacementBrowserContext.selectedCandidateId) {
+        const sel = plannerGetPlayer(replacementBrowserContext.selectedCandidateId);
+        const ownedIds = new Set(gwPlanner.squad.map(p=>p.element));
+        const selValid = sel && sel.position===outP.position && !ownedIds.has(sel.id);
+        add(selValid?'ok':'err','Replacement Browser selected candidate',selValid?(sel.name+' \u2014 same position, not owned'):'Selected candidate no longer valid');
+      }
+    }
   }
   return checks;
 }
@@ -8024,6 +8523,18 @@ function aiPlannedLineup(lines) {
   lines.push('Planned vice-captain: ' + (viceP ? viceP.name : '—'));
 }
 
+function aiReplacementBrowserContext(lines) {
+  if (!replacementBrowserContext || !replacementBrowserContext.outPlayerId || !replacementBrowserContext.selectedCandidateId || !gwPlanner) return;
+  const outP = labGetSquadPlayer(replacementBrowserContext.outPlayerId);
+  const selP = plannerGetPlayer(replacementBrowserContext.selectedCandidateId);
+  if (!outP || !selP) return;
+  aiSection(lines, '2C. ACTIVE REPLACEMENT BROWSER CONTEXT');
+  lines.push('OUT: ' + outP.name);
+  lines.push('SELECTED CANDIDATE: ' + selP.name);
+  lines.push('STATUS: Exploratory only -- NOT CURRENT RECOMMENDATION.');
+  if (replacementBrowserContext.manualBudget != null) lines.push('Explored using MANUAL ANALYSIS BUDGET (£' + replacementBrowserContext.manualBudget.toFixed(1) + 'm) -- not verified official affordability.');
+}
+
 function aiPerformance(lines) {
   aiSection(lines, '3. PLAYER PERFORMANCE DATA');
   (gwPlanner?.squad || []).forEach(sp=>{
@@ -8340,6 +8851,7 @@ function aiMachineState(lines) {
     benchGoalkeeper:squad.filter(p=>p.isBench).find(p=>p.position==='GKP')?.name||null,
     outfieldBenchOrder:squad.filter(p=>p.isBench&&p.position!=='GKP').map(p=>p.name),
     plannedLineup:(()=>{ensurePlannedLineup();if(!plannedLineup)return null;return{active:true,sourceGw:plannedLineup.sourceGw,starters:[...plannedLineup.starters],benchGk:plannedLineup.benchGk,benchOutfield:[...plannedLineup.benchOutfield],captain:plannedLineup.captain,viceCaptain:plannedLineup.viceCaptain,changesFromOfficial:plannedDiffCount(),source:'tracker local planning state',isOfficial:false,isCurrentRecommendation:false};})(),
+    replacementBrowserContext:(()=>{if(!replacementBrowserContext||!replacementBrowserContext.outPlayerId||!replacementBrowserContext.selectedCandidateId)return null;return{outPlayerId:replacementBrowserContext.outPlayerId,selectedCandidateId:replacementBrowserContext.selectedCandidateId,manualBudget:replacementBrowserContext.manualBudget,source:replacementBrowserContext.source,status:'exploratory',isCurrentRecommendation:false};})(),
     currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,chanceOfPlaying:aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],null),news:p.news,source:'Official FPL/tracker sync',updated:lastSyncedAt?lastSyncedAt.toISOString():null}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
     savedScenario:{transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0,source:'SAVED OLD PLAN / TRACKER STATE',isCurrentRecommendation:false},currentRecommendation:null,
@@ -8421,6 +8933,7 @@ function buildAiHandoffReport() {
   aiReportMetadata(lines);
   aiExactSquad(lines);
   aiPlannedLineup(lines);
+  aiReplacementBrowserContext(lines);
   aiPerformance(lines);
   aiRoleMinutes(lines);
   aiFixtures8(lines);
@@ -8690,6 +9203,7 @@ document.querySelectorAll('.pv-toggle-btn[data-pitch-mode]').forEach(btn => {
   await loadPlannedLineup();
   await loadTransferLabContext();
   await loadSavedTransferScenarios();
+  await loadReplacementBrowserContext();
   await loadPhase5State();
   await loadPhase5Baseline();
   renderAllViews();
