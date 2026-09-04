@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build-version="v7.0.0">
+<html lang="en" data-build-version="v10.0.0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="fpl-build-version" content="v7.0.0">
+<meta name="fpl-build-version" content="v10.0.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FPL Tracker">
@@ -15,7 +15,7 @@
 <title>FPL Tracker</title>
 <script>
 /* Build watchdog: once this build is installed, future GitHub Pages updates self-refresh without re-adding the Home Screen app. */
-window.FPL_TRACKER_BUILD='v7.0.0';
+window.FPL_TRACKER_BUILD='v10.0.0';
 (async function fplFreshBuildWatchdog(){
   if(!/^https?:$/.test(location.protocol)) return;
   try{
@@ -1798,6 +1798,62 @@ body.player-info-open .player-sheet{z-index:1901}
   .pitch-name{font-size:13px}.pitch-extra{font-size:12.5px}
 }
 
+
+/* ===== v9 touch-scroll + pitch visual correction ===== */
+@media(max-width:768px){
+  /* Player info: drag-to-scroll from every non-control surface, including dark cards. */
+  .player-info-page{overflow-y:scroll!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior-y:auto!important}
+  .player-info-shell{touch-action:pan-y!important}
+  .player-info-hero,.player-info-card,.player-info-card *,.player-info-avatar,.player-info-meta,.player-info-mini,.player-info-club{touch-action:pan-y!important}
+  .player-info-card,.player-info-hero{pointer-events:none}
+  .player-info-topbar,.player-info-topbar *{pointer-events:auto}
+
+  /* Smaller contextual action menu, closer to the Hub proportions instead of dominating the screen. */
+  .player-sheet{top:clamp(170px,24vh,255px)!important;width:min(330px,calc(100vw - 72px))!important;max-height:none!important;padding:0 18px!important;border-radius:17px!important;overflow:hidden!important}
+  .ps-hub-actions{padding:4px 0!important}
+  .player-sheet .ps-action-row{min-height:58px!important;font-size:16px!important;gap:12px!important;padding:0 1px!important}
+  .ps-hub-icon{width:26px!important;min-width:26px!important;height:26px!important;font-size:19px!important}
+  .ps-hub-letter{font-size:12px!important}
+  .ps-hub-symbol{font-size:21px!important}
+
+  /* Pitch proportions: compact cards and row widths rather than stretched full-width labels. */
+  .pitch-container{min-height:760px!important;padding:24px 5px 20px!important;background:
+    linear-gradient(to bottom,transparent 49.7%,rgba(255,255,255,.88) 49.85%,rgba(255,255,255,.88) 50.15%,transparent 50.3%),
+    radial-gradient(circle at 50% 50%,transparent 0 72px,rgba(255,255,255,.82) 73px 76px,transparent 77px),
+    #779b88!important}
+  .pitch-container::before{inset:10px!important;border:2px solid rgba(255,255,255,.82)!important}
+  .pitch-container::after{left:19%!important;right:19%!important;top:10px!important;height:142px!important}
+  .pitch-row{width:100%;justify-content:space-around!important;gap:4px!important;margin-bottom:39px!important}
+  .pitch-row:first-of-type{margin-top:12px!important;margin-bottom:44px!important}
+  .pitch-row:last-child{margin-bottom:8px!important}
+  .pitch-card{flex:0 1 auto!important;width:31%!important;max-width:220px!important;padding:0!important}
+  .pitch-row:has(> .pitch-card:nth-child(5)) .pitch-card{width:18.5%!important;max-width:145px!important}
+  .pitch-row:has(> .pitch-card:nth-child(4)):not(:has(> .pitch-card:nth-child(5))) .pitch-card{width:23%!important;max-width:175px!important}
+  .pitch-row:has(> .pitch-card:nth-child(3)):not(:has(> .pitch-card:nth-child(4))) .pitch-card{width:30.8%!important;max-width:235px!important}
+  .pitch-row:has(> .pitch-card:nth-child(2)):not(:has(> .pitch-card:nth-child(3))) .pitch-card{width:31%!important;max-width:240px!important}
+  .pitch-row:not(:has(> .pitch-card:nth-child(2))) .pitch-card{width:31%!important;max-width:240px!important}
+  .pitch-kit-wrap{height:66px!important;margin-bottom:0!important}
+  .pitch-kit-img{width:70px!important;height:66px!important;object-fit:contain!important;filter:drop-shadow(0 3px 4px rgba(0,0,0,.18))!important}
+  .pitch-kit-badge-fallback{width:48px;height:48px;object-fit:contain;margin:auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+  .pitch-jersey{display:none!important}
+  .pitch-name,.pitch-extra{width:100%!important;max-width:none!important;font-weight:500!important}
+  .pitch-name{background:#1b2022!important;color:#f5f6f6!important;border-radius:8px 8px 0 0!important;padding:6px 4px 5px!important;font-size:13px!important}
+  .pitch-extra{background:#2d3234!important;color:#f5f6f6!important;border-radius:0 0 8px 8px!important;padding:6px 4px!important;font-size:12.5px!important}
+  .pitch-badges{top:5px!important;right:calc(50% - 35px)!important}
+  .pitch-badge{width:24px!important;height:24px!important;font-size:11px!important}
+  .pitch-bench-wrap{margin-top:18px!important;border-radius:26px!important;background:#0c0f10!important;padding:14px 7px 15px!important}
+  .pitch-bench-row .pitch-card{width:24%!important;max-width:170px!important}
+  .pitch-bench-row .pitch-kit-wrap{height:55px!important}.pitch-bench-row .pitch-kit-img{width:58px!important;height:55px!important}
+  .pitch-bench-row .pitch-kit-badge-fallback{width:42px;height:42px}
+}
+@media(max-width:430px){
+ .player-sheet{width:min(320px,calc(100vw - 54px))!important}
+ .pitch-container{min-height:720px!important}
+ .pitch-row{margin-bottom:35px!important}.pitch-row:first-of-type{margin-bottom:40px!important}
+ .pitch-kit-img{width:64px!important;height:61px!important}.pitch-kit-wrap{height:61px!important}
+ .pitch-name{font-size:12.5px!important}.pitch-extra{font-size:12px!important}
+}
+
 </style>
 </head>
 <body>
@@ -1964,7 +2020,7 @@ body.player-info-open .player-sheet{z-index:1901}
         <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
         <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
       </div>
-      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v7.0.0 · AUTO-UPDATE ENABLED</div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v10.0.0 · AUTO-UPDATE ENABLED</div>
     </div>
   </div>
 
@@ -2503,13 +2559,21 @@ const TEAM_NAME_BY_SHORT={ARS:'Arsenal',AVL:'Aston Villa',BOU:'Bournemouth',BRE:
 const PLAYER_SEARCH_ALIASES={'Gabriel':'Gabriel Magalhaes','Calafiori':'Riccardo Calafiori','Maguire':'Harry Maguire','Haaland':'Erling Haaland','Mbeumo':'Bryan Mbeumo','João Pedro':'Joao Pedro','B.Fernandes':'Bruno Fernandes','Kinsky':'Antonin Kinsky','Tzolis':'Christos Tzolis','Groß':'Pascal Gross'};
 function expandedTeamName(short){return TEAM_NAME_BY_SHORT[String(short||'').toUpperCase()]||short||'';}
 function playerSearchName(p){return p?.fullName||p?.full_name||[p?.firstName||p?.first_name,p?.secondName||p?.second_name].filter(Boolean).join(' ')||PLAYER_SEARCH_ALIASES[p?.name]||p?.name||'';}
+const FPL_TEAM_CODE_BY_SHORT={ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,LEE:2,LIV:14,MCI:43,MUN:1,NEW:4,NFO:17,TOT:6,WHU:21,WOL:39};
 function fplTeamShirtUrl(code){return code?('https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_'+code+'-110.png'):'';}
+function fplTeamBadgeUrl(code){return code?('https://resources.premierleague.com/premierleague/badges/100/t'+code+'.png'):'';}
 function pitchKitMarkup(p){
   let off=null,team=null;
   try{off=typeof officialPlayerById==='function'?officialPlayerById(p?.id):null; team=off&&typeof officialTeamById==='function'?officialTeamById(off.team):null;}catch(e){}
-  const src=team?.code?fplTeamShirtUrl(team.code):'';
-  const fallback='<div class="pitch-jersey '+(p.position==='GKP'?'gk':'')+'" style="background:'+teamColor(p.team)+'"></div>';
-  return src?('<img class="pitch-kit-img" src="'+src+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'+fallback.replace('<div','<div style="display:none"')):fallback;
+  const short=String(p?.team||team?.short_name||'').toUpperCase();
+  const code=team?.code||FPL_TEAM_CODE_BY_SHORT[short]||null;
+  const shirt=fplTeamShirtUrl(code);
+  const badge=fplTeamBadgeUrl(code);
+  const badgeMarkup=badge?'<img class="pitch-kit-badge-fallback" src="'+badge+'" alt="" onerror="this.style.display=\'none\'">':'';
+  if(shirt){
+    return '<img class="pitch-kit-img" src="'+shirt+'" alt="" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'block\'">'+(badge?'<img class="pitch-kit-badge-fallback" style="display:none" src="'+badge+'" alt="">':'');
+  }
+  return badgeMarkup;
 }
 
 function pitchCard(p, idx, containerId, benchOrder) {
@@ -3610,6 +3674,24 @@ function fplPlayerPhotoUrl(code){ return code ? 'https://resources.premierleague
 function fplTeamBadgeUrl(code){ return code ? 'https://resources.premierleague.com/premierleague/badges/70/t'+code+'.png' : ''; }
 function officialTeamById(id){ return officialFplVisuals.teams.get(Number(id)) || null; }
 function officialPlayerById(id){ return officialFplVisuals.players.get(Number(id)) || null; }
+function normalizePlayerKey(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+function officialPlayerFor(full){
+  const direct=officialPlayerById(full?.id);
+  if(direct) return direct;
+  const wanted=[full?.name,full?.webName,full?.web_name,full?.displayName].map(normalizePlayerKey).filter(Boolean);
+  const teamShort=String(full?.team||'').toUpperCase();
+  let pool=[...officialFplVisuals.players.values()];
+  if(teamShort){
+    const t=officialTeamByShort(teamShort);
+    if(t) pool=pool.filter(p=>Number(p.team)===Number(t.id));
+  }
+  return pool.find(p=>{
+    const keys=[p.web_name,p.first_name+' '+p.second_name,p.second_name,p.first_name].map(normalizePlayerKey);
+    return wanted.some(w=>keys.some(k=>k===w || (w.length>4&&k.includes(w)) || (k.length>4&&w.includes(k))));
+  }) || null;
+}
+function officialSummaryFor(full){const op=officialPlayerFor(full); return op ? officialElementSummaryCache.get(Number(op.id))||null : officialElementSummaryCache.get(Number(full?.id))||null;}
+
 function officialTeamByShort(short){ const k=String(short||'').toUpperCase(); return [...officialFplVisuals.teams.values()].find(t=>String(t.short_name||'').toUpperCase()===k || String(t.name||'').toUpperCase()===k) || null; }
 
 async function loadOfficialFplVisualAssets(){
@@ -3638,7 +3720,7 @@ async function loadOfficialElementSummary(playerId){
 }
 
 function playerVisualAsset(full){
-  const off=officialPlayerById(full?.id);
+  const off=officialPlayerFor(full);
   const code=off?.code || full?.code || null;
   const teamId=off?.team || full?.teamId || null;
   const team=officialTeamById(teamId) || officialTeamByShort(full?.team);
@@ -3683,7 +3765,7 @@ let currentPlayerInfo = null;
 let playerInfoHistoryPushed = false;
 
 function playerInfoRecentRows(full) {
-  const official=officialElementSummaryCache.get(Number(full?.id));
+  const official=officialSummaryFor(full);
   if(official && Array.isArray(official.history) && official.history.length){
     return official.history.slice().sort((a,b)=>Number(b.round)-Number(a.round)).slice(0,4).map(r=>{
       const opp=officialTeamById(r.opponent_team);
@@ -3709,7 +3791,7 @@ function playerInfoRecentRows(full) {
 }
 
 function playerInfoProjectionRows(full) {
-  const official=officialElementSummaryCache.get(Number(full?.id));
+  const official=officialSummaryFor(full);
   const rawFixtures=(official&&Array.isArray(official.fixtures)&&official.fixtures.length) ? official.fixtures.map(f=>{
     const teamId=f.is_home?f.team_a:f.team_h; const opp=officialTeamById(teamId);
     return {gw:f.event,opponent:opp?.short_name||opp?.name||'—',opponentTeamId:teamId,venue:f.is_home?'H':'A',difficulty:Number(f.difficulty||3)};
@@ -3753,8 +3835,9 @@ function renderFullPlayerInfo(p) {
     return '<div class="player-info-form-row"><div class="player-info-gw">GW'+r.gw+'</div><div class="player-info-match"><div class="player-info-match-main">'+(badge?'<img class="player-info-opp-badge" src="'+badge+'" alt="" onerror="this.style.display=\'none\'">':'')+'<span class="player-info-match-text">'+label+venue+'</span>'+score+'</div></div><div class="player-info-points">'+r.points+'pts</div></div>';
   }).join('') : '<div class="player-info-empty">Match-by-match history is loading from the official FPL player endpoint.</div>';
   const projHtml = projections.length ? projections.map(r=>{
-    const cls=r.difficulty<=2?'easy':r.difficulty>=4?'hard':'mid';
-    const xp = r.xp != null && Number.isFinite(Number(r.xp)) ? Number(r.xp).toFixed(1)+'pts' : '—';
+    const xpNum=(r.xp != null && Number.isFinite(Number(r.xp)))?Number(r.xp):null;
+    const cls=xpNum!=null?(xpNum>=5?'xp-elite':xpNum>=4?'xp-good':xpNum>=3?'xp-mid':'xp-low'):(r.difficulty<=2?'xp-good':r.difficulty>=4?'xp-low':'xp-mid');
+    const xp = xpNum != null ? xpNum.toFixed(1)+'pts' : '—';
     const venue = r.venue === 'H' ? 'Home' : (r.venue === 'A' ? 'Away' : r.venue);
     const oppTeam=officialTeamById(r.opponentTeamId); const badge=fplTeamBadgeUrl(oppTeam?.code);
     return '<div class="player-info-proj-row"><div class="player-info-gw">GW'+(r.gw ?? '—')+'</div><div class="player-info-proj-pill '+cls+'"><span class="player-info-match-main">'+(badge?'<img class="player-info-opp-badge" src="'+badge+'" alt="" onerror="this.style.display=\'none\'">':'')+'<span>'+escapeHtml(r.opponent)+(venue?' ('+escapeHtml(venue)+')':'')+'</span></span><span class="xp">'+xp+'</span></div></div>';
@@ -3781,9 +3864,9 @@ function renderFullPlayerInfo(p) {
       '<div><div class="player-info-stat-label">Assists</div><div class="player-info-stat-value">'+assists+'</div></div>'+
       '<div><div class="player-info-stat-label">'+thirdLabel+'</div><div class="player-info-stat-value">'+thirdValue+'</div></div>'+
     '</div></div>'+
-    '<div class="player-info-card"><div class="player-info-section-head"><span>Form</span><span class="player-info-source">Official FPL match history</span></div>'+recentHtml+'</div>'+
-    '<div class="player-info-card"><div class="player-info-section-head"><span>Projected points</span><span class="player-info-source">Tracker projections + official fixtures</span></div>'+projHtml+'<div class="player-info-empty" style="padding-top:16px">No projection is invented: missing tracker xPts stay as —.</div></div>'+
-    '<div class="player-info-build">BUILD v7.0.0 · LIVE VISUAL FALLBACKS</div>';
+    '<div class="player-info-card"><div class="player-info-section-head"><span>Form</span><span class="player-info-source">Form</span></div>'+recentHtml+'</div>'+
+    '<div class="player-info-card"><div class="player-info-section-head"><span>Projected points</span><span class="player-info-source">Next GWs</span></div>'+projHtml+'</div>'+
+    '<div class="player-info-build">BUILD v10.0.0 · LIVE VISUAL FALLBACKS</div>';
 }
 
 function openFullPlayerInfo(p) {
@@ -3792,8 +3875,14 @@ function openFullPlayerInfo(p) {
   closePlayerSheet();
   renderFullPlayerInfo(p);
   const fullForVisual=fullPlayerRecord(p);
-  (officialFplVisuals.loaded ? Promise.resolve(true) : loadOfficialFplVisualAssets()).then(()=>{if(currentPlayerInfo&&Number(currentPlayerInfo.id)===Number(p.id)) renderFullPlayerInfo(currentPlayerInfo);}).catch(()=>{});
-  loadOfficialElementSummary(p.id).then(()=>{if(currentPlayerInfo&&Number(currentPlayerInfo.id)===Number(p.id)) renderFullPlayerInfo(currentPlayerInfo);}).catch(()=>{});
+  (officialFplVisuals.loaded ? Promise.resolve(true) : loadOfficialFplVisualAssets()).then(async()=>{
+    if(!(currentPlayerInfo&&Number(currentPlayerInfo.id)===Number(p.id))) return;
+    renderFullPlayerInfo(currentPlayerInfo);
+    const resolved=officialPlayerFor(fullForVisual);
+    const officialId=resolved?.id || p.id;
+    await loadOfficialElementSummary(officialId);
+    if(currentPlayerInfo&&Number(currentPlayerInfo.id)===Number(p.id)) renderFullPlayerInfo(currentPlayerInfo);
+  }).catch(()=>{});
   loadExternalPlayerVisual(fullForVisual).then(()=>{if(currentPlayerInfo&&Number(currentPlayerInfo.id)===Number(p.id)) renderFullPlayerInfo(currentPlayerInfo);}).catch(()=>{});
   const page=document.getElementById('playerInfoPage');
   page.classList.add('open'); page.setAttribute('aria-hidden','false'); page.scrollTop=0;
