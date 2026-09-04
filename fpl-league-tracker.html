@@ -1489,6 +1489,120 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
   body{min-height:100dvh}
 }
 
+
+
+/* ===== Premium mobile pass — remaining screens ===== */
+@media (max-width:768px){
+  /* context-aware app header */
+  body.feature-open .app-header{display:none}
+  .section-back-row{display:flex;align-items:center;gap:10px;margin:2px 0 18px;min-height:50px}
+  .section-back-btn{min-height:46px;padding:0 8px 0 0;font-size:17px;font-weight:850;border:0;background:transparent;color:var(--accent)}
+  .section-back-title{font-size:22px;font-weight:900;letter-spacing:-.025em;color:#f6f9f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* section landing hierarchy */
+  .section-landing{padding-bottom:8px}
+  .section-landing::before{display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:2px 0 6px}
+  #landingTransfers::before{content:'Plan your moves'}
+  #landingIntelligence::before{content:'Research & rivals'}
+  #landingMore::before{content:'Tools & data'}
+  .section-landing-title{font-size:33px;line-height:1.05;margin-bottom:18px}
+  .landing-card{position:relative;min-height:84px;padding:17px 16px;border:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg,#11231a,#0e1d16);box-shadow:0 10px 28px rgba(0,0,0,.12)}
+  .landing-card:active{transform:scale(.992);background:#13271d}
+  .landing-card-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:15px;background:#182e23;font-size:25px}
+  .landing-card-title{font-size:18px;line-height:1.15;font-weight:900;letter-spacing:-.015em}
+  .landing-card-desc{font-size:14px;line-height:1.35;margin-top:5px;color:#95a49c}
+  .landing-card-chevron{font-size:27px;color:#728178}
+  .landing-card.featured{min-height:102px;border-color:rgba(201,255,53,.18);background:linear-gradient(135deg,rgba(201,255,53,.09),#102119 58%)}
+  .landing-card.featured .landing-card-icon{background:rgba(201,255,53,.12);color:var(--accent)}
+  .landing-card.featured .landing-card-title{font-size:20px}
+
+  /* universal mobile controls */
+  .tab-panel button:not(.bn-btn), .tab-panel select, .tab-panel input[type=text], .tab-panel input[type=number]{min-height:48px;font-size:15px;border-radius:12px}
+  .tab-panel textarea{font-size:14px;border-radius:12px;line-height:1.45}
+  .tab-panel label{font-family:var(--font-body);font-size:12px;font-weight:750;letter-spacing:.01em;color:#9caaa2}
+  .tab-panel .heuristic-note{font-size:13px;line-height:1.5;border-radius:14px;padding:13px 14px}
+  .tab-panel .empty-note{font-size:14px;line-height:1.45;padding:26px 16px}
+
+  /* Transfer landing — make Replacement Browser the obvious first route */
+  #landingTransfers .landing-card[data-open-tab="replacementbrowser"]{order:-2}
+  #landingTransfers .landing-card[data-open-tab="translab"]{order:-1}
+  #landingTransfers{display:flex;flex-direction:column}
+
+  /* Transfer Lab */
+  .lab-current-analysis-card,.lab-hold-player-card,.lab-scenario-card,.lab-saved-scenario-card{border-radius:18px;padding:17px 16px;margin-bottom:12px;border-color:rgba(255,255,255,.075);background:#102119}
+  .lab-current-analysis-title,.lab-hold-player-title{font-family:var(--font-body);font-size:12px;font-weight:850;letter-spacing:.07em}
+  .lab-current-analysis-name,.lab-hold-player-name{font-family:var(--font-body);font-size:22px;font-weight:900;letter-spacing:-.025em}
+  .lab-current-analysis-meta,.lab-hold-player-meta{font-size:14px;line-height:1.4}
+  .lab-scenario-title{font-family:var(--font-body);font-size:18px;text-transform:none;letter-spacing:-.015em}
+  .lab-pair-row{gap:12px;margin-bottom:14px}.lab-pair-col{min-width:100%}
+  .lab-pair-col select,.lab-pair-col input[type=text]{min-height:50px;padding:11px 12px;font-size:15px;border-radius:12px}
+  .lab-candidate-card{border-radius:18px;padding:16px;margin-bottom:12px;background:#102119;border-color:rgba(255,255,255,.07)}
+  .lab-candidate-name{font-size:18px}.lab-candidate-meta{font-size:13px}.lab-candidate-stat,.rb-evidence-stat{padding:10px 11px;border-radius:11px;min-width:82px}
+  .lab-candidate-stat-label,.rb-evidence-label{font-family:var(--font-body);font-size:10px;font-weight:800}.lab-candidate-stat-val,.rb-evidence-val{font-family:var(--font-body);font-size:15px}
+  .lab-candidate-reasons,.lab-candidate-tradeoffs{font-size:13px;line-height:1.45}
+  .lab-candidate-actions button{flex:1;min-width:105px}
+
+  /* Replacement Browser */
+  .rb-financial-bar{border-radius:18px;padding:15px 16px;background:#102119;border-color:rgba(255,255,255,.07)}
+  .rb-fin-row{font-size:14px;padding:7px 0}.rb-filters-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 14px}
+  .rb-filters-row select,.rb-filters-row input{width:100%!important;min-height:48px;margin:0!important;font-size:14px!important;border-radius:12px!important}
+  .rb-candidate-grid{display:block}.rb-sticky-bar{bottom:calc(84px + env(safe-area-inset-bottom,0px));border-radius:16px;padding:13px 14px;font-size:13px;background:rgba(14,30,22,.96);backdrop-filter:blur(16px)}
+  .rb-fx-strip{gap:6px}.rb-fx-strip .fdr-cell,.rb-fx-strip .pitch-fx-pill{font-size:11px}
+
+  /* Compare */
+  .cmp-controls{display:grid;grid-template-columns:1fr;gap:9px}.cmp-controls input[type=text],.cmp-controls select{width:100%;min-width:0;margin:0;min-height:50px;padding:11px 12px;border-radius:12px;font-size:15px}
+  .cmp-chip{min-height:44px;border-radius:12px;padding:9px 12px;font-size:14px}
+  .cmp-table-scroll,.cmp-fx-scroll{margin-left:-14px;margin-right:-14px;padding:0 14px 8px;scrollbar-width:none}.cmp-table-scroll::-webkit-scrollbar,.cmp-fx-scroll::-webkit-scrollbar{display:none}
+  .cmp-table th,.cmp-table td{font-size:13px;padding:10px 11px}.cmp-table th{font-size:14px}.cmp-verdict-card{border-radius:18px;padding:17px 16px}.cmp-verdict-label{font-family:var(--font-body);font-size:19px;text-transform:none}.cmp-verdict-why{font-size:14px}.cmp-tradeoff{font-size:13px}
+
+  /* 6-GW planner / squad outlook / analysis */
+  .plan-card,.planner-card,.analysis-card,.player-analysis-card{border-radius:18px!important}
+  .roll-ft-btn{width:100%;min-height:52px;border-radius:14px!important;font-size:15px!important}
+  .ts-row,.perf-row,.pressure-row,.price-row,.injury-row,.home-rival-row,.gt-squad-card,.gt-standings-row{border-radius:14px;padding:13px 14px;margin-bottom:8px;background:#102119;border-color:rgba(255,255,255,.065)}
+  .ts-team,.perf-name,.price-name,.injury-name,.hr-name,.gt-squad-name{font-size:15px}.ts-players,.perf-meta,.price-meta,.injury-meta,.hr-meta,.gt-player-list{font-size:12.5px;line-height:1.4}
+
+  /* Decisions */
+  #tab-decisions .decision-hero-card{border-radius:22px;padding:20px 17px;background:linear-gradient(145deg,#13271d,#0e1d16);border-color:rgba(201,255,53,.12)}
+  #tab-decisions .decision-hero-title{font-family:var(--font-body);font-size:26px;letter-spacing:-.03em}
+  #tab-decisions .decision-hero-deadline{font-size:14px;margin-bottom:18px}
+  #tab-decisions .decision-grid{gap:10px}
+  #tab-decisions .decision-card{border-radius:14px;padding:14px;background:#17291f;min-height:84px}
+  #tab-decisions .decision-card-label{font-family:var(--font-body);font-size:11px;font-weight:800}
+  #tab-decisions .decision-card-val{font-size:17px;line-height:1.2}
+  #tab-decisions .decision-card-sub{font-size:12px;line-height:1.35}
+  #tab-decisions .decision-readiness-title{font-family:var(--font-body);font-size:12px;font-weight:800}
+  #tab-decisions .decision-readiness-status{font-family:var(--font-body);font-size:20px}
+  #tab-decisions #decReadinessList{font-size:13px;line-height:1.55}
+  #tab-decisions .planned-context-card{border-radius:16px;padding:15px}
+  #tab-decisions .planned-context-title{font-family:var(--font-body);font-size:12px}
+  #tab-decisions .planned-context-row{font-size:14px;padding:8px 0}
+
+  /* Mini Leagues */
+  .ml-select{min-height:56px;font-size:17px;padding:14px 15px;border-radius:15px}
+  .ml-table-row{min-height:76px;border-radius:15px;padding:14px 15px;margin-bottom:8px}
+  .ml-rank-num{font-size:18px;min-width:30px}.ml-table-name{font-size:16px}.ml-table-manager{font-size:13px}.ml-table-pts-val{font-size:20px}.ml-table-pts-label{font-size:10px}
+  .ml-award-card{border-radius:18px;padding:18px 16px}.ml-award-title{font-family:var(--font-body);font-size:17px;text-transform:none}.ml-award-row{font-size:14px;padding:9px 4px}
+  .ml-transfer-row{border-radius:14px;padding:13px 14px;font-size:14px}
+
+  /* Captain & chips / global top */
+  .chase-card,.verdict-card,.gw-hero,.rank-stat,.chart-card{border-radius:18px;padding:17px 16px;background:#102119;border-color:rgba(255,255,255,.07)}
+  .verdict-label{font-family:var(--font-body);font-size:21px;text-transform:none}.verdict-reasons{font-size:14px}
+  .rank-stat-val{font-family:var(--font-body);font-size:30px}.rank-stat-label{font-family:var(--font-body);font-size:11px;font-weight:800}
+
+  /* AI handoff + System/Data */
+  #tab-aihandoff button,#tab-systemdata button{width:100%;margin:5px 0;min-height:50px}
+  #tab-aihandoff .add-panel,#tab-systemdata .add-panel{border-radius:18px;padding:16px;background:#102119}
+
+  /* Dense legacy tables remain scrollable instead of crushing text */
+  .tab-panel table:not(.ml-table){min-width:620px}
+  .tab-panel .fdr-table{min-width:620px}
+  .tab-panel .cmp-table,.tab-panel .cmp-fx-table{min-width:610px}
+
+  /* cleaner section spacing */
+  .tab-panel>.section-label:first-child{margin-top:6px}
+  .tab-panel .section-label{font-size:21px;margin-top:24px}
+}
+
 </style>
 </head>
 <body>
@@ -1514,14 +1628,14 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
     <div class="landing-card" data-open-tab="compare"><div class="landing-card-icon">🔀</div><div><div class="landing-card-title">Compare Players</div><div class="landing-card-desc">Compare 2–4 players side by side</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="translab"><div class="landing-card-icon">🧪</div><div><div class="landing-card-title">Transfer Lab</div><div class="landing-card-desc">Analyse saved OUT → IN scenarios vs HOLD</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="sixgw"><div class="landing-card-icon">📅</div><div><div class="landing-card-title">6-GW Plan</div><div class="landing-card-desc">Future squad planning across gameweeks</div></div><div class="landing-card-chevron">›</div></div>
-    <div class="landing-card" data-open-tab="replacementbrowser"><div class="landing-card-icon">🔍</div><div><div class="landing-card-title">Replacement Browser</div><div class="landing-card-desc">Explore same-position replacements for a squad player</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card featured" data-open-tab="replacementbrowser"><div class="landing-card-icon">🔍</div><div><div class="landing-card-title">Replacement Browser</div><div class="landing-card-desc">Explore same-position replacements for a squad player</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="watchlist"><div class="landing-card-icon">⭐</div><div><div class="landing-card-title">Watchlist</div><div class="landing-card-desc">Players you've flagged to track</div></div><div class="landing-card-chevron">›</div></div>
   </div>
 
   <div class="section-landing" id="landingIntelligence" style="display:none">
     <div class="section-landing-title">Intelligence</div>
     <div class="landing-card" data-open-tab="info"><div class="landing-card-icon">📋</div><div><div class="landing-card-title">FPL Info / Fixture Centre</div><div class="landing-card-desc">Deadlines, fixtures, price changes, injuries</div></div><div class="landing-card-chevron">›</div></div>
-    <div class="landing-card" data-open-tab="minileagues"><div class="landing-card-icon">🏆</div><div><div class="landing-card-title">Mini Leagues</div><div class="landing-card-desc">Almost Champions, Cyprus, FPL Harry — one screen</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card featured" data-open-tab="minileagues"><div class="landing-card-icon">🏆</div><div><div class="landing-card-title">Mini Leagues</div><div class="landing-card-desc">Almost Champions, Cyprus, FPL Harry — one screen</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="rivals"><div class="landing-card-icon">⚔️</div><div><div class="landing-card-title">Rivals</div><div class="landing-card-desc">Direct rival intelligence and threat analysis</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="analysis"><div class="landing-card-icon">📊</div><div><div class="landing-card-title">Analysis</div><div class="landing-card-desc">Per-player official data vs heuristic classification</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="planner"><div class="landing-card-icon">🧠</div><div><div class="landing-card-title">Squad Outlook</div><div class="landing-card-desc">Squad — next 6 fixtures, problems, possible moves</div></div><div class="landing-card-chevron">›</div></div>
@@ -1531,12 +1645,13 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
 
   <div class="section-landing" id="landingMore" style="display:none">
     <div class="section-landing-title">More</div>
-    <div class="landing-card" data-open-tab="aihandoff"><div class="landing-card-icon">🧠</div><div><div class="landing-card-title">AI FPL Handoff</div><div class="landing-card-desc">Export tracker context for external AI analysis</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card featured" data-open-tab="aihandoff"><div class="landing-card-icon">🧠</div><div><div class="landing-card-title">AI FPL Handoff</div><div class="landing-card-desc">Export tracker context for external AI analysis</div></div><div class="landing-card-chevron">›</div></div>
     <div class="landing-card" data-open-tab="systemdata"><div class="landing-card-icon">⚙️</div><div><div class="landing-card-title">System &amp; Data</div><div class="landing-card-desc">Sync, diagnostics, tracker health</div></div><div class="landing-card-chevron">›</div></div>
   </div>
 
   <div class="section-back-row" id="sectionBackRow" style="display:none">
     <button class="section-back-btn" id="sectionBackBtn">‹ Back</button>
+    <div class="section-back-title" id="sectionBackTitle"></div>
   </div>
 
   <div class="tabs">
@@ -9257,6 +9372,16 @@ wireAiExportButtons();
 /* ---- Tabs + bottom-nav sections + landing screens ---- */
 let activeSection = 'myteam';
 const LANDING_SECTIONS = ['transfers', 'intelligence', 'more'];
+const SECTION_LABELS = {myteam:'MY TEAM',transfers:'TRANSFERS',intelligence:'INTELLIGENCE',decisions:'DECISIONS',more:'MORE'};
+const FEATURE_TITLES = {compare:'Compare Players',translab:'Transfer Lab',sixgw:'6-GW Plan',replacementbrowser:'Replacement Browser',watchlist:'Watchlist',info:'Fixture Centre',minileagues:'Mini Leagues',rivals:'Rivals',analysis:'Analysis',planner:'Squad Outlook',captain:'Captain & Chips',globaltop:'Global Top-10',aihandoff:'AI FPL Handoff',systemdata:'System & Data'};
+function updateShellContext(section, featureTab){
+  const kicker=document.querySelector('.app-kicker');
+  if(kicker) kicker.textContent=SECTION_LABELS[section]||'FPL TRACKER';
+  const deep=!!featureTab && LANDING_SECTIONS.includes(section);
+  document.body.classList.toggle('feature-open',deep);
+  const t=document.getElementById('sectionBackTitle');
+  if(t) t.textContent=deep?(FEATURE_TITLES[featureTab]||''):'';
+}
 
 function hideAllLandings() {
   LANDING_SECTIONS.forEach(s => {
@@ -9274,6 +9399,7 @@ function updateSubNavVisibility() {
 }
 
 function showLandingFor(section) {
+  updateShellContext(section, null);
   hideAllLandings();
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelector('.tabs').style.display = 'none';
@@ -9283,6 +9409,7 @@ function showLandingFor(section) {
 }
 
 function openFeature(tabName, section) {
+  updateShellContext(section, tabName);
   hideAllLandings();
   document.getElementById('sectionBackRow').style.display = LANDING_SECTIONS.includes(section) ? '' : 'none';
   document.querySelector(`.tab-btn[data-tab="${tabName}"]`).click();
@@ -9292,6 +9419,7 @@ function openFeature(tabName, section) {
 
 function switchSection(section) {
   activeSection = section;
+  updateShellContext(section, null);
   document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === section));
   if (LANDING_SECTIONS.includes(section)) {
     showLandingFor(section);
@@ -9324,6 +9452,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+updateShellContext(activeSection, null);
 updateSubNavVisibility();
 
 document.getElementById('playerSheetBackdrop').addEventListener('click', closePlayerSheet);
