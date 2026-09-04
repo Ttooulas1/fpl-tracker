@@ -436,6 +436,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .gw-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
 .gw-card-stat { }
 .gw-card-val { font-family: var(--font-mono); font-size: 26px; font-weight: 700; color: var(--lime); line-height: 1.1; }
+.gw-chip-banner {
+  margin-top: 14px; background: rgba(198,255,61,0.12); border: 1px solid var(--lime-dim); color: var(--lime);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; text-align: center; padding: 9px; border-radius: 6px;
+}
 .gw-card-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-top: 3px; }
 .gw-card-move { display: inline-block; margin-left: 6px; font-size: 10px; }
 .gw-card-move.up { color: var(--lime); }
@@ -785,7 +789,11 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .pitch-name { font-family: var(--font-body); font-weight: 700; font-size: 12px; color: #fff; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pitch-extra { font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
 .pitch-news-flag { font-size: 10px; }
-.pitch-fx-list { display: flex; flex-direction: column; gap: 2px; margin-top: 5px; }
+.pitch-fx-list { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; }
+.pitch-fdr-band {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 800; padding: 5px 4px; border-radius: 4px;
+  margin-top: 5px; text-align: center; letter-spacing: 0.01em;
+}
 .pitch-fx-pill { font-family: var(--font-mono); font-size: 9px; font-weight: 700; padding: 2px 4px; border-radius: 2px; }
 .pitch-bench-wrap { margin-top: 12px; padding: 10px; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 5px; }
 .pitch-bench-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 8px; }
@@ -1749,9 +1757,15 @@ function pitchCard(p, idx, containerId, benchOrder) {
   const badges = (p.isCaptain || p.isVice)
     ? `<div class="pitch-badges">${p.isCaptain ? '<div class="pitch-badge c">C</div>' : ''}${p.isVice ? '<div class="pitch-badge v">V</div>' : ''}</div>`
     : (benchOrder ? `<div class="pitch-badges"><div class="pitch-badge order">${benchOrder}</div></div>` : '');
-  const fxHtml = (p.fixtures || []).slice(0, p.fixtureCount || 3).map(f =>
-    `<div class="pitch-fx-pill fdr-${f.difficulty}">${escapeHtml(f.opponent)} ${f.venue}</div>`
-  ).join('') || '<div class="pitch-fx-pill" style="background:var(--bg-elev-2);color:var(--text-faint)">—</div>';
+  const fixtures = (p.fixtures || []).slice(0, p.fixtureCount || 3);
+  const primary = fixtures[0];
+  const rest = fixtures.slice(1);
+  const primaryBandHtml = primary
+    ? `<div class="pitch-fdr-band fdr-${primary.difficulty}">${escapeHtml(primary.opponent)} (${primary.venue})</div>`
+    : `<div class="pitch-fdr-band" style="background:var(--bg-elev-2);color:var(--text-faint)">—</div>`;
+  const restHtml = rest.length
+    ? `<div class="pitch-fx-list">${rest.map(f => `<div class="pitch-fx-pill fdr-${f.difficulty}">${escapeHtml(f.opponent)} ${f.venue}</div>`).join('')}</div>`
+    : '';
   return `
     <div class="pitch-card" data-pitch-idx="${idx}" data-pitch-container="${containerId}">
       <div style="position:relative">
@@ -1760,7 +1774,8 @@ function pitchCard(p, idx, containerId, benchOrder) {
       </div>
       <div class="pitch-name">${escapeHtml(p.name)}${p.news ? ' <span class="pitch-news-flag">⚠️</span>' : ''}</div>
       <div class="pitch-extra">${p.extra || ''}</div>
-      <div class="pitch-fx-list">${fxHtml}</div>
+      ${primaryBandHtml}
+      ${restHtml}
     </div>
   `;
 }
@@ -2507,10 +2522,11 @@ function renderHome() {
           <div class="gw-card-label">Bank</div>
         </div>
         <div class="gw-card-stat">
-          <div class="gw-card-val">${h.freeTransfersEstimate ?? '—'} FT</div>
-          <div class="gw-card-label">Free Transfers <span class="verify-tag">TRACKER CALCULATION</span></div>
+          <div class="gw-card-val">${h.transfersMade ?? 0}/${h.freeTransfersEstimate ?? '—'}</div>
+          <div class="gw-card-label">Transfers <span class="verify-tag">FT TRACKER CALCULATION</span></div>
         </div>
       </div>
+      ${h.chipActive ? `<div class="gw-chip-banner">${h.chipActive.toUpperCase()} in play this GW</div>` : ''}
     </div>
   `;
 
