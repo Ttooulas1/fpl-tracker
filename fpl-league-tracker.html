@@ -417,6 +417,29 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   padding: 1px 3px; margin-left: 4px; text-transform: uppercase; vertical-align: middle;
 }
 .pitch-quick-actions { display: flex; justify-content: flex-end; margin: -4px 0 16px; }
+
+/* ---- Section landing screens ---- */
+.section-landing { margin-bottom: 8px; }
+.section-landing-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin-bottom: 16px; }
+.landing-card {
+  display: flex; align-items: center; gap: 14px; background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; margin-bottom: 10px; cursor: pointer; min-height: 44px;
+}
+.landing-card:active { border-color: var(--lime-dim); }
+.landing-card-icon { font-size: 26px; width: 36px; text-align: center; flex-shrink: 0; }
+.landing-card-title { font-size: 16px; font-weight: 700; }
+.landing-card-desc { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.landing-card-chevron { margin-left: auto; font-size: 20px; color: var(--text-faint); }
+.section-back-row { margin-bottom: 12px; }
+.section-back-btn {
+  background: none; border: none; color: var(--lime); font-family: var(--font-body); font-size: 14px;
+  font-weight: 600; cursor: pointer; padding: 8px 0; min-height: 44px;
+}
+.watchlist-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 6px; padding: 12px 14px; margin-bottom: 8px;
+}
+.watchlist-remove { background: none; border: 1px solid var(--border); color: var(--text-faint); border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
 .quick-actions-sheet { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; margin-bottom: 16px; }
 
 /* ---- Global Top ---- */
@@ -1175,6 +1198,35 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <h1>FPL Tracker</h1>
   <div class="subtitle">Team <span>BYFARTHEGREATESTEAM</span> · 2026/27</div>
 
+  <div class="section-landing" id="landingTransfers" style="display:none">
+    <div class="section-landing-title">Transfers</div>
+    <div class="landing-card" data-open-tab="compare"><div class="landing-card-icon">🔀</div><div><div class="landing-card-title">Compare Players</div><div class="landing-card-desc">Compare 2–4 players side by side</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="translab"><div class="landing-card-icon">🧪</div><div><div class="landing-card-title">Transfer Lab</div><div class="landing-card-desc">Analyse saved OUT → IN scenarios vs HOLD</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="sixgw"><div class="landing-card-icon">📅</div><div><div class="landing-card-title">6-GW Plan</div><div class="landing-card-desc">Future squad planning across gameweeks</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="watchlist"><div class="landing-card-icon">⭐</div><div><div class="landing-card-title">Watchlist</div><div class="landing-card-desc">Players you've flagged to track</div></div><div class="landing-card-chevron">›</div></div>
+  </div>
+
+  <div class="section-landing" id="landingIntelligence" style="display:none">
+    <div class="section-landing-title">Intelligence</div>
+    <div class="landing-card" data-open-tab="info"><div class="landing-card-icon">📋</div><div><div class="landing-card-title">FPL Info / Fixture Centre</div><div class="landing-card-desc">Deadlines, fixtures, price changes, injuries</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="minileagues"><div class="landing-card-icon">🏆</div><div><div class="landing-card-title">Mini Leagues</div><div class="landing-card-desc">Almost Champions, Cyprus, FPL Harry — one screen</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="rivals"><div class="landing-card-icon">⚔️</div><div><div class="landing-card-title">Rivals</div><div class="landing-card-desc">Direct rival intelligence and threat analysis</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="analysis"><div class="landing-card-icon">📊</div><div><div class="landing-card-title">Analysis</div><div class="landing-card-desc">Per-player official data vs heuristic classification</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="planner"><div class="landing-card-icon">🧠</div><div><div class="landing-card-title">Squad Outlook</div><div class="landing-card-desc">Squad — next 6 fixtures, problems, possible moves</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="captain"><div class="landing-card-icon">👑</div><div><div class="landing-card-title">Captain &amp; Chips</div><div class="landing-card-desc">Captaincy candidates and chip status</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="globaltop"><div class="landing-card-icon">🌍</div><div><div class="landing-card-title">Global Top-10 Snapshot</div><div class="landing-card-desc">Real data from FPL's public Overall league</div></div><div class="landing-card-chevron">›</div></div>
+  </div>
+
+  <div class="section-landing" id="landingMore" style="display:none">
+    <div class="section-landing-title">More</div>
+    <div class="landing-card" data-open-tab="aihandoff"><div class="landing-card-icon">🧠</div><div><div class="landing-card-title">AI FPL Handoff</div><div class="landing-card-desc">Export tracker context for external AI analysis</div></div><div class="landing-card-chevron">›</div></div>
+    <div class="landing-card" data-open-tab="systemdata"><div class="landing-card-icon">⚙️</div><div><div class="landing-card-title">System &amp; Data</div><div class="landing-card-desc">Sync, diagnostics, tracker health</div></div><div class="landing-card-chevron">›</div></div>
+  </div>
+
+  <div class="section-back-row" id="sectionBackRow" style="display:none">
+    <button class="section-back-btn" id="sectionBackBtn">‹ Back</button>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="home" data-section="myteam">🏠 My Team</button>
     <button class="tab-btn" data-tab="league" data-section="more">Almost Champions</button>
@@ -1191,8 +1243,9 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="sixgw" data-section="transfers">📅 6-GW Plan</button>
     <button class="tab-btn" data-tab="globaltop" data-section="intelligence">🌍 Global Top</button>
     <button class="tab-btn" data-tab="minileagues" data-section="intelligence">🏆 Mini Leagues</button>
-    <button class="tab-btn" data-tab="globaltop" data-section="intelligence">🌍 Global Top</button>
-    <button class="tab-btn" data-tab="minileagues" data-section="intelligence">🏆 Mini Leagues</button>
+    <button class="tab-btn" data-tab="aihandoff" data-section="more">🧠 AI Handoff</button>
+    <button class="tab-btn" data-tab="systemdata" data-section="more">⚙️ System &amp; Data</button>
+    <button class="tab-btn" data-tab="watchlist" data-section="transfers">⭐ Watchlist</button>
   </div>
 
   <div class="bottom-nav" id="bottomNav">
@@ -1247,15 +1300,9 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="section-label">Upcoming</div>
     <div class="gw-status-card" id="upcomingCard"></div>
 
-    <div class="section-label">System Health</div>
-    <div class="system-health-card" id="systemHealthCard">
-      <div class="system-health-head">
-        <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
-        <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
-      </div>
-      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
-    </div>
+  </div>
 
+  <div class="tab-panel" id="tab-aihandoff">
     <div class="section-label">AI FPL Handoff</div>
     <div class="ai-export-card" id="aiExportCard">
       <div class="ai-export-head">
@@ -1271,7 +1318,22 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       </div>
       <div class="ai-export-status" id="aiExportStatus">Sync the tracker before exporting so another AI receives the freshest possible state.</div>
     </div>
+  </div>
 
+  <div class="tab-panel" id="tab-systemdata">
+    <div class="section-label">System Health</div>
+    <div class="system-health-card" id="systemHealthCard">
+      <div class="system-health-head">
+        <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
+        <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
+      </div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-watchlist">
+    <div class="section-label">Watchlist</div>
+    <div id="watchlistWrap"></div>
   </div>
 
   <div class="tab-panel" id="tab-league">
@@ -2276,6 +2338,30 @@ function renderMlAwards() {
   `;
 }
 
+function renderWatchlist() {
+  const wrap = document.getElementById('watchlistWrap');
+  if (!wrap) return;
+  if (!watchlist.length) { wrap.innerHTML = '<div class="empty-note">No players watchlisted yet. Add one from a player action menu.</div>'; return; }
+  wrap.innerHTML = watchlist.map(w => {
+    const full = gwPlanner && gwPlanner.allPlayers ? gwPlanner.allPlayers.find(p => p.id === w.id) : null;
+    return `
+      <div class="watchlist-row">
+        <div>
+          <div class="ml-table-name">${escapeHtml(w.name)}</div>
+          <div class="ml-table-manager">${full ? escapeHtml(full.team) + ' \u00b7 ' + full.position + ' \u00b7 \\u00a3' + full.price.toFixed(1) + 'm' : 'Not in current squad pool'}</div>
+        </div>
+        <button class="watchlist-remove" data-watchlist-remove="${w.id}">Remove</button>
+      </div>
+    `;
+  }).join('');
+  wrap.querySelectorAll('[data-watchlist-remove]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await toggleWatchlist(Number(btn.dataset.watchlistRemove), '');
+      renderWatchlist();
+    });
+  });
+}
+
 function renderMiniLeagues() {
   document.getElementById('mlLeagueSelect').value = mlLeague;
   document.getElementById('mlTableWrap').style.display = mlView === 'table' ? '' : 'none';
@@ -2649,8 +2735,9 @@ async function handleSheetAction(action, p) {
     closePlayerSheet();
     cmpSelectedIds = [p.id];
     await saveCmpSelected();
-    document.querySelector('.tab-btn[data-tab="compare"]').click();
-    switchSection('transfers');
+    activeSection = 'transfers';
+    document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'transfers'));
+    openFeature('compare', 'transfers');
     renderComparison();
     return;
   }
@@ -2658,14 +2745,16 @@ async function handleSheetAction(action, p) {
     closePlayerSheet();
     transferScenarios[0] = { pairs: [{ outId: p.id, inId: null }], name: '', reason: '' };
     await saveTransferLab();
-    document.querySelector('.tab-btn[data-tab="translab"]').click();
-    switchSection('transfers');
+    activeSection = 'transfers';
+    document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'transfers'));
+    openFeature('translab', 'transfers');
     renderTransferLab();
     return;
   }
   if (action === 'watchlist') {
     await toggleWatchlist(p.id, p.name);
     renderSheetView();
+    renderWatchlist();
     return;
   }
 }
@@ -6205,7 +6294,7 @@ function renderAllViews() {
   renderLeaguePositionContext(); renderLeagueMovement(); renderGwBattle(); renderRivalsOverview();
   renderRivalCompare(); renderCaptainOwnership(); renderMiniLeagueOwnership(); renderThreatAnalysis();
   renderRivalWatchHome(); renderPlayerAnalysis(); renderPlanner(); renderCaptainChipsTab(); renderComparison();
-  renderTransferLab(); renderSixGwPlanner(); renderGlobalTop(); renderMiniLeagues(); renderSystemHealth();
+  renderTransferLab(); renderSixGwPlanner(); renderGlobalTop(); renderMiniLeagues(); renderWatchlist(); renderSystemHealth();
 }
 function phase7Audit() {
   const out=[]; const add=(level,label,detail='')=>out.push({level,label,detail});
@@ -7506,8 +7595,16 @@ function wireAiExportButtons() {
 }
 wireAiExportButtons();
 
-/* ---- Tabs + bottom-nav sections ---- */
+/* ---- Tabs + bottom-nav sections + landing screens ---- */
 let activeSection = 'myteam';
+const LANDING_SECTIONS = ['transfers', 'intelligence', 'more'];
+
+function hideAllLandings() {
+  LANDING_SECTIONS.forEach(s => {
+    const el = document.getElementById('landing' + s.charAt(0).toUpperCase() + s.slice(1));
+    if (el) el.style.display = 'none';
+  });
+}
 
 function updateSubNavVisibility() {
   const tabsInSection = document.querySelectorAll(`.tab-btn[data-section="${activeSection}"]`);
@@ -7517,17 +7614,43 @@ function updateSubNavVisibility() {
   document.querySelector('.tabs').style.display = tabsInSection.length > 1 ? '' : 'none';
 }
 
+function showLandingFor(section) {
+  hideAllLandings();
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.tabs').style.display = 'none';
+  document.getElementById('sectionBackRow').style.display = 'none';
+  const landing = document.getElementById('landing' + section.charAt(0).toUpperCase() + section.slice(1));
+  if (landing) landing.style.display = '';
+}
+
+function openFeature(tabName, section) {
+  hideAllLandings();
+  document.getElementById('sectionBackRow').style.display = LANDING_SECTIONS.includes(section) ? '' : 'none';
+  document.querySelector(`.tab-btn[data-tab="${tabName}"]`).click();
+  updateSubNavVisibility();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
 function switchSection(section) {
   activeSection = section;
   document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === section));
-  updateSubNavVisibility();
-  const visibleTabs = document.querySelectorAll(`.tab-btn[data-section="${section}"]`);
-  const alreadyActiveInSection = Array.from(visibleTabs).find(b => b.classList.contains('active'));
-  if (!alreadyActiveInSection && visibleTabs.length) {
-    visibleTabs[0].click();
+  if (LANDING_SECTIONS.includes(section)) {
+    showLandingFor(section);
+  } else {
+    hideAllLandings();
+    document.getElementById('sectionBackRow').style.display = 'none';
+    updateSubNavVisibility();
+    const visibleTabs = document.querySelectorAll(`.tab-btn[data-section="${section}"]`);
+    const alreadyActiveInSection = Array.from(visibleTabs).find(b => b.classList.contains('active'));
+    if (!alreadyActiveInSection && visibleTabs.length) visibleTabs[0].click();
   }
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
+
+document.querySelectorAll('.landing-card').forEach(card => {
+  card.addEventListener('click', () => openFeature(card.dataset.openTab, activeSection));
+});
+document.getElementById('sectionBackBtn').addEventListener('click', () => showLandingFor(activeSection));
 
 document.querySelectorAll('.bn-btn').forEach(btn => {
   btn.addEventListener('click', () => switchSection(btn.dataset.sectionNav));
@@ -7553,8 +7676,8 @@ document.getElementById('pitchQuickActionsBtn').addEventListener('click', () => 
 document.querySelectorAll('.quick-actions-sheet [data-qa]').forEach(row => {
   row.addEventListener('click', () => {
     if (row.classList.contains('disabled')) return;
-    if (row.dataset.qa === 'analyse') { document.querySelector('.tab-btn[data-tab="captain"]').click(); switchSection('intelligence'); }
-    if (row.dataset.qa === 'chipstrategy') { document.querySelector('.tab-btn[data-tab="captain"]').click(); switchSection('intelligence'); }
+    if (row.dataset.qa === 'analyse') { activeSection = 'intelligence'; document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'intelligence')); openFeature('captain', 'intelligence'); }
+    if (row.dataset.qa === 'chipstrategy') { activeSection = 'intelligence'; document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'intelligence')); openFeature('captain', 'intelligence'); }
   });
 });
 
