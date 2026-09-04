@@ -53,8 +53,6 @@ body {
 }
 
 /* ---- Player detail bottom sheet ---- */
-.pitch-card { cursor: pointer; transition: transform 0.1s; }
-.pitch-card:active { transform: scale(0.97); }
 .player-sheet-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
@@ -77,8 +75,6 @@ body {
   width: 100%; margin-top: 16px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-dim);
   font-family: var(--font-body); font-weight: 600; padding: 12px; border-radius: 6px; cursor: pointer;
 }
-
-/* ---- Player action menu rows + back navigation ---- */
 .ps-back-btn { background: none; border: none; color: var(--lime); font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0 10px; }
 .ps-action-row {
   display: flex; align-items: center; gap: 12px; padding: 14px 4px; border-top: 1px solid var(--border-soft);
@@ -97,29 +93,6 @@ body {
 .ps-info-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
 .ps-info-val { font-family: var(--font-mono); font-size: 14px; font-weight: 700; margin-top: 2px; }
 .ps-data-quality { font-size: 10px; color: var(--text-faint); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
-
-/* ---- Quick actions (pitch ••• menu) ---- */
-.pitch-quick-actions { display: flex; justify-content: flex-end; margin: -4px 0 16px; }
-.pitch-qa-btn {
-  background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--font-body);
-  font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 20px; cursor: pointer;
-}
-.quick-actions-sheet-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.2s;
-}
-.quick-actions-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
-.quick-actions-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 91; max-width: 500px; margin: 0 auto;
-  background: var(--bg-elev); border-top: 1px solid var(--border); border-radius: 14px 14px 0 0;
-  padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transition: transform 0.25s ease;
-}
-.quick-actions-sheet.open { transform: translateY(0); }
-.qa-row {
-  padding: 15px 4px; border-top: 1px solid var(--border-soft); font-size: 15px; font-weight: 600; cursor: pointer; min-height: 44px;
-  display: flex; align-items: center;
-}
-.qa-row:first-of-type { border-top: none; }
-.qa-row.disabled { color: var(--text-faint); cursor: default; }
 
 .eyebrow {
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -425,29 +398,71 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .home-chip-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
 .home-chip-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--lime); margin-top: 3px; }
 .home-chip-move { font-family: var(--font-mono); font-size: 10px; margin-top: 3px; }
-.home-chip-move.up { color: var(--lime); }
-.home-chip-move.down { color: var(--red); }
-.home-chip-move.same { color: var(--text-faint); }
 
-/* ---- New My Team GW card ---- */
-.gw-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+/* ---- GW card (My Team header) ---- */
+.gw-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 4px; }
 .gw-card-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
 .gw-card-deadline { font-size: 13px; color: var(--text-dim); margin-top: 2px; margin-bottom: 14px; }
-.gw-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
-.gw-card-stat { }
+.gw-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.gw-card-stat {}
 .gw-card-val { font-family: var(--font-mono); font-size: 26px; font-weight: 700; color: var(--lime); line-height: 1.1; }
+.gw-card-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-top: 3px; }
+.gw-card-move { font-family: var(--font-mono); font-size: 10px; margin-top: 2px; display: block; }
 .gw-chip-banner {
   margin-top: 14px; background: rgba(198,255,61,0.12); border: 1px solid var(--lime-dim); color: var(--lime);
   font-family: var(--font-mono); font-size: 12px; font-weight: 700; text-align: center; padding: 9px; border-radius: 6px;
 }
-.gw-card-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-top: 3px; }
-.gw-card-move { display: inline-block; margin-left: 6px; font-size: 10px; }
-.gw-card-move.up { color: var(--lime); }
-.gw-card-move.down { color: var(--red); }
 .verify-tag {
-  display: inline-block; font-family: var(--font-mono); font-size: 8px; color: var(--text-faint);
-  border: 1px solid var(--border-soft); border-radius: 2px; padding: 1px 4px; margin-left: 5px; text-transform: none;
+  font-family: var(--font-mono); font-size: 8px; color: var(--gold); border: 1px solid var(--gold); border-radius: 2px;
+  padding: 1px 3px; margin-left: 4px; text-transform: uppercase; vertical-align: middle;
 }
+.pitch-quick-actions { display: flex; justify-content: flex-end; margin: -4px 0 16px; }
+.quick-actions-sheet { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; margin-bottom: 16px; }
+
+/* ---- Global Top ---- */
+.gt-standings-row {
+  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px; font-family: var(--font-mono);
+}
+.gt-rank-badge { font-weight: 700; color: var(--gold); min-width: 34px; }
+.gt-squad-card {
+  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 4px; padding: 12px 14px; margin-bottom: 8px;
+}
+.gt-squad-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.gt-squad-name { font-weight: 700; font-size: 13px; }
+.gt-overlap-stat { font-family: var(--font-mono); font-size: 12px; color: var(--lime); }
+.gt-player-list { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+
+/* ---- Mini Leagues ---- */
+.ml-select {
+  width: 100%; background: var(--bg-elev); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body);
+  font-size: 15px; font-weight: 600; padding: 12px 14px; border-radius: 8px; margin-bottom: 12px;
+}
+.ml-table-row {
+  display: flex; align-items: center; gap: 12px; background: var(--bg-elev); border: 1px solid var(--border-soft);
+  border-radius: 6px; padding: 12px 14px; margin-bottom: 6px;
+}
+.ml-table-row.mine { border-color: var(--lime); background: rgba(198,255,61,0.06); }
+.ml-rank-num { font-family: var(--font-mono); font-size: 15px; font-weight: 800; color: var(--gold); min-width: 26px; }
+.ml-table-name { font-weight: 700; font-size: 14px; }
+.ml-table-manager { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+.ml-table-pts { margin-left: auto; text-align: right; }
+.ml-table-pts-val { font-family: var(--font-mono); font-size: 16px; font-weight: 700; }
+.ml-table-pts-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
+.ml-unavailable { text-align: center; padding: 30px 16px; color: var(--text-dim); font-size: 13px; }
+.ml-award-card {
+  background: var(--bg-elev); border: 1px solid var(--gold); border-radius: 8px; padding: 16px; margin-bottom: 12px; text-align: center;
+}
+.ml-award-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.ml-award-sub { font-size: 11px; color: var(--text-faint); margin-bottom: 12px; }
+.ml-award-row { display: flex; justify-content: space-between; padding: 7px 4px; border-top: 1px solid var(--border-soft); font-size: 13px; }
+.ml-transfer-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 6px; padding: 10px 14px; margin-bottom: 6px; font-size: 13px; }
+.ml-transfer-detail { font-size: 11px; margin-top: 2px; }
+.ml-transfer-out { color: var(--red); }
+.ml-transfer-in { color: var(--lime); }
+.home-chip-move.up { color: var(--lime); }
+.home-chip-move.down { color: var(--red); }
+.home-chip-move.same { color: var(--text-faint); }
 
 /* ---- Manager Verdict ---- */
 .verdict-card {
@@ -725,33 +740,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .rw-line { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
 .rw-goto-btn { margin-top: 10px; background: var(--gold); color: #0a1410; border: none; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 3px; cursor: pointer; }
 
-/* ---- Global Top ---- */
-.gt-standings-row {
-  display: flex; justify-content: space-between; align-items: center; background: var(--bg-elev); border: 1px solid var(--border-soft);
-  border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; font-size: 12px; font-family: var(--font-mono);
-}
-.gt-standings-row.mine { border-color: var(--lime); background: rgba(198,255,61,0.06); }
-.gt-rank-badge { font-weight: 700; color: var(--gold); min-width: 34px; }
-.gt-squad-card {
-  background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 4px; padding: 12px 14px; margin-bottom: 8px;
-}
-.gt-squad-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.gt-squad-name { font-weight: 700; font-size: 13px; }
-.gt-overlap-stat { font-family: var(--font-mono); font-size: 12px; color: var(--lime); }
-.gt-player-list { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
-.gt-shared-tag { color: var(--lime); }
-.gt-theirs-tag { color: var(--gold); }
-.swing-tag { font-size: 9px; padding: 1px 5px; border-radius: 2px; margin-left: 5px; text-transform: uppercase; font-family: var(--font-mono); }
-.swing-tag.improving { background: rgba(198,255,61,0.10); color: var(--lime); }
-.swing-tag.worsening { background: rgba(255,107,92,0.10); color: var(--red); }
-
-/* ---- Pitch view ---- */
+/* ---- Pitch view (final styling, incorporates FFH visual match + typography pass) ---- */
+.pitch-card { cursor: pointer; transition: transform 0.1s; }
+.pitch-card:active { transform: scale(0.97); }
 .pitch-toggle { display: flex; gap: 8px; margin-bottom: 10px; }
-.pitch-toggle-btn {
-  background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--font-body);
-  font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 3px; cursor: pointer;
-}
-.pitch-toggle-btn.active { border-color: var(--lime); color: var(--lime); background: rgba(198,255,61,0.08); }
 .pitch-container {
   background: linear-gradient(180deg, #0f2e1a 0%, #163b22 50%, #0f2e1a 100%);
   border: 1px solid var(--border); border-radius: 6px; padding: 16px 10px; position: relative; overflow: hidden;
@@ -778,8 +770,6 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .pitch-badge.c { background: var(--gold); }
 .pitch-badge.v { background: #7fd4ff; }
 .pitch-badge.order { background: var(--bg-elev-2); color: var(--text-dim); border: 1px solid var(--border); }
-
-/* ---- Pitch view toggle (Live / Next GW / Next 3) ---- */
 .pitch-view-toggle { display: flex; gap: 6px; margin-bottom: 10px; background: var(--bg-elev); border-radius: 8px; padding: 4px; }
 .pv-toggle-btn {
   flex: 1; background: none; border: none; color: var(--text-faint); font-family: var(--font-body);
@@ -1190,8 +1180,6 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="league" data-section="more">Almost Champions</button>
     <button class="tab-btn" data-tab="cyprus" data-section="more">Cyprus</button>
     <button class="tab-btn" data-tab="fplharry" data-section="more">FPL Harry</button>
-    <button class="tab-btn" data-tab="aihandoff" data-section="more">🧠 AI FPL Handoff</button>
-    <button class="tab-btn" data-tab="systemdata" data-section="more">⚙ System &amp; Data</button>
     <button class="tab-btn" data-tab="info" data-section="intelligence">FPL Info</button>
     <button class="tab-btn" data-tab="decisions" data-section="decisions">Decisions</button>
     <button class="tab-btn" data-tab="rivals" data-section="intelligence">⚔️ Rivals</button>
@@ -1202,6 +1190,9 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <button class="tab-btn" data-tab="translab" data-section="transfers">🧪 Transfer Lab</button>
     <button class="tab-btn" data-tab="sixgw" data-section="transfers">📅 6-GW Plan</button>
     <button class="tab-btn" data-tab="globaltop" data-section="intelligence">🌍 Global Top</button>
+    <button class="tab-btn" data-tab="minileagues" data-section="intelligence">🏆 Mini Leagues</button>
+    <button class="tab-btn" data-tab="globaltop" data-section="intelligence">🌍 Global Top</button>
+    <button class="tab-btn" data-tab="minileagues" data-section="intelligence">🏆 Mini Leagues</button>
   </div>
 
   <div class="bottom-nav" id="bottomNav">
@@ -1216,7 +1207,6 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <div class="player-sheet" id="playerSheet">
     <div class="ps-handle"></div>
     <div id="playerSheetBody"></div>
-    <button class="ps-close-btn" id="playerSheetClose">Close</button>
   </div>
 
   <div id="syncBar" class="sync-bar">
@@ -1242,7 +1232,13 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div id="squadWrap"></div>
 
     <div class="pitch-quick-actions">
-      <button class="pitch-qa-btn" id="pitchMenuBtn">••• Quick actions</button>
+      <button class="rw-goto-btn" id="pitchQuickActionsBtn">••• Quick actions</button>
+    </div>
+    <div class="quick-actions-sheet" id="quickActionsSheet" style="display:none">
+      <div class="ps-action-row" data-qa="editteam">Edit Team <span class="ps-action-phase-tag">Phase 2</span></div>
+      <div class="ps-action-row" data-qa="analyse">Analyse Line-up (Captain &amp; Chips)</div>
+      <div class="ps-action-row" data-qa="chipstrategy">Chip Strategy</div>
+      <div class="ps-action-row disabled" data-qa="resetplanned">Reset Planned Team <span class="ps-action-phase-tag">Phase 2</span></div>
     </div>
 
     <div class="section-label">Gameweek status</div>
@@ -1251,16 +1247,31 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="section-label">Upcoming</div>
     <div class="gw-status-card" id="upcomingCard"></div>
 
-  </div>
+    <div class="section-label">System Health</div>
+    <div class="system-health-card" id="systemHealthCard">
+      <div class="system-health-head">
+        <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
+        <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
+      </div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
+    </div>
 
-  <div class="quick-actions-sheet-backdrop" id="quickActionsBackdrop"></div>
-  <div class="quick-actions-sheet" id="quickActionsSheet">
-    <div class="ps-handle"></div>
-    <div class="qa-row" data-qa-goto="planner">Edit Team / Squad Outlook</div>
-    <div class="qa-row" data-qa-goto="captain">Analyse Line-up (Captain &amp; Chips)</div>
-    <div class="qa-row" data-qa-goto="captain">Chip Strategy</div>
-    <div class="qa-row disabled">Reset Planned Team <span class="verify-tag">Phase 2</span></div>
-    <button class="ps-close-btn" id="quickActionsClose">Close</button>
+    <div class="section-label">AI FPL Handoff</div>
+    <div class="ai-export-card" id="aiExportCard">
+      <div class="ai-export-head">
+        <div>
+          <div class="ai-export-title">AI FPL Handoff</div>
+          <div class="ai-export-sub">Portable memory of the project: permanent manager instructions + current squad, strategy, rivals, plans and research requirements.</div>
+        </div>
+        <div class="ai-export-actions">
+          <button class="ai-export-btn" id="downloadAiPdfBtn">Download AI FPL Report</button>
+          <button class="ai-export-btn secondary" id="downloadAiTxtBtn">Download TXT</button>
+          <button class="ai-export-btn secondary" id="copyAiContextBtn">Copy AI Context</button>
+        </div>
+      </div>
+      <div class="ai-export-status" id="aiExportStatus">Sync the tracker before exporting so another AI receives the freshest possible state.</div>
+    </div>
+
   </div>
 
   <div class="tab-panel" id="tab-league">
@@ -1370,7 +1381,6 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
   <!-- ================= DECISIONS TAB ================= -->
   <div class="tab-panel" id="tab-decisions">
-
     <div class="section-label">Manager verdict <span style="font-weight:400">— heuristic, not a prediction</span></div>
     <div class="verdict-card" id="verdictCard">
       <div class="empty-note">Waiting for first sync…</div>
@@ -1673,36 +1683,35 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
   </div>
 
-  <!-- ================= AI HANDOFF TAB (More) ================= -->
-  <div class="tab-panel" id="tab-aihandoff">
+  <!-- ================= MINI LEAGUES TAB ================= -->
+  <div class="tab-panel" id="tab-minileagues">
 
-    <div class="ai-export-card" id="aiExportCard">
-      <div class="ai-export-head">
-        <div>
-          <div class="ai-export-title">AI FPL Handoff</div>
-          <div class="ai-export-sub">Portable memory of the project: permanent manager instructions + current squad, strategy, rivals, plans and research requirements.</div>
-        </div>
-        <div class="ai-export-actions">
-          <button class="ai-export-btn" id="downloadAiPdfBtn">Download AI FPL Report</button>
-          <button class="ai-export-btn secondary" id="downloadAiTxtBtn">Download TXT</button>
-          <button class="ai-export-btn secondary" id="copyAiContextBtn">Copy AI Context</button>
-        </div>
-      </div>
-      <div class="ai-export-status" id="aiExportStatus">Sync the tracker before exporting so another AI receives the freshest possible state.</div>
+    <div class="section-label">Mini Leagues</div>
+    <select id="mlLeagueSelect" class="ml-select">
+      <option value="ac">Almost Champions</option>
+      <option value="cyprus">Cyprus</option>
+      <option value="fplharry">FPL Harry</option>
+    </select>
+
+    <div class="pitch-view-toggle" id="mlViewToggle">
+      <button class="pv-toggle-btn active" data-ml-view="table">Table</button>
+      <button class="pv-toggle-btn" data-ml-view="stats">Stats</button>
+      <button class="pv-toggle-btn" data-ml-view="awards">Awards</button>
     </div>
 
-  </div>
+    <div id="mlTableWrap"></div>
 
-  <!-- ================= SYSTEM & DATA TAB (More) ================= -->
-  <div class="tab-panel" id="tab-systemdata">
-
-    <div class="system-health-card" id="systemHealthCard">
-      <div class="system-health-head">
-        <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
-        <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
+    <div id="mlStatsWrap" style="display:none">
+      <div class="pitch-view-toggle" id="mlStatsSubToggle">
+        <button class="pv-toggle-btn active" data-ml-stats="general">General</button>
+        <button class="pv-toggle-btn" data-ml-stats="captains">Captains</button>
+        <button class="pv-toggle-btn" data-ml-stats="transfers">Transfers</button>
+        <button class="pv-toggle-btn" data-ml-stats="chips">Chips</button>
       </div>
-      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
+      <div id="mlStatsContentWrap"></div>
     </div>
+
+    <div id="mlAwardsWrap" style="display:none"></div>
 
   </div>
 
@@ -1732,7 +1741,6 @@ const TEAM_STRUCTURE_KEY = 'team-structure';
 const CMP_SELECTED_KEY = 'compare-selected';
 const TRANSFER_LAB_KEY = 'transfer-lab-scenarios';
 const PLANNER_PLANS_KEY = 'sixgw-planner-plans';
-const GLOBAL_TOP_KEY = 'global-top-managers';
 const PHASE5_KEY = 'phase5-live-intelligence';
 const PHASE5_SYNC_BASELINE_KEY = 'phase5-sync-baseline';
 // Phase 4 shared FPL mechanics — one source of truth for front-end simulations.
@@ -1741,7 +1749,6 @@ const PLANNING_HORIZON = FPL_RULES.planningHorizon;
 
 // One source of truth for the forward fixture window.
 // Backwards-compatible with legacy field names still returned by the data layer.
-// ---- Team colors: approximate real club primary shirt colors, not kit graphics/logos ----
 const TEAM_COLORS = {
   ARS: '#EF0107', AVL: '#95BFE5', BOU: '#DA291C', BRE: '#e30613', BHA: '#0057B8',
   BUR: '#6C1D45', CHE: '#034694', CRY: '#1B458F', EVE: '#003399', FUL: '#000000',
@@ -1750,7 +1757,6 @@ const TEAM_COLORS = {
 };
 function teamColor(short) { return TEAM_COLORS[short] || '#555'; }
 
-/* ---- Shared pitch-view renderer -- used by Home, Planner (squad outlook), and 6-GW Plan ---- */
 const pitchPlayersByContainer = {};
 
 function pitchCard(p, idx, containerId, benchOrder) {
@@ -1790,7 +1796,6 @@ function renderPitchView(containerId, players, opts) {
 
   const starters = players.filter(p => !p.isBench);
   const bench = players.filter(p => p.isBench);
-  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
   const rowsMap = { GKP: [], DEF: [], MID: [], FWD: [] };
   starters.forEach(p => { if (rowsMap[p.position]) rowsMap[p.position].push(p); });
 
@@ -1800,7 +1805,7 @@ function renderPitchView(containerId, players, opts) {
   let html = `<div class="pitch-formation-label">Formation ${formation}</div><div class="pitch-container">`;
   ['GKP', 'DEF', 'MID', 'FWD'].forEach(pos => {
     if (!rowsMap[pos].length) return;
-    html += `<div class="pitch-row">${rowsMap[pos].map(cardHtml).join('')}</div>`;
+    html += `<div class="pitch-row">${rowsMap[pos].map(p => cardHtml(p)).join('')}</div>`;
   });
   html += '</div>';
 
@@ -1811,7 +1816,7 @@ function renderPitchView(containerId, players, opts) {
     if (benchGk.length) {
       html += `
         <div class="pitch-bench-label">Bench GK</div>
-        <div class="pitch-bench-row">${benchGk.map(cardHtml).join('')}</div>
+        <div class="pitch-bench-row">${benchGk.map(p => cardHtml(p)).join('')}</div>
       `;
     }
     if (benchOutfield.length) {
@@ -1832,185 +1837,6 @@ function renderPitchView(containerId, players, opts) {
       if (player) openPlayerSheet(player);
     });
   });
-}
-
-// ---- Watchlist (real, localStorage-backed, minimal) ----
-const WATCHLIST_KEY = 'watchlist-players';
-let watchlist = [];
-async function loadWatchlist() {
-  const val = await storageGet(WATCHLIST_KEY);
-  watchlist = val ? JSON.parse(val) : [];
-}
-async function saveWatchlist() {
-  await storageSet(WATCHLIST_KEY, JSON.stringify(watchlist));
-}
-async function toggleWatchlist(id, name) {
-  const idx = watchlist.findIndex(w => w.id === id);
-  if (idx > -1) watchlist.splice(idx, 1);
-  else watchlist.push({ id, name, addedAt: new Date().toISOString() });
-  await saveWatchlist();
-}
-
-// ---- Player sheet: stack-based navigation (action menu <-> player info) ----
-let sheetStack = [];
-
-function fullPlayerRecord(p) {
-  // Joins the lean pitch-card object with the full allPlayers record for detail views.
-  const full = (gwPlanner && gwPlanner.allPlayers) ? gwPlanner.allPlayers.find(x => x.id === p.id) : null;
-  return full ? { ...p, ...full, id: p.id, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench, extra: p.extra, fixtures: p.fixtures } : p;
-}
-
-function openPlayerActionMenu(p) {
-  sheetStack = [{ view: 'menu', player: p }];
-  renderSheetView();
-}
-
-function renderSheetView() {
-  const sheet = document.getElementById('playerSheet');
-  const backdrop = document.getElementById('playerSheetBackdrop');
-  const top = sheetStack[sheetStack.length - 1];
-  if (!top) { sheet.classList.remove('open'); backdrop.classList.remove('open'); return; }
-  const p = top.player;
-  const body = document.getElementById('playerSheetBody');
-  const backHtml = sheetStack.length > 1 ? `<button class="ps-back-btn" id="psBackBtn">‹ Back</button>` : '';
-
-  if (top.view === 'menu') {
-    const inWatchlist = watchlist.some(w => w.id === p.id);
-    body.innerHTML = `
-      ${backHtml}
-      <div class="ps-head">
-        <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)};width:40px;height:40px;margin:0"></div>
-        <div>
-          <div class="ps-name">${escapeHtml(p.name)}${p.isCaptain ? ' <span class="squad-badge c">C</span>' : ''}${p.isVice ? ' <span class="squad-badge v">V</span>' : ''}</div>
-          <div class="ps-meta">${escapeHtml(p.team || '')} · ${p.position || ''} · ${p.isBench ? 'Bench' : 'Starting'}</div>
-        </div>
-      </div>
-      <div class="ps-action-row disabled" data-ps-action="captain">👑 Make Captain <span class="ps-action-phase-tag">Phase 2</span></div>
-      <div class="ps-action-row disabled" data-ps-action="vice">🅥 Make Vice Captain <span class="ps-action-phase-tag">Phase 2</span></div>
-      <div class="ps-action-row disabled" data-ps-action="sub">🔁 Substitute <span class="ps-action-phase-tag">Phase 2</span></div>
-      <div class="ps-action-row" data-ps-action="transferout">➡️ Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Opens Transfer Lab</span></div>
-      <div class="ps-action-row disabled" data-ps-action="recommend">🧠 Recommend Transfer <span class="ps-action-phase-tag">Phase 4</span></div>
-      <div class="ps-action-row" data-ps-action="compare">🔀 Compare</div>
-      <div class="ps-action-row" data-ps-action="info">ℹ️ See Player Info</div>
-      <div class="ps-action-row" data-ps-action="watchlist">${inWatchlist ? '⭐ Remove from Watchlist' : '☆ Add to Watchlist'}</div>
-      <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
-    `;
-    body.querySelectorAll('[data-ps-action]').forEach(row => {
-      row.addEventListener('click', () => handleSheetAction(row.dataset.psAction, p));
-    });
-    document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
-  } else if (top.view === 'info') {
-    const full = fullPlayerRecord(p);
-    const fxHtml = (p.fixtures || []).map(f =>
-      `<div class="ps-fx-row"><span>GW${f.gw}</span><span class="pitch-fx-pill fdr-${f.difficulty}" style="display:inline-block">${escapeHtml(f.opponent)} ${f.venue}</span></div>`
-    ).join('') || '<div class="empty-note">No fixture data.</div>';
-    const setPieceLine = (label, val) => val != null ? `<div class="ps-info-stat"><div class="ps-info-label">${label}</div><div class="ps-info-val">#${val}</div></div>` : '';
-    const dcVal = full.defensiveContribution;
-    body.innerHTML = `
-      ${backHtml}
-      <div class="ps-head">
-        <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)};width:40px;height:40px;margin:0"></div>
-        <div>
-          <div class="ps-name">${escapeHtml(p.name)}</div>
-          <div class="ps-meta">${escapeHtml(p.team || '')} · ${p.position || ''} · £${full.price != null ? full.price.toFixed(1) : '—'}m</div>
-        </div>
-      </div>
-      ${full.news ? `<div class="ps-row warn"><span>Status</span><span>⚠️ ${escapeHtml(full.news)}</span></div>` : `<div class="ps-row"><span>Status</span><span>${full.status === 'a' ? 'Available' : (full.status || '—')}</span></div>`}
-
-      <div class="pm-position-label" style="margin-top:14px">Current FPL data</div>
-      <div class="ps-info-grid">
-        <div class="ps-info-stat"><div class="ps-info-label">Total pts</div><div class="ps-info-val">${full.totalPoints ?? '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">PPG</div><div class="ps-info-val">${full.pointsPerGame != null ? full.pointsPerGame.toFixed(1) : '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">Form</div><div class="ps-info-val">${full.form != null ? full.form.toFixed(1) : '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">ep_next</div><div class="ps-info-val">${full.epNext != null ? full.epNext.toFixed(1) : '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">Minutes</div><div class="ps-info-val">${full.seasonMinutes ?? '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">Starts</div><div class="ps-info-val">${full.starts ?? '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">Bonus</div><div class="ps-info-val">${full.bonus ?? '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">BPS</div><div class="ps-info-val">${full.bps ?? '—'}</div></div>
-      </div>
-
-      <div class="pm-position-label" style="margin-top:14px">Ownership &amp; market</div>
-      <div class="ps-info-grid">
-        <div class="ps-info-stat"><div class="ps-info-label">Selected</div><div class="ps-info-val">${full.ownership != null ? full.ownership.toFixed(1) + '%' : '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">Net transfers</div><div class="ps-info-val">${full.netTransfers != null ? (full.netTransfers >= 0 ? '+' : '') + full.netTransfers.toLocaleString() : '—'}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">Pressure</div><div class="ps-info-val">${full.transferPressure || '—'}</div></div>
-      </div>
-
-      ${(full.penaltiesOrder || full.directFreekicksOrder || full.cornersOrder) ? `
-      <div class="pm-position-label" style="margin-top:14px">Set pieces <span style="font-weight:400">— official FPL data</span></div>
-      <div class="ps-info-grid">
-        ${setPieceLine('Penalties', full.penaltiesOrder)}
-        ${setPieceLine('Direct FK', full.directFreekicksOrder)}
-        ${setPieceLine('Corners/IFK', full.cornersOrder)}
-      </div>` : ''}
-
-      ${dcVal != null ? `
-      <div class="pm-position-label" style="margin-top:14px">Defensive contribution <span style="font-weight:400">— official FPL data</span></div>
-      <div class="ps-info-grid">
-        <div class="ps-info-stat"><div class="ps-info-label">Season DC</div><div class="ps-info-val">${dcVal}</div></div>
-        <div class="ps-info-stat"><div class="ps-info-label">DC / 90</div><div class="ps-info-val">${full.defensiveContributionPer90 != null ? full.defensiveContributionPer90.toFixed(2) : '—'}</div></div>
-      </div>` : ''}
-
-      <div class="pm-position-label" style="margin-top:14px">Fixtures</div>
-      ${fxHtml}
-
-      <div class="ps-data-quality">Source: Official FPL API · Verified · Synced ${lastSyncedAt ? lastSyncedAt.toLocaleTimeString() : '—'}</div>
-      <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
-    `;
-    document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
-  }
-
-  const backBtn = document.getElementById('psBackBtn');
-  if (backBtn) backBtn.addEventListener('click', sheetBack);
-
-  sheet.classList.add('open');
-  backdrop.classList.add('open');
-}
-
-function sheetBack() {
-  sheetStack.pop();
-  if (sheetStack.length) renderSheetView();
-  else closePlayerSheet();
-}
-
-async function handleSheetAction(action, p) {
-  if (action === 'info') {
-    sheetStack.push({ view: 'info', player: p });
-    renderSheetView();
-    return;
-  }
-  if (action === 'compare') {
-    closePlayerSheet();
-    cmpSelectedIds = [p.id];
-    await saveCmpSelected();
-    document.querySelector('.tab-btn[data-tab="compare"]').click();
-    switchSection('transfers');
-    renderComparison();
-    return;
-  }
-  if (action === 'transferout') {
-    closePlayerSheet();
-    transferScenarios[0] = { pairs: [{ outId: p.id, inId: null }], name: '', reason: '' };
-    await saveTransferLab();
-    document.querySelector('.tab-btn[data-tab="translab"]').click();
-    switchSection('transfers');
-    renderTransferLab();
-    return;
-  }
-  if (action === 'watchlist') {
-    await toggleWatchlist(p.id, p.name);
-    renderSheetView(); // refresh the star label
-    return;
-  }
-  // captain / vice / sub / recommend -- disabled rows, no-op
-}
-
-function openPlayerSheet(p) { openPlayerActionMenu(p); }
-
-function closePlayerSheet() {
-  sheetStack = [];
-  document.getElementById('playerSheet').classList.remove('open');
-  document.getElementById('playerSheetBackdrop').classList.remove('open');
 }
 
 function getPlanningFixtures(player) {
@@ -2151,7 +1977,6 @@ let plannerPlans = [{ id: 'plan-default', name: 'Plan A', actions: {} }];
 let plannerActivePlanId = 'plan-default';
 let plannerSelectedGwIdx = 0;
 let plannerWildcardDraft = null; // { ids: [...] } while editing a wildcard squad, before confirming
-let globalTop = null;
 let captainCandidates = [];
 let phase5State={transfer:'',captain:'',vice:'',chip:'HOLD',hit:0,manualStatus:'auto',note:'',research:{pressers:'todo',europe:'todo',injuries:'todo',prices:'todo',experts:'todo',lateNews:'todo'},experts:[],locked:[],changes:[]};
 let phase5SyncBaseline=null;
@@ -2245,6 +2070,220 @@ async function loadFHContext() {
 }
 async function saveFHContext() {
   await storageSet(FH_CONTEXT_KEY, JSON.stringify(fhContext));
+}
+
+/* ============================================================
+   GLOBAL TOP MANAGERS (real FPL "Overall" league, ID 314)
+   ============================================================ */
+let globalTop = null;
+const GLOBAL_TOP_KEY = 'global-top-managers';
+async function loadGlobalTop() {
+  const val = await storageGet(GLOBAL_TOP_KEY);
+  globalTop = val ? JSON.parse(val) : null;
+}
+async function saveGlobalTop() {
+  await storageSet(GLOBAL_TOP_KEY, JSON.stringify(globalTop));
+}
+
+function renderGlobalTopMe() {
+  const wrap = document.getElementById('globalTopMeWrap');
+  if (!globalTop || !homeData) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const leader = globalTop.standings && globalTop.standings[0];
+  wrap.innerHTML = `
+    <div class="league-pos-row">
+      <div class="league-pos-stat"><div class="league-pos-label">Your overall rank</div><div class="league-pos-val">${homeData.overallRank != null ? homeData.overallRank.toLocaleString() : '\u2014'}</div></div>
+      <div class="league-pos-stat"><div class="league-pos-label">Global #1</div><div class="league-pos-val">${leader ? escapeHtml(leader.entry_name) : '\u2014'}</div><div class="league-pos-sub">${leader ? leader.total + ' pts' : ''}</div></div>
+    </div>
+    <div class="heuristic-note" style="margin-top:10px">Rank-to-rank comparison isn't shown as a single "gap" number here since the scale (millions of managers) makes that mostly meaningless day to day. The useful signal is squad overlap and captain choices below, not the raw rank distance.</div>
+  `;
+}
+
+function renderGlobalTopStandings() {
+  const wrap = document.getElementById('globalTopStandingsWrap');
+  if (!globalTop || !globalTop.standings || !globalTop.standings.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  wrap.innerHTML = globalTop.standings.map(r => `
+    <div class="gt-standings-row">
+      <span><span class="gt-rank-badge">#${r.rank}</span> ${escapeHtml(r.entry_name)}</span>
+      <span>${r.total} pts ${r.event_total != null ? '(' + r.event_total + ' this GW)' : ''}</span>
+    </div>
+  `).join('');
+}
+
+function renderGlobalTopOverlap() {
+  const wrap = document.getElementById('globalTopOverlapWrap');
+  if (!globalTop || !globalTop.squads || !globalTop.squads.length || !gwPlanner) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const myIds = new Set(gwPlanner.squad.map(p => p.element));
+
+  wrap.innerHTML = globalTop.squads.map(sq => {
+    const shared = sq.picks.filter(p => myIds.has(p.element));
+    const theirsOnly = sq.picks.filter(p => !myIds.has(p.element) && p.multiplier > 0);
+    const overlapPct = sq.picks.length ? Math.round((shared.length / sq.picks.length) * 100) : 0;
+    return `
+      <div class="gt-squad-card">
+        <div class="gt-squad-head">
+          <div class="gt-squad-name">#${sq.rank} ${escapeHtml(sq.entry_name)}</div>
+          <div class="gt-overlap-stat">${shared.length}/15 shared (${overlapPct}%)</div>
+        </div>
+        <div class="gt-player-list">
+          <span style="color:var(--gold)">Own that you don't (starting):</span> ${theirsOnly.length ? theirsOnly.map(p => escapeHtml(p.name)).join(', ') : 'None'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderGlobalTopCaptain() {
+  const wrap = document.getElementById('globalTopCaptainWrap');
+  if (!globalTop || !globalTop.squads || !globalTop.squads.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
+  const total = globalTop.squads.length;
+  const byCaptain = {};
+  globalTop.squads.forEach(sq => { if (sq.captainName) byCaptain[sq.captainName] = (byCaptain[sq.captainName] || 0) + 1; });
+  const sorted = Object.keys(byCaptain).map(name => ({ name, count: byCaptain[name] })).sort((a, b) => b.count - a.count);
+  wrap.innerHTML = sorted.map(c => `
+    <div class="captain-own-row">
+      <span>${escapeHtml(c.name)}</span>
+      <div class="captain-own-bar"><div class="captain-own-fill" style="width:${(c.count/total*100).toFixed(0)}%"></div></div>
+      <span>${c.count}/${total}</span>
+    </div>
+  `).join('') || '<div class="empty-note">No captain data yet.</div>';
+}
+
+function renderGlobalTop() {
+  renderGlobalTopMe();
+  renderGlobalTopStandings();
+  renderGlobalTopOverlap();
+  renderGlobalTopCaptain();
+}
+
+/* ============================================================
+   MINI LEAGUES -- unified league-selector screen
+   ============================================================ */
+let mlLeague = 'ac';
+let mlView = 'table';
+let mlStatsTab = 'general';
+
+function renderMlTable() {
+  const wrap = document.getElementById('mlTableWrap');
+  let rows = [];
+  if (mlLeague === 'ac') {
+    rows = currentStandings().map(r => ({ rank: r.rank, entry_name: r.entry_name, player_name: r.player_name, total: r.total, event_total: r.event_total, entry: r.entry }));
+  } else if (mlLeague === 'cyprus') {
+    rows = (cyContext && cyContext.results) ? [...cyContext.results].sort((a,b) => a.rank - b.rank) : [];
+  } else if (mlLeague === 'fplharry') {
+    rows = (fhContext && fhContext.results) ? [...fhContext.results].sort((a,b) => a.rank - b.rank) : [];
+  }
+  if (!rows.length) { wrap.innerHTML = '<div class="ml-unavailable">No standings synced for this league yet.</div>'; return; }
+  wrap.innerHTML = rows.map(r => `
+    <div class="ml-table-row ${r.entry === MY_ENTRY ? 'mine' : ''}">
+      <div class="ml-rank-num">${r.rank}</div>
+      <div>
+        <div class="ml-table-name">${escapeHtml(r.entry_name)}</div>
+        <div class="ml-table-manager">${escapeHtml(r.player_name || '')}</div>
+      </div>
+      <div class="ml-table-pts">
+        <div class="ml-table-pts-val">${r.total}</div>
+        <div class="ml-table-pts-label">${r.event_total != null ? 'GW ' + r.event_total : 'Total'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function mlSquadDataAvailable() {
+  return mlLeague === 'ac' && rivalIntel && rivalIntel.managers && rivalIntel.managers.length;
+}
+function mlUnavailableHtml() {
+  return `<div class="ml-unavailable">Detailed squad stats require full squad sync, which is only available for Almost Champions right now.<br><br>Cyprus and FPL Harry are large public leagues -- syncing every manager's squad isn't realistic, so this stays honestly unavailable rather than approximated.</div>`;
+}
+
+function renderMlStats() {
+  const wrap = document.getElementById('mlStatsContentWrap');
+  if (!mlSquadDataAvailable()) { wrap.innerHTML = mlUnavailableHtml(); return; }
+  const managers = rivalIntel.managers;
+
+  if (mlStatsTab === 'general') {
+    wrap.innerHTML = managers.map(m => `
+      <div class="ml-table-row ${m.entry === MY_ENTRY ? 'mine' : ''}">
+        <div>
+          <div class="ml-table-name">${escapeHtml(m.entry_name)}</div>
+          <div class="ml-table-manager">Rank ${m.overallRank != null ? m.overallRank.toLocaleString() : '\u2014'} \u00b7 Bank \u00a3${m.bank != null ? m.bank.toFixed(1) : '\u2014'}m \u00b7 Value \u00a3${m.teamValue != null ? m.teamValue.toFixed(1) : '\u2014'}m</div>
+        </div>
+        <div class="ml-table-pts"><div class="ml-table-pts-val">${m.gwPoints ?? '\u2014'}</div><div class="ml-table-pts-label">GW pts</div></div>
+      </div>
+    `).join('');
+  } else if (mlStatsTab === 'captains') {
+    const total = managers.length;
+    const byCaptain = {};
+    managers.forEach(m => { if (m.captainName) byCaptain[m.captainName] = (byCaptain[m.captainName] || 0) + 1; });
+    const sorted = Object.keys(byCaptain).map(name => ({ name, count: byCaptain[name] })).sort((a,b) => b.count - a.count);
+    wrap.innerHTML = sorted.map(c => `
+      <div class="captain-own-row">
+        <span>${escapeHtml(c.name)}</span>
+        <div class="captain-own-bar"><div class="captain-own-fill" style="width:${(c.count/total*100).toFixed(0)}%"></div></div>
+        <span>${c.count}/${total}</span>
+      </div>
+    `).join('') || '<div class="empty-note">No captain data yet.</div>';
+  } else if (mlStatsTab === 'transfers') {
+    wrap.innerHTML = managers.map(m => {
+      const t = formatTransferActivity(m);
+      const parts = t.detail ? t.detail.split(' \u2192 ') : [];
+      return `
+        <div class="ml-transfer-row">
+          <div>
+            <div class="ml-table-name">${escapeHtml(m.entry_name)}</div>
+            <div class="ml-transfer-detail">${escapeHtml(t.line)}</div>
+            ${t.detail ? `<div class="ml-transfer-detail"><span class="ml-transfer-out">${escapeHtml(parts[0] || '')}</span> \u2192 <span class="ml-transfer-in">${escapeHtml(parts[1] || t.detail)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else if (mlStatsTab === 'chips') {
+    const gw = gwPlanner ? (gwPlanner.nextGw - 1) : 1;
+    wrap.innerHTML = managers.map(m => {
+      const statusHtml = CHIP_TYPES.map(ct => {
+        const s = chipHalfStatus(ct.key, m.seasonChips, gw);
+        return `<span class="chip-pill ${s.availableNow ? 'chip-wildcard' : 'chip-none'}">${ct.label}: ${s.availableNow ? 'Available' : 'Used'}</span>`;
+      }).join('');
+      return `<div class="ml-transfer-row"><div><div class="ml-table-name">${escapeHtml(m.entry_name)}</div><div style="margin-top:6px">${statusHtml}</div></div></div>`;
+    }).join('');
+  }
+}
+
+function renderMlAwards() {
+  const wrap = document.getElementById('mlAwardsWrap');
+  if (!mlSquadDataAvailable()) { wrap.innerHTML = mlUnavailableHtml(); return; }
+  const managers = rivalIntel.managers;
+
+  const benchPoints = managers.map(m => ({
+    name: m.entry_name,
+    val: (m.picks || []).filter(p => p.isBench).reduce((s, p) => s + (p.rawPoints || 0), 0)
+  })).sort((a, b) => b.val - a.val);
+
+  const captainPoints = managers.map(m => ({
+    name: m.entry_name, captain: m.captainName, val: m.captainPoints ?? 0
+  })).sort((a, b) => b.val - a.val);
+
+  wrap.innerHTML = `
+    <div class="ml-award-card">
+      <div class="ml-award-title">Most Points Left On Bench</div>
+      <div class="ml-award-sub">This gameweek -- real bench player points, not a fabricated metric</div>
+      ${benchPoints.slice(0, 5).map((b, i) => `<div class="ml-award-row"><span>${i+1}. ${escapeHtml(b.name)}</span><span>${b.val} pts</span></div>`).join('')}
+    </div>
+    <div class="ml-award-card">
+      <div class="ml-award-title">Best Captain Pick</div>
+      <div class="ml-award-sub">This gameweek -- raw captain points before doubling</div>
+      ${captainPoints.slice(0, 5).map((c, i) => `<div class="ml-award-row"><span>${i+1}. ${escapeHtml(c.name)} (${escapeHtml(c.captain || '\u2014')})</span><span>${c.val} pts</span></div>`).join('')}
+    </div>
+  `;
+}
+
+function renderMiniLeagues() {
+  document.getElementById('mlLeagueSelect').value = mlLeague;
+  document.getElementById('mlTableWrap').style.display = mlView === 'table' ? '' : 'none';
+  document.getElementById('mlStatsWrap').style.display = mlView === 'stats' ? '' : 'none';
+  document.getElementById('mlAwardsWrap').style.display = mlView === 'awards' ? '' : 'none';
+  renderMlTable();
+  if (mlView === 'stats') renderMlStats();
+  if (mlView === 'awards') renderMlAwards();
 }
 
 function renderContextTable(wrapId, labelId, context) {
@@ -2403,15 +2442,6 @@ async function savePlannerPlans() {
   await storageSet(PLANNER_PLANS_KEY, JSON.stringify({ plans: plannerPlans, activePlanId: plannerActivePlanId }));
 }
 
-async function loadGlobalTop() {
-  const val = await storageGet(GLOBAL_TOP_KEY);
-  if (val) { globalTop = JSON.parse(val); return; }
-  globalTop = null;
-}
-async function saveGlobalTop() {
-  await storageSet(GLOBAL_TOP_KEY, JSON.stringify(globalTop));
-}
-
 function parseContextJson(raw) {
   const parsed = JSON.parse(raw);
   const results = parsed?.standings?.results;
@@ -2458,11 +2488,10 @@ function renderHomePitch() {
       const fx = gp ? getPlanningFixtures(gp).slice(0, 3) : (p.nextFixture ? [p.nextFixture] : []);
       return {
         id: p.element, name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
-        news: p.news, extra: gp && gp.price != null ? '£' + gp.price.toFixed(1) + 'm' : '',
+        news: p.news, extra: gp && gp.price != null ? '\u00a3' + gp.price.toFixed(1) + 'm' : '',
         fixtures: fx, fixtureCount: 3
       };
     }
-    // live (default)
     return {
       id: p.element, name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
       news: p.news, extra: p.contribution + ' pts', fixtures: p.nextFixture ? [p.nextFixture] : [], fixtureCount: 1
@@ -2470,6 +2499,183 @@ function renderHomePitch() {
   });
 
   renderPitchView('squadWrap', players, { emptyMessage: 'No squad data yet.' });
+}
+
+// ---- Watchlist ----
+const WATCHLIST_KEY = 'watchlist-players';
+let watchlist = [];
+async function loadWatchlist() {
+  const val = await storageGet(WATCHLIST_KEY);
+  watchlist = val ? JSON.parse(val) : [];
+}
+async function saveWatchlist() {
+  await storageSet(WATCHLIST_KEY, JSON.stringify(watchlist));
+}
+async function toggleWatchlist(id, name) {
+  const idx = watchlist.findIndex(w => w.id === id);
+  if (idx > -1) watchlist.splice(idx, 1);
+  else watchlist.push({ id, name, addedAt: new Date().toISOString() });
+  await saveWatchlist();
+}
+
+// ---- Player sheet: stack-based navigation (action menu <-> player info) ----
+let sheetStack = [];
+
+function fullPlayerRecord(p) {
+  const full = (gwPlanner && gwPlanner.allPlayers) ? gwPlanner.allPlayers.find(x => x.id === p.id) : null;
+  return full ? { ...p, ...full, id: p.id, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench, extra: p.extra, fixtures: p.fixtures } : p;
+}
+
+function openPlayerActionMenu(p) {
+  sheetStack = [{ view: 'menu', player: p }];
+  renderSheetView();
+}
+
+function renderSheetView() {
+  const sheet = document.getElementById('playerSheet');
+  const backdrop = document.getElementById('playerSheetBackdrop');
+  const top = sheetStack[sheetStack.length - 1];
+  if (!top) { sheet.classList.remove('open'); backdrop.classList.remove('open'); return; }
+  const p = top.player;
+  const body = document.getElementById('playerSheetBody');
+  const backHtml = sheetStack.length > 1 ? `<button class="ps-back-btn" id="psBackBtn">\u2039 Back</button>` : '';
+
+  if (top.view === 'menu') {
+    const inWatchlist = watchlist.some(w => w.id === p.id);
+    body.innerHTML = `
+      ${backHtml}
+      <div class="ps-head">
+        <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)};width:40px;height:40px;margin:0"></div>
+        <div>
+          <div class="ps-name">${escapeHtml(p.name)}${p.isCaptain ? ' <span class="squad-badge c">C</span>' : ''}${p.isVice ? ' <span class="squad-badge v">V</span>' : ''}</div>
+          <div class="ps-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 ${p.isBench ? 'Bench' : 'Starting'}</div>
+        </div>
+      </div>
+      <div class="ps-action-row disabled" data-ps-action="captain">Make Captain <span class="ps-action-phase-tag">Phase 2</span></div>
+      <div class="ps-action-row disabled" data-ps-action="vice">Make Vice Captain <span class="ps-action-phase-tag">Phase 2</span></div>
+      <div class="ps-action-row disabled" data-ps-action="sub">Substitute <span class="ps-action-phase-tag">Phase 2</span></div>
+      <div class="ps-action-row" data-ps-action="transferout">Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Opens Transfer Lab</span></div>
+      <div class="ps-action-row disabled" data-ps-action="recommend">Recommend Transfer <span class="ps-action-phase-tag">Phase 4</span></div>
+      <div class="ps-action-row" data-ps-action="compare">Compare</div>
+      <div class="ps-action-row" data-ps-action="info">See Player Info</div>
+      <div class="ps-action-row" data-ps-action="watchlist">${inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}</div>
+      <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
+    `;
+    body.querySelectorAll('[data-ps-action]').forEach(row => {
+      row.addEventListener('click', () => handleSheetAction(row.dataset.psAction, p));
+    });
+    document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
+  } else if (top.view === 'info') {
+    const full = fullPlayerRecord(p);
+    const fxHtml = (p.fixtures || []).map(f =>
+      `<div class="ps-fx-row"><span>GW${f.gw}</span><span class="pitch-fx-pill fdr-${f.difficulty}" style="display:inline-block">${escapeHtml(f.opponent)} ${f.venue}</span></div>`
+    ).join('') || '<div class="empty-note">No fixture data.</div>';
+    const setPieceLine = (label, val) => val != null ? `<div class="ps-info-stat"><div class="ps-info-label">${label}</div><div class="ps-info-val">#${val}</div></div>` : '';
+    const dcVal = full.defensiveContribution;
+    body.innerHTML = `
+      ${backHtml}
+      <div class="ps-head">
+        <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)};width:40px;height:40px;margin:0"></div>
+        <div>
+          <div class="ps-name">${escapeHtml(p.name)}</div>
+          <div class="ps-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 \u00a3${full.price != null ? full.price.toFixed(1) : '\u2014'}m</div>
+        </div>
+      </div>
+      ${full.news ? `<div class="ps-row warn"><span>Status</span><span>\u26a0\ufe0f ${escapeHtml(full.news)}</span></div>` : `<div class="ps-row"><span>Status</span><span>${full.status === 'a' ? 'Available' : (full.status || '\u2014')}</span></div>`}
+
+      <div class="pm-position-label" style="margin-top:14px">Current FPL data</div>
+      <div class="ps-info-grid">
+        <div class="ps-info-stat"><div class="ps-info-label">Total pts</div><div class="ps-info-val">${full.totalPoints ?? '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">PPG</div><div class="ps-info-val">${full.pointsPerGame != null ? full.pointsPerGame.toFixed(1) : '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">Form</div><div class="ps-info-val">${full.form != null ? full.form.toFixed(1) : '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">ep_next</div><div class="ps-info-val">${full.epNext != null ? full.epNext.toFixed(1) : '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">Minutes</div><div class="ps-info-val">${full.seasonMinutes ?? '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">Starts</div><div class="ps-info-val">${full.starts ?? '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">Bonus</div><div class="ps-info-val">${full.bonus ?? '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">BPS</div><div class="ps-info-val">${full.bps ?? '\u2014'}</div></div>
+      </div>
+
+      <div class="pm-position-label" style="margin-top:14px">Ownership &amp; market</div>
+      <div class="ps-info-grid">
+        <div class="ps-info-stat"><div class="ps-info-label">Selected</div><div class="ps-info-val">${full.ownership != null ? full.ownership.toFixed(1) + '%' : '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">Net transfers</div><div class="ps-info-val">${full.netTransfers != null ? (full.netTransfers >= 0 ? '+' : '') + full.netTransfers.toLocaleString() : '\u2014'}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">Pressure</div><div class="ps-info-val">${full.transferPressure || '\u2014'}</div></div>
+      </div>
+
+      ${(full.penaltiesOrder || full.directFreekicksOrder || full.cornersOrder) ? `
+      <div class="pm-position-label" style="margin-top:14px">Set pieces <span style="font-weight:400">\u2014 official FPL data</span></div>
+      <div class="ps-info-grid">
+        ${setPieceLine('Penalties', full.penaltiesOrder)}
+        ${setPieceLine('Direct FK', full.directFreekicksOrder)}
+        ${setPieceLine('Corners/IFK', full.cornersOrder)}
+      </div>` : ''}
+
+      ${dcVal != null ? `
+      <div class="pm-position-label" style="margin-top:14px">Defensive contribution <span style="font-weight:400">\u2014 official FPL data</span></div>
+      <div class="ps-info-grid">
+        <div class="ps-info-stat"><div class="ps-info-label">Season DC</div><div class="ps-info-val">${dcVal}</div></div>
+        <div class="ps-info-stat"><div class="ps-info-label">DC / 90</div><div class="ps-info-val">${full.defensiveContributionPer90 != null ? full.defensiveContributionPer90.toFixed(2) : '\u2014'}</div></div>
+      </div>` : ''}
+
+      <div class="pm-position-label" style="margin-top:14px">Fixtures</div>
+      ${fxHtml}
+
+      <div class="ps-data-quality">Source: Official FPL API \u00b7 Verified \u00b7 Synced ${lastSyncedAt ? lastSyncedAt.toLocaleTimeString() : '\u2014'}</div>
+      <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
+    `;
+    document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
+  }
+
+  const backBtn = document.getElementById('psBackBtn');
+  if (backBtn) backBtn.addEventListener('click', sheetBack);
+
+  sheet.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+function sheetBack() {
+  sheetStack.pop();
+  if (sheetStack.length) renderSheetView();
+  else closePlayerSheet();
+}
+
+async function handleSheetAction(action, p) {
+  if (action === 'info') {
+    sheetStack.push({ view: 'info', player: p });
+    renderSheetView();
+    return;
+  }
+  if (action === 'compare') {
+    closePlayerSheet();
+    cmpSelectedIds = [p.id];
+    await saveCmpSelected();
+    document.querySelector('.tab-btn[data-tab="compare"]').click();
+    switchSection('transfers');
+    renderComparison();
+    return;
+  }
+  if (action === 'transferout') {
+    closePlayerSheet();
+    transferScenarios[0] = { pairs: [{ outId: p.id, inId: null }], name: '', reason: '' };
+    await saveTransferLab();
+    document.querySelector('.tab-btn[data-tab="translab"]').click();
+    switchSection('transfers');
+    renderTransferLab();
+    return;
+  }
+  if (action === 'watchlist') {
+    await toggleWatchlist(p.id, p.name);
+    renderSheetView();
+    return;
+  }
+}
+
+function openPlayerSheet(p) { openPlayerActionMenu(p); }
+
+function closePlayerSheet() {
+  sheetStack = [];
+  document.getElementById('playerSheet').classList.remove('open');
+  document.getElementById('playerSheetBackdrop').classList.remove('open');
 }
 
 function renderHome() {
@@ -2500,7 +2706,7 @@ function renderHome() {
     else moveHtml = `<div class="home-chip-move same">No change since GW${movement.fromGw}</div>`;
   }
 
-  const deadlineText = (fplInfo && fplInfo.deadline && fplInfo.deadline.deadline_time)
+  const deadlineText = fplInfo?.deadline?.deadline_time
     ? new Date(fplInfo.deadline.deadline_time).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     : '—';
 
@@ -2964,13 +3170,6 @@ function labPlayerPrice(p) {
 function labPlayerFixtureAvg(p) {
   return getPlanningAvgDifficulty(p);
 }
-function labPlayerSwingText(p) {
-  const swing = p && p.fixtureSwing;
-  if (!swing || swing.swing == null) return null;
-  if (swing.swing >= 1.0) return `${p.team} run improves — ${swing.earlyAvg.toFixed(1)} → ${swing.lateAvg.toFixed(1)} avg difficulty`;
-  if (swing.swing <= -1.0) return `${p.team} run worsens — ${swing.earlyAvg.toFixed(1)} → ${swing.lateAvg.toFixed(1)} avg difficulty`;
-  return null;
-}
 function labPlayerForm(p) {
   return p.form != null ? p.form : 0;
 }
@@ -3065,22 +3264,15 @@ function renderPairLiveComparison(outP, inP) {
     ['ep_next', (outP.epNext ?? 0).toFixed(1), (inP.epNext ?? 0).toFixed(1)],
     ['Next fixture', outFx ? escapeHtml(outFx.opponent) + ' (' + outFx.venue + ')' : '\u2014', inFx ? escapeHtml(inFx.opponent) + ' (' + inFx.venue + ')' : '\u2014']
   ];
-  const outSwing = labPlayerSwingText(outP);
-  const inSwing = labPlayerSwingText(inP);
-  const swingHtml = (outSwing || inSwing)
-    ? `<div class="lab-wc-row" style="margin-top:6px"><span>Fixture run ahead</span><span>${outSwing ? 'OUT: ' + escapeHtml(outSwing) : ''}${outSwing && inSwing ? '<br>' : ''}${inSwing ? 'IN: ' + escapeHtml(inSwing) : ''}</span></div>`
-    : '';
   return `
     <div class="lab-pair-compare-title">${escapeHtml(outP.name)} \u2192 ${escapeHtml(inP.name)}</div>
     <table class="cmp-table"><thead><tr><th></th><th>OUT</th><th>IN</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td class="cmp-row-label">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}
     </tbody></table>
-    ${swingHtml}
   `;
 }
 
 function renderWhatChanges(metrics) {
-  const swingLines = (metrics.inPlayers || []).map(labPlayerSwingText).filter(Boolean);
   return `
     <div class="lab-what-changes">
       <div class="lab-wc-title">What changes</div>
@@ -3089,7 +3281,6 @@ function renderWhatChanges(metrics) {
       <div class="lab-wc-row"><span>FT</span><span>${metrics.ftAvailable} \u2192 ${metrics.ftAfter}</span></div>
       <div class="lab-wc-row"><span>Hit</span><span>${metrics.hitCost > 0 ? '-' + metrics.hitCost : 'None'}</span></div>
       <div class="lab-wc-row"><span>Fixture run</span><span class="${metrics.fixtureCls}">${metrics.fixtureEffect}</span></div>
-      ${swingLines.length ? `<div class="lab-wc-row"><span>Fixture swing ahead</span><span>${swingLines.map(escapeHtml).join('<br>')}</span></div>` : ''}
       <div class="lab-wc-row"><span>Starting XI impact</span><span>${metrics.startingXiImpact}</span></div>
       <div class="lab-wc-row"><span>Opportunity cost</span><span>${metrics.opportunityCost}</span></div>
     </div>
@@ -3503,23 +3694,12 @@ function renderLabFixtures(allMetrics) {
   wrap.innerHTML = html;
 }
 
-function labPlayerSwingValue(p) {
-  return (p && p.fixtureSwing && p.fixtureSwing.swing != null) ? p.fixtureSwing.swing : null;
-}
-
 function tallyGroupComparison(outPlayers, inPlayers) {
-  const avg = (arr, fn) => {
-    const vals = arr.map(fn).filter(v => v != null);
-    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
-  };
+  const avg = (arr, fn) => arr.length ? arr.reduce((s, p) => s + fn(p), 0) / arr.length : null;
   const cats = [
     { label: 'better fixture run', outV: avg(outPlayers, labPlayerFixtureAvg), inV: avg(inPlayers, labPlayerFixtureAvg), higherBetter: false },
     { label: 'stronger form', outV: avg(outPlayers, labPlayerForm), inV: avg(inPlayers, labPlayerForm), higherBetter: true },
     { label: 'higher underlying threat (xGI/90)', outV: avg(outPlayers, labPlayerXgiPer90), inV: avg(inPlayers, labPlayerXgiPer90), higherBetter: true }
-    // Fixture swing is deliberately excluded from this tally on purpose — it's shown
-    // as evidence (What Changes, live pair comparison) but never counts toward a
-    // verdict or win-tally on its own. A worsening run doesn't make a sell; an
-    // improving run doesn't win a comparison by itself.
   ];
   const reasons = [];
   let inWins = 0, decided = 0;
@@ -3780,10 +3960,6 @@ function computePlanSimulation(plan) {
   if (!gws.length || !gwPlanner) return [];
 
   let squadIds = gwPlanner.squad.map(p => p.element);
-  // Roles are tracked per squad SLOT (same index as squadIds), so a transferred-in
-  // player inherits the outgoing player's bench/captain/vice slot. Only a wildcard
-  // resets this, since the whole squad is rebuilt at once.
-  let roles = gwPlanner.squad.map(p => ({ isBench: p.isBench, isCaptain: p.isCaptain, isVice: p.isVice }));
   let ftIn = gwPlanner.ftEstimate != null ? gwPlanner.ftEstimate : 1;
   let bank = gwPlanner.bank;
   const results = [];
@@ -3792,7 +3968,6 @@ function computePlanSimulation(plan) {
     const action = (plan.actions && plan.actions[gw]) || { type: 'roll' };
     let transfersUsed = 0, hitCost = 0, incoming = [], outgoing = [];
     let illegal = null;
-    let wildcardThisGw = false;
 
     if (action.type === 'wildcard' && action.wildcardSquad && action.wildcardSquad.length === FPL_RULES.squadSize) {
       const beforeValue = squadIds.reduce((s, id) => { const p = plannerGetPlayer(id); return s + (p ? p.price : 0); }, 0);
@@ -3802,33 +3977,12 @@ function computePlanSimulation(plan) {
       bank = round1(bank + beforeValue - afterValue);
       squadIds = [...action.wildcardSquad];
       hitCost = 0;
-      wildcardThisGw = true;
-
-      // No real bench-order or captaincy intent exists for a fresh wildcard squad --
-      // assign a simple, clearly-heuristic starting XI (highest price per position,
-      // respecting valid formation limits) and leave captain/vice unset rather than guess.
-      const wcPlayers = squadIds.map(plannerGetPlayer).filter(Boolean);
-      const byPos = { GKP: [], DEF: [], MID: [], FWD: [] };
-      wcPlayers.forEach(p => { if (byPos[p.position]) byPos[p.position].push(p); });
-      Object.keys(byPos).forEach(pos => byPos[pos].sort((a, b) => b.price - a.price));
-      const startIds = new Set();
-      if (byPos.GKP[0]) startIds.add(byPos.GKP[0].id);
-      byPos.DEF.slice(0, 4).forEach(p => startIds.add(p.id));
-      byPos.MID.slice(0, 4).forEach(p => startIds.add(p.id));
-      byPos.FWD.slice(0, 2).forEach(p => startIds.add(p.id));
-      // Top up to 11 starters if the 4-4-2 defaults left us short (e.g. 3-5-2 squads)
-      const remaining = [...byPos.DEF, ...byPos.MID, ...byPos.FWD].filter(p => !startIds.has(p.id)).sort((a, b) => b.price - a.price);
-      let i = 0;
-      while (startIds.size < 11 && i < remaining.length) { startIds.add(remaining[i].id); i++; }
-
-      roles = squadIds.map(id => ({ isBench: !startIds.has(id), isCaptain: false, isVice: false }));
     } else if (action.type === 'transfer' || action.type === 'double') {
       const pairs = (action.pairs || []).filter(pr => pr.outId && pr.inId);
       transfersUsed = pairs.length;
       pairs.forEach(pr => {
         const idx = squadIds.indexOf(pr.outId);
         if (idx > -1) { squadIds[idx] = pr.inId; outgoing.push(pr.outId); incoming.push(pr.inId); }
-        // roles array is untouched -- the incoming player inherits the same slot/role
       });
       const outSum = pairs.reduce((s, pr) => { const p = plannerGetPlayer(pr.outId); return s + (p ? p.price : 0); }, 0);
       const inSum = pairs.reduce((s, pr) => { const p = plannerGetPlayer(pr.inId); return s + (p ? p.price : 0); }, 0);
@@ -3845,12 +3999,7 @@ function computePlanSimulation(plan) {
       ? Math.min(FPL_RULES.maxFreeTransfers, ftIn)
       : Math.min(FPL_RULES.maxFreeTransfers, ftOut + 1);
 
-    const squadFull = squadIds.map((id, idx) => {
-      const p = plannerGetPlayer(id);
-      if (!p) return null;
-      const role = roles[idx] || { isBench: false, isCaptain: false, isVice: false };
-      return { ...p, isBench: role.isBench, isCaptain: role.isCaptain, isVice: role.isVice };
-    }).filter(Boolean);
+    const squadFull = squadIds.map(plannerGetPlayer).filter(Boolean);
     const teamValue = round1(squadFull.reduce((s, p) => s + p.price, 0) + bank);
     const exposures = {};
     squadFull.forEach(p => { exposures[p.team] = (exposures[p.team] || 0) + 1; });
@@ -3858,7 +4007,7 @@ function computePlanSimulation(plan) {
     if (!teamCountsOk && !illegal) illegal = 'Squad would exceed 3 players from one club';
 
     results.push({
-      gw, action: action.type, transfersUsed, hitCost, bank, ftIn, ftOut, illegal, wildcardThisGw,
+      gw, action: action.type, transfersUsed, hitCost, bank, ftIn, ftOut, illegal,
       squadIds: [...squadIds], squadFull, incoming, outgoing, teamValue, exposures
     });
 
@@ -4171,26 +4320,31 @@ function renderSixGwSquad(results) {
     const outNames = r.outgoing.map(id => { const p = plannerGetPlayer(id); return p ? p.name : '?'; }).join(', ');
     ioHtml = `<div class="sixgw-io-line">${r.incoming.length ? `<span class="in">IN: ${escapeHtml(inNames)}</span>` : ''}${r.incoming.length && r.outgoing.length ? ' &nbsp; ' : ''}${r.outgoing.length ? `<span class="out">OUT: ${escapeHtml(outNames)}</span>` : ''}</div>`;
   }
-  if (r.wildcardThisGw) {
-    ioHtml += `<div class="heuristic-note" style="margin-bottom:10px">Starting XI shown is a default suggestion (highest price per position, valid formation) — no captain assumed for a fresh wildcard squad.</div>`;
-  }
+
   if (r.illegal) {
     ioHtml += `<div class="warning-banner">\u26a0\ufe0f ${escapeHtml(r.illegal)}</div>`;
   }
 
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const sorted = [...r.squadFull].sort((a, b) => (order[a.position] || 9) - (order[b.position] || 9));
   const gw = r.gw;
-  const pitchPlayers = r.squadFull.map(p => {
-    const allFx = getPlanningFixtures(p);
-    const idx = allFx.findIndex(f => f.gw === gw);
-    const fixturesFromHere = idx > -1 ? allFx.slice(idx, idx + 3) : [];
-    return {
-      id: p.id, name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
-      news: p.news, extra: `£${p.price.toFixed(1)}m`, fixtures: fixturesFromHere, fixtureCount: 3
-    };
-  });
 
-  wrap.innerHTML = ioHtml + '<div id="sixgwPitchInner"></div>';
-  renderPitchView('sixgwPitchInner', pitchPlayers, { emptyMessage: 'No fixture in GW' + gw + ' window.' });
+  const squadHtml = sorted.map(p => {
+    const fx = getPlanningFixtures(p).find(f => f.gw === gw);
+    return `
+      <div class="planner-squad-row">
+        <div class="planner-squad-head">
+          <div>
+            <div class="planner-squad-name">${escapeHtml(p.name)}</div>
+            <div class="planner-squad-meta">${escapeHtml(p.team)} \u00b7 ${p.position} \u00b7 £${p.price.toFixed(1)}m</div>
+          </div>
+          ${fx ? fixtureBadge(fx) : '<span class="chip-none">no fixture GW' + gw + '</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  wrap.innerHTML = ioHtml + squadHtml;
 }
 
 function renderSixGwWarnings(results) {
@@ -4315,81 +4469,6 @@ function renderSixGwVerdict(results) {
   }
 
   wrap.innerHTML = `<div class="cmp-verdict-card"><div class="cmp-verdict-label">${escapeHtml(verdict)}</div><div class="cmp-verdict-why">${reasons.map(r => `<div>${escapeHtml(r)}</div>`).join('')}</div></div>`;
-}
-
-/* ============================================================
-   GLOBAL TOP MANAGERS (real FPL "Overall" league, ID 314)
-   ============================================================ */
-
-function renderGlobalTopMe() {
-  const wrap = document.getElementById('globalTopMeWrap');
-  if (!globalTop || !homeData) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
-  const leader = globalTop.standings && globalTop.standings[0];
-  wrap.innerHTML = `
-    <div class="league-pos-row">
-      <div class="league-pos-stat"><div class="league-pos-label">Your overall rank</div><div class="league-pos-val">${homeData.overallRank != null ? homeData.overallRank.toLocaleString() : '\u2014'}</div></div>
-      <div class="league-pos-stat"><div class="league-pos-label">Global #1</div><div class="league-pos-val">${leader ? escapeHtml(leader.entry_name) : '\u2014'}</div><div class="league-pos-sub">${leader ? leader.total + ' pts' : ''}</div></div>
-    </div>
-    <div class="heuristic-note" style="margin-top:10px">Rank-to-rank comparison isn't shown as a single "gap" number here since the scale (millions of managers) makes that mostly meaningless day to day. The useful signal is squad overlap and captain choices below, not the raw rank distance.</div>
-  `;
-}
-
-function renderGlobalTopStandings() {
-  const wrap = document.getElementById('globalTopStandingsWrap');
-  if (!globalTop || !globalTop.standings || !globalTop.standings.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
-  wrap.innerHTML = globalTop.standings.map(r => `
-    <div class="gt-standings-row">
-      <span><span class="gt-rank-badge">#${r.rank}</span> ${escapeHtml(r.entry_name)}</span>
-      <span>${r.total} pts ${r.event_total != null ? '(' + r.event_total + ' this GW)' : ''}</span>
-    </div>
-  `).join('');
-}
-
-function renderGlobalTopOverlap() {
-  const wrap = document.getElementById('globalTopOverlapWrap');
-  if (!globalTop || !globalTop.squads || !globalTop.squads.length || !gwPlanner) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
-  const myIds = new Set(gwPlanner.squad.map(p => p.element));
-
-  wrap.innerHTML = globalTop.squads.map(sq => {
-    const theirIds = new Set(sq.picks.map(p => p.element));
-    const shared = sq.picks.filter(p => myIds.has(p.element));
-    const theirsOnly = sq.picks.filter(p => !myIds.has(p.element) && p.multiplier > 0);
-    const overlapPct = sq.picks.length ? Math.round((shared.length / sq.picks.length) * 100) : 0;
-    return `
-      <div class="gt-squad-card">
-        <div class="gt-squad-head">
-          <div class="gt-squad-name">#${sq.rank} ${escapeHtml(sq.entry_name)}</div>
-          <div class="gt-overlap-stat">${shared.length}/15 shared (${overlapPct}%)</div>
-        </div>
-        <div class="gt-player-list">
-          <span class="gt-theirs-tag">Own that you don't (starting):</span> ${theirsOnly.length ? theirsOnly.map(p => escapeHtml(p.name)).join(', ') : 'None'}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderGlobalTopCaptain() {
-  const wrap = document.getElementById('globalTopCaptainWrap');
-  if (!globalTop || !globalTop.squads || !globalTop.squads.length) { wrap.innerHTML = '<div class="empty-note">Waiting for first sync\u2026</div>'; return; }
-  const total = globalTop.squads.length;
-  const byCaptain = {};
-  globalTop.squads.forEach(sq => { if (sq.captainName) byCaptain[sq.captainName] = (byCaptain[sq.captainName] || 0) + 1; });
-  const sorted = Object.keys(byCaptain).map(name => ({ name, count: byCaptain[name] })).sort((a, b) => b.count - a.count);
-  wrap.innerHTML = sorted.map(c => `
-    <div class="captain-own-row">
-      <span>${escapeHtml(c.name)}</span>
-      <div class="captain-own-bar"><div class="captain-own-fill" style="width:${(c.count/total*100).toFixed(0)}%"></div></div>
-      <span>${c.count}/${total}</span>
-    </div>
-  `).join('') || '<div class="empty-note">No captain data yet.</div>';
-}
-
-function renderGlobalTop() {
-  renderGlobalTopMe();
-  renderGlobalTopStandings();
-  renderGlobalTopOverlap();
-  renderGlobalTopCaptain();
 }
 
 function renderSixGwPlanner() {
@@ -5067,15 +5146,32 @@ function renderPlanner() {
 }
 
 function renderPlannerSquad() {
-  if (!gwPlanner || !gwPlanner.squad.length) { document.getElementById('plannerSquadWrap').innerHTML = '<div class="empty-note">No squad data yet.</div>'; return; }
-  renderPitchView('plannerSquadWrap', gwPlanner.squad.map(pl => {
+  const wrap = document.getElementById('plannerSquadWrap');
+  if (!gwPlanner || !gwPlanner.squad.length) { wrap.innerHTML = '<div class="empty-note">No squad data yet.</div>'; return; }
+  const order = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+  const sorted = [...gwPlanner.squad].sort((a, b) => {
+    if (a.isBench !== b.isBench) return a.isBench ? 1 : -1;
+    return (order[a.position] || 9) - (order[b.position] || 9);
+  });
+  wrap.innerHTML = sorted.map(pl => {
     const effectiveBucket = pl.heuristic ? aiEffectiveClassification(pl) : '';
-    return {
-      id: pl.element, name: pl.name, team: pl.team, position: pl.position, isCaptain: pl.isCaptain, isVice: pl.isVice, isBench: pl.isBench,
-      news: pl.news, extra: `£${pl.price != null ? pl.price.toFixed(1) : '—'}m${effectiveBucket ? ' · ' + effectiveBucket : ''}`,
-      fixtures: getPlanningFixtures(pl), fixtureCount: PLANNING_HORIZON
-    };
-  }), { emptyMessage: 'No squad data yet.' });
+    const bucketCls = effectiveBucket === 'FIXTURE CONCERN / HOLD' ? 'monitor' : (BUCKET_CLASS[effectiveBucket] || 'monitor');
+    return `
+      <div class="planner-squad-row">
+        <div class="planner-squad-head">
+          <div>
+            <div class="planner-squad-name">${pl.isCaptain ? '<span class="squad-badge c">C</span> ' : ''}${pl.isVice ? '<span class="squad-badge v">V</span> ' : ''}${escapeHtml(pl.name)}</div>
+            <div class="planner-squad-meta">${escapeHtml(pl.team || '')} · ${pl.position} · £${pl.price != null ? pl.price.toFixed(1) : '—'}m · ep_next ${pl.epNext != null ? pl.epNext.toFixed(1) : '—'} · form ${pl.form != null ? pl.form.toFixed(1) : '—'}</div>
+          </div>
+          ${pl.heuristic ? `<div class="pa-bucket ${bucketCls}">${effectiveBucket === 'FIXTURE CONCERN / HOLD' ? '⚠️' : pl.heuristic.emoji} ${effectiveBucket}</div>` : ''}
+        </div>
+        ${pl.news ? `<div class="pa-news">⚠️ ${escapeHtml(pl.news)}</div>` : ''}
+        <div class="planner-fx-row">
+          ${getPlanningFixtures(pl).map(f => `<div class="planner-fx-cell fdr-${f.difficulty}">GW${f.gw}: ${escapeHtml(f.opponent)} (${f.venue})</div>`).join('') || '<span class="chip-none">no fixtures in window</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderSquadProblems() {
@@ -5104,8 +5200,8 @@ function renderPossibleMoves() {
         ${list.map(c => `
           <div class="pm-candidate-row">
             <div>
-              <div class="pm-candidate-name">${escapeHtml(c.name)}${labPlayerSwingText(c) ? ' <span class="swing-tag improving">Run improving</span>' : ''}</div>
-              <div class="pm-candidate-meta">${escapeHtml(c.team)} · £${c.price.toFixed(1)}m · form ${c.form.toFixed(1)} · xGI/90 ${c.seasonXgiPer90.toFixed(2)}${labPlayerSwingText(c) ? ' · ' + escapeHtml(labPlayerSwingText(c)) : ''}</div>
+              <div class="pm-candidate-name">${escapeHtml(c.name)}</div>
+              <div class="pm-candidate-meta">${escapeHtml(c.team)} · £${c.price.toFixed(1)}m · form ${c.form.toFixed(1)} · xGI/90 ${c.seasonXgiPer90.toFixed(2)}</div>
             </div>
             ${fixtureBadge(c.nextFixture)}
           </div>
@@ -6109,7 +6205,7 @@ function renderAllViews() {
   renderLeaguePositionContext(); renderLeagueMovement(); renderGwBattle(); renderRivalsOverview();
   renderRivalCompare(); renderCaptainOwnership(); renderMiniLeagueOwnership(); renderThreatAnalysis();
   renderRivalWatchHome(); renderPlayerAnalysis(); renderPlanner(); renderCaptainChipsTab(); renderComparison();
-  renderTransferLab(); renderSixGwPlanner(); renderGlobalTop(); renderSystemHealth();
+  renderTransferLab(); renderSixGwPlanner(); renderGlobalTop(); renderMiniLeagues(); renderSystemHealth();
 }
 function phase7Audit() {
   const out=[]; const add=(level,label,detail='')=>out.push({level,label,detail});
@@ -6475,8 +6571,8 @@ function aiMissingDataSummaryRaw() {
   const research=phase5State?.research||{};
   return {
     purchasePrices:purchaseMissing, sellingPrices:sellingMissing, multiGwXp:xpMissing, expectedMinutes:minsMissing,
-    pressConferenceData:research.pressers!=='done', eliteManagerResearch:!(globalTop?.squads?.length) && !(phase5State?.experts||[]).some(e=>e.manager),
-    pricePredictor:true, topManagerOwnership:!(globalTop?.squads?.length)
+    pressConferenceData:research.pressers!=='done', eliteManagerResearch:!(phase5State?.experts||[]).some(e=>e.manager),
+    pricePredictor:true, topManagerOwnership:true
   };
 }
 
@@ -6987,8 +7083,7 @@ function aiTransferMarket(lines) {
     all.filter(p=>p.position===pos && !(gwPlanner?.squad||[]).some(x=>String(x.element)===String(p.id))).sort((a,b)=>(Number(b.epNext)||0)-(Number(a.epNext)||0)).slice(0,15).forEach(p=>{
       const mins=Number(p.seasonMinutes)||0, xgi=Number(p.seasonXGI);
       const xgi90=mins>0&&Number.isFinite(xgi)?(xgi/(mins/90)).toFixed(2):'—';
-      const swingTxt = (typeof labPlayerSwingText === 'function' ? labPlayerSwingText(p) : null);
-      lines.push('- '+p.name+' | '+p.team+' | '+aiMoney(p.price)+' | Own '+aiOwnershipText(p)+' | Form '+aiFmt(p.form)+' | Mins '+aiFmt(p.seasonMinutes)+' | xG '+aiFmt(p.seasonXG)+' | xA '+aiFmt(p.seasonXA)+' | xGI/90 '+xgi90+' | ep_next '+aiFmt(p.epNext)+' | Fixtures '+(getReportFixtures(p).map(aiFixtureText).join(' ; ')||'—')+(swingTxt?' | Fixture swing: '+swingTxt:'')+' | Rotation '+aiFirst(p,['rotationRisk'],'NOT STORED'));
+      lines.push('- '+p.name+' | '+p.team+' | '+aiMoney(p.price)+' | Own '+aiOwnershipText(p)+' | Form '+aiFmt(p.form)+' | Mins '+aiFmt(p.seasonMinutes)+' | xG '+aiFmt(p.seasonXG)+' | xA '+aiFmt(p.seasonXA)+' | xGI/90 '+xgi90+' | ep_next '+aiFmt(p.epNext)+' | Fixtures '+(getReportFixtures(p).map(aiFixtureText).join(' ; ')||'—')+' | Rotation '+aiFirst(p,['rotationRisk'],'NOT STORED'));
     });
   });
   lines.push('Premium/mid-price/budget/enabler labels are not generated here because price-band thresholds are not currently defined as a shared transparent rule.');
@@ -7118,46 +7213,16 @@ function aiRivalStrategy(lines) {
 }
 
 function aiEliteManagers(lines) {
-  aiSection(lines, '17. GLOBAL TOP-10 SNAPSHOT');
-  const gt = globalTop;
-  if (gt && gt.squads && gt.squads.length && gwPlanner) {
-    const myIds = new Set((gwPlanner.squad||[]).map(p=>p.element));
-    lines.push('AUTOMATED — real data from FPL\'s public "Overall" global league (ID 314), top ' + gt.squads.length + ' managers, GW' + gt.gw + ':');
-    gt.squads.forEach(sq => {
-      const theirIds = new Set(sq.picks.map(p=>p.element));
-      const shared = sq.picks.filter(p=>myIds.has(p.element));
-      const theirsOnly = sq.picks.filter(p=>!myIds.has(p.element) && p.multiplier>0);
-      const pct = sq.picks.length ? Math.round((shared.length/sq.picks.length)*100) : 0;
-      lines.push('- #'+sq.rank+' '+sq.entry_name+' | Total '+sq.total+' | Overlap '+shared.length+'/15 ('+pct+'%) | Captain '+(sq.captainName||'—')+' | Chip '+(sq.chipActive||'none')+' | Owns that we don\'t (starting): '+(theirsOnly.map(p=>p.name).join(', ')||'none'));
-    });
-  } else {
-    lines.push('Automated top-manager data not yet synced.');
-  }
+  aiSection(lines, '17. ELITE MANAGER COMPARISON');
   const experts=(phase5State?.experts||[]).filter(e=>e.manager);
-  if(experts.length){lines.push('Manually recorded research (supplements the automated data above):');experts.forEach(e=>lines.push(e.manager+' | Source '+(e.source||'—')+' | Squad '+(e.squad||'—')+'/15 | XI '+(e.xi||'—')+'/11 | Transfer '+(e.transfer||'—')+' | Captain '+(e.captain||'—')+' | Chip '+(e.chip||'—')+' | Notes '+(e.notes||'—')));}
-  lines.push('This is a Global Top-10 Snapshot, not an "elite consensus" — 10 managers is too small a sample to call representative. Real ownership/overlap data, not a proprietary similarity score. Use it for ideas (captain patterns, differentials, structural approaches), never as automatic authority. Following what these managers own is never sufficient reason alone to make a transfer.');
+  if(experts.length){experts.forEach(e=>lines.push(e.manager+' | Source '+(e.source||'—')+' | Squad '+(e.squad||'—')+'/15 | XI '+(e.xi||'—')+'/11 | Transfer '+(e.transfer||'—')+' | Captain '+(e.captain||'—')+' | Chip '+(e.chip||'—')+' | Notes '+(e.notes||'—')));} else lines.push('No verified similar-manager research recorded in tracker yet.');
+  lines.push('MANDATORY receiving-AI research: prioritize verified >=90% similarity (14/15+ squad; 10/11+ XI). If none, use >=80%/structural fallback and say so. Show shared/different players, transfers, captain, chip, formation, bank if public, historical record/current rank if verifiable, then summarize consensus. Supporting evidence only — never automatic authority.');
 }
 
 function aiTemplateOwnership(lines) {
   aiSection(lines, '18. TOP MANAGER / TEMPLATE OWNERSHIP');
-  const gt = globalTop;
-  if (gt && gt.squads && gt.squads.length) {
-    const byElement = {};
-    gt.squads.forEach(sq => sq.picks.forEach(p => {
-      if (!byElement[p.element]) byElement[p.element] = { name: p.name, owned: 0, started: 0, captained: 0 };
-      byElement[p.element].owned++;
-      if (p.multiplier > 0) byElement[p.element].started++;
-      if (p.isCaptain) byElement[p.element].captained++;
-    }));
-    const total = gt.squads.length;
-    lines.push('Ownership among the top ' + total + ' global managers (real, sourced from FPL league 314 — NOT top-10k/top-100k, which this tracker does not fetch):');
-    Object.values(byElement).filter(e=>e.owned>=Math.ceil(total*0.3)).sort((a,b)=>b.owned-a.owned).forEach(e=>{
-      lines.push('- '+e.name+' | Owned '+e.owned+'/'+total+' | Started '+e.started+'/'+total+' | Captained '+e.captained+'/'+total);
-    });
-  } else {
-    lines.push('Top-manager ownership not yet synced.');
-  }
-  lines.push('Tracker mini-league ownership is available separately in Section 16 and must not be confused with this global top-manager sample.');
+  lines.push('Overall top-10k / top-100k / elite-sample ownership is NOT currently sourced by this tracker. Receiving AI must obtain and timestamp it if used.');
+  lines.push('Tracker mini-league ownership is available separately in Section 16 and must not be mislabeled as global/top-manager ownership.');
 }
 
 function aiTeamStructureDetailed(lines) {
@@ -7239,15 +7304,6 @@ function aiMachineState(lines) {
     outfieldBenchOrder:squad.filter(p=>p.isBench&&p.position!=='GKP').map(p=>p.name),
     currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,chanceOfPlaying:aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],null),news:p.news,source:'Official FPL/tracker sync',updated:lastSyncedAt?lastSyncedAt.toISOString():null}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
-    globalTopManagers: globalTop && globalTop.squads ? {
-      leagueId: globalTop.leagueId, gw: globalTop.gw, source: 'FPL public Overall league (verified real, ID 314)',
-      squadsTracked: globalTop.squads.length,
-      overlapSummary: globalTop.squads.map(sq => {
-        const myIds = new Set(squad.map(p=>p.element));
-        const shared = sq.picks.filter(p=>myIds.has(p.element)).length;
-        return { rank: sq.rank, entry_name: sq.entry_name, total: sq.total, captain: sq.captainName, chip: sq.chipActive, overlapWithUs: shared + '/15' };
-      })
-    } : null,
     savedScenario:{transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0,source:'SAVED OLD PLAN / TRACKER STATE',isCurrentRecommendation:false},currentRecommendation:null,
     transferScenarios:(transferScenarios||[]).map(sc=>{
       const pairs=(sc.pairs||[]).filter(p=>p.outId||p.inId);
@@ -7488,39 +7544,44 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 updateSubNavVisibility();
 
-document.getElementById('playerSheetClose').addEventListener('click', closePlayerSheet);
 document.getElementById('playerSheetBackdrop').addEventListener('click', closePlayerSheet);
 
-document.querySelectorAll('.pv-toggle-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    pitchViewMode = btn.dataset.pitchMode;
-    document.querySelectorAll('.pv-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
-    renderHomePitch();
+document.getElementById('pitchQuickActionsBtn').addEventListener('click', () => {
+  const sheet = document.getElementById('quickActionsSheet');
+  sheet.style.display = sheet.style.display === 'none' ? '' : 'none';
+});
+document.querySelectorAll('.quick-actions-sheet [data-qa]').forEach(row => {
+  row.addEventListener('click', () => {
+    if (row.classList.contains('disabled')) return;
+    if (row.dataset.qa === 'analyse') { document.querySelector('.tab-btn[data-tab="captain"]').click(); switchSection('intelligence'); }
+    if (row.dataset.qa === 'chipstrategy') { document.querySelector('.tab-btn[data-tab="captain"]').click(); switchSection('intelligence'); }
   });
 });
 
-/* ---- My Team quick actions sheet ---- */
-function openQuickActions() {
-  document.getElementById('quickActionsSheet').classList.add('open');
-  document.getElementById('quickActionsBackdrop').classList.add('open');
-}
-function closeQuickActions() {
-  document.getElementById('quickActionsSheet').classList.remove('open');
-  document.getElementById('quickActionsBackdrop').classList.remove('open');
-}
-const pitchMenuBtnEl = document.getElementById('pitchMenuBtn');
-if (pitchMenuBtnEl) pitchMenuBtnEl.addEventListener('click', openQuickActions);
-document.getElementById('quickActionsClose').addEventListener('click', closeQuickActions);
-document.getElementById('quickActionsBackdrop').addEventListener('click', closeQuickActions);
-document.querySelectorAll('.qa-row[data-qa-goto]').forEach(row => {
-  row.addEventListener('click', () => {
-    const tab = row.dataset.qaGoto;
-    const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
-    if (btn) {
-      switchSection(btn.dataset.section);
-      btn.click();
-    }
-    closeQuickActions();
+document.getElementById('mlLeagueSelect').addEventListener('change', (e) => {
+  mlLeague = e.target.value;
+  renderMiniLeagues();
+});
+document.querySelectorAll('#mlViewToggle .pv-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mlView = btn.dataset.mlView;
+    document.querySelectorAll('#mlViewToggle .pv-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderMiniLeagues();
+  });
+});
+document.querySelectorAll('#mlStatsSubToggle .pv-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mlStatsTab = btn.dataset.mlStats;
+    document.querySelectorAll('#mlStatsSubToggle .pv-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderMlStats();
+  });
+});
+
+document.querySelectorAll('.pv-toggle-btn[data-pitch-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    pitchViewMode = btn.dataset.pitchMode;
+    btn.parentElement.querySelectorAll('.pv-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderHomePitch();
   });
 });
 
