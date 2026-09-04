@@ -1,14 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-build-version="v6.0.0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07110d">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="fpl-build-version" content="v6.0.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FPL Tracker">
 <meta name="mobile-web-app-capable" content="yes">
 <title>FPL Tracker</title>
+<script>
+/* Build watchdog: once this build is installed, future GitHub Pages updates self-refresh without re-adding the Home Screen app. */
+window.FPL_TRACKER_BUILD='v6.0.0';
+(async function fplFreshBuildWatchdog(){
+  if(!/^https?:$/.test(location.protocol)) return;
+  try{
+    const base=location.origin+location.pathname;
+    const freshUrl=base+'?__fpl_fresh='+(Date.now());
+    const res=await fetch(freshUrl,{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
+    if(!res.ok) return;
+    const txt=await res.text();
+    const m=txt.match(/<meta\s+name=["']fpl-build-version["']\s+content=["']([^"']+)/i);
+    const remote=m&&m[1];
+    if(remote && remote!==window.FPL_TRACKER_BUILD){
+      const target=base+'?build='+encodeURIComponent(remote)+'&refresh='+(Date.now());
+      location.replace(target);
+    }
+  }catch(e){ /* offline / transient network: keep current working build */ }
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
@@ -1603,6 +1627,112 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
   .tab-panel .section-label{font-size:21px;margin-top:24px}
 }
 
+
+/* v4 — compact contextual player menu */
+@media(max-width:600px){
+  .player-sheet-backdrop{background:rgba(3,8,6,.48);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+  .player-sheet{left:50%;right:auto;bottom:auto;top:clamp(118px,18vh,185px);width:min(386px,calc(100vw - 56px));max-height:calc(100dvh - 210px);margin:0;transform:translate(-50%,-10px) scale(.985);opacity:0;background:#090d0b;border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:0 24px;box-shadow:0 24px 70px rgba(0,0,0,.46);overflow-y:auto;transition:opacity .18s ease,transform .18s ease}
+  .player-sheet.open{transform:translate(-50%,0) scale(1);opacity:1}
+  .player-sheet .ps-handle,.player-sheet .ps-head{display:none}
+  .ps-hub-actions{padding:12px 0}
+  .player-sheet .ps-action-row{min-height:82px;padding:0 4px;gap:16px;border-top:1px solid rgba(255,255,255,.18);font-size:20px;font-weight:450;letter-spacing:-.015em;color:#f1f3f2}
+  .player-sheet .ps-action-row:first-child{border-top:0}
+  .player-sheet .ps-action-row.disabled{opacity:.48}
+  .ps-hub-icon{width:32px;min-width:32px;height:32px;display:grid;place-items:center;font-size:23px;line-height:1}
+  .ps-hub-letter{border-radius:50%;background:#fff;color:#101513;font-size:14px;font-weight:900}
+  .ps-hub-letter.dark{background:#202623;color:#fff}
+  .ps-hub-symbol{background:transparent;color:#f4f6f5;font-size:26px}
+  .player-sheet .ps-close-btn{display:none}
+  .pitch-card.ps-selected-player{position:relative;z-index:92;transform:scale(1.04);filter:none!important}
+  .pitch-card.ps-selected-player::before{content:'';position:absolute;inset:-9px -7px -8px;border-radius:18px;background:rgba(80,150,115,.42);z-index:-1;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+}
+
+
+/* ===== v5 Hub-style full player info ===== */
+.player-info-page{position:fixed;inset:0;z-index:1800;background:#2c3234;color:#f4f6f5;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:calc(18px + env(safe-area-inset-top,0px)) 0 calc(34px + env(safe-area-inset-bottom,0px))}
+.player-info-page.open{display:block}
+.player-info-shell{width:min(760px,100%);margin:0 auto;padding:0 20px 34px}
+.player-info-topbar{display:grid;grid-template-columns:58px 1fr 58px;align-items:center;gap:14px;min-height:82px;margin-bottom:18px}
+.player-info-back,.player-info-more{width:58px;height:58px;border:0;border-radius:50%;background:#0b0f10;color:#fff;display:grid;place-items:center;font-size:32px;line-height:1;cursor:pointer}
+.player-info-back{font-size:42px;font-weight:200;padding-bottom:5px}
+.player-info-more{font-size:28px;padding-bottom:8px}
+.player-info-title{font-size:34px;font-weight:800;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-info-hero{display:grid;grid-template-columns:minmax(132px,34%) 1fr;gap:24px;align-items:stretch;margin-bottom:24px}
+.player-info-avatar{background:#1b2022;border-radius:0 0 34px 34px;min-height:205px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.player-info-avatar .pitch-jersey{width:112px!important;height:112px!important;margin:0 0 16px!important;filter:drop-shadow(0 10px 16px rgba(0,0,0,.25))}
+.player-info-meta{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+.player-info-club{background:#1b2022;border-radius:0 0 34px 34px;display:flex;align-items:center;padding:18px 28px;font-size:23px;gap:14px;min-height:92px}
+.player-info-club-dot{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#111;font-size:20px;font-weight:900}
+.player-info-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.player-info-mini{background:#1b2022;border-radius:28px;padding:22px 28px;display:flex;flex-direction:column;justify-content:center}
+.player-info-mini-label{font-size:20px;color:#aeb4b3;margin-bottom:7px}
+.player-info-mini-value{font-size:23px;color:#f4f6f5}
+.player-info-card{background:#1b2022;border-radius:34px;padding:30px 32px;margin:0 0 24px}
+.player-info-statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px 24px}
+.player-info-stat-label{font-size:20px;color:#aeb4b3;line-height:1.2;margin-bottom:9px}
+.player-info-stat-value{font-size:24px;font-weight:800;color:#fff}
+.player-info-section-head{display:flex;align-items:center;justify-content:space-between;font-size:24px;font-weight:800;margin-bottom:22px}
+.player-info-source{font-size:12px;color:#9ea5a3;font-weight:500}
+.player-info-form-row{display:grid;grid-template-columns:68px 1fr auto;gap:14px;align-items:center;margin:0 0 12px}
+.player-info-form-row:last-child{margin-bottom:0}
+.player-info-gw{font-size:20px;color:#f2f4f3}
+.player-info-match{min-height:64px;border-radius:22px;background:#070a0b;padding:0 20px;display:flex;align-items:center;gap:10px;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-info-match strong{font-weight:800}
+.player-info-points{font-size:22px;font-weight:800;white-space:nowrap}
+.player-info-proj-row{display:grid;grid-template-columns:68px 1fr;gap:14px;align-items:center;margin:0 0 12px}
+.player-info-proj-row:last-child{margin-bottom:0}
+.player-info-proj-pill{min-height:70px;border-radius:22px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;gap:18px;font-size:20px;background:#a95c1e;color:#fff}
+.player-info-proj-pill.easy{background:#4b915d}.player-info-proj-pill.hard{background:#9b3b32}.player-info-proj-pill.mid{background:#a95c1e}
+.player-info-proj-pill .xp{font-size:23px;font-weight:800;white-space:nowrap}
+.player-info-empty{font-size:16px;color:#aeb4b3;line-height:1.5;padding:8px 0}
+body.player-info-open{overflow:hidden}
+body.player-info-open .player-sheet-backdrop{z-index:1900}
+body.player-info-open .player-sheet{z-index:1901}
+@media(max-width:768px){
+  .player-info-shell{padding-left:20px;padding-right:20px}
+  .player-info-topbar{grid-template-columns:58px 1fr 58px;min-height:86px;margin-bottom:20px}
+  .player-info-title{font-size:34px}
+  .player-info-hero{grid-template-columns:36% 1fr;gap:18px;margin-bottom:22px}
+  .player-info-avatar{min-height:210px}
+  .player-info-club{padding:16px 22px;font-size:20px;min-height:90px}
+  .player-info-mini{padding:18px 22px;border-radius:28px}
+  .player-info-mini-label{font-size:18px}.player-info-mini-value{font-size:21px}
+  .player-info-card{border-radius:34px;padding:30px 28px;margin-bottom:22px}
+  .player-info-statgrid{gap:28px 18px}.player-info-stat-label{font-size:18px}.player-info-stat-value{font-size:23px}
+  .player-info-section-head{font-size:23px}
+}
+@media(max-width:420px){
+  .player-info-shell{padding-left:16px;padding-right:16px}.player-info-title{font-size:31px}
+  .player-info-back,.player-info-more{width:54px;height:54px}.player-info-topbar{grid-template-columns:54px 1fr 54px;gap:12px}
+  .player-info-hero{grid-template-columns:35% 1fr;gap:14px}.player-info-avatar{min-height:188px}
+  .player-info-avatar .pitch-jersey{width:92px!important;height:92px!important}
+  .player-info-club{font-size:18px;padding:14px 18px}.player-info-club-dot{width:36px;height:36px}
+  .player-info-meta-grid{gap:12px}.player-info-mini{padding:16px 18px}.player-info-mini-label{font-size:16px}.player-info-mini-value{font-size:19px}
+  .player-info-card{padding:26px 22px}.player-info-stat-label{font-size:16px}.player-info-stat-value{font-size:21px}
+  .player-info-form-row,.player-info-proj-row{grid-template-columns:58px 1fr;gap:10px}.player-info-form-row{grid-template-columns:58px 1fr auto}
+  .player-info-gw{font-size:18px}.player-info-match{font-size:17px;padding:0 16px}.player-info-points{font-size:20px}
+  .player-info-proj-pill{font-size:18px;padding:0 18px}.player-info-proj-pill .xp{font-size:21px}
+}
+
+
+/* ===== v6 real FPL visual assets + player info polish ===== */
+.player-info-avatar{position:relative}
+.player-info-player-photo{width:100%;height:100%;object-fit:contain;object-position:center bottom;display:block;filter:drop-shadow(0 8px 14px rgba(0,0,0,.18))}
+.player-info-player-photo.fallback-hidden{display:none}
+.player-info-avatar-fallback{width:100%;height:100%;display:grid;place-items:end center;padding-bottom:18px}
+.player-info-team-badge{width:46px;height:46px;object-fit:contain;display:block;flex:0 0 auto}
+.player-info-opp-badge{width:27px;height:27px;object-fit:contain;display:block;flex:0 0 auto}
+.player-info-club-dot.asset-fallback{display:grid}
+.player-info-club-dot.has-asset{display:none}
+.player-info-match-main{display:flex;align-items:center;gap:9px;min-width:0}
+.player-info-match-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-info-build{font-size:11px;color:#7f8b87;text-align:right;margin:-6px 4px 14px;font-weight:700;letter-spacing:.04em}
+.player-info-section-head .player-info-source{max-width:48%;text-align:right;line-height:1.25}
+@media(max-width:420px){
+ .player-info-team-badge{width:38px;height:38px}.player-info-opp-badge{width:24px;height:24px}
+ .player-info-avatar{min-height:188px}.player-info-player-photo{min-height:188px}
+}
+
 </style>
 </head>
 <body>
@@ -1690,6 +1820,18 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
     <div id="playerSheetBody"></div>
   </div>
 
+
+  <div class="player-info-page" id="playerInfoPage" aria-hidden="true">
+    <div class="player-info-shell">
+      <div class="player-info-topbar">
+        <button class="player-info-back" id="playerInfoBack" aria-label="Back">‹</button>
+        <div class="player-info-title" id="playerInfoTitle">Player</div>
+        <button class="player-info-more" id="playerInfoMore" aria-label="Player actions">•••</button>
+      </div>
+      <div id="playerInfoContent"></div>
+    </div>
+  </div>
+
   <div id="syncBar" class="sync-bar">
     <span id="syncStatusText">Not synced yet</span>
     <button id="syncNowBtn" class="sync-btn">↻ Sync now</button>
@@ -1757,7 +1899,7 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
         <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
         <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
       </div>
-      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v6.0.0 · AUTO-UPDATE ENABLED</div>
     </div>
   </div>
 
@@ -2367,7 +2509,7 @@ function renderPitchView(containerId, players, opts) {
       const idx = Number(card.dataset.pitchIdx);
       const cid = card.dataset.pitchContainer;
       const player = (pitchPlayersByContainer[cid] || [])[idx];
-      if (player) openPlayerSheet(player);
+      if (player) openPlayerSheet(player, card);
     });
   });
 }
@@ -3382,6 +3524,49 @@ async function toggleWatchlist(id, name) {
   await saveWatchlist();
 }
 
+// ---- Official FPL public visual assets / element detail ----
+const officialFplVisuals={players:new Map(),teams:new Map(),loaded:false};
+const officialElementSummaryCache=new Map();
+
+function fplPlayerPhotoUrl(code){ return code ? 'https://resources.premierleague.com/premierleague/photos/players/250x250/p'+code+'.png' : ''; }
+function fplTeamBadgeUrl(code){ return code ? 'https://resources.premierleague.com/premierleague/badges/70/t'+code+'.png' : ''; }
+function officialTeamById(id){ return officialFplVisuals.teams.get(Number(id)) || null; }
+function officialPlayerById(id){ return officialFplVisuals.players.get(Number(id)) || null; }
+function officialTeamByShort(short){ const k=String(short||'').toUpperCase(); return [...officialFplVisuals.teams.values()].find(t=>String(t.short_name||'').toUpperCase()===k || String(t.name||'').toUpperCase()===k) || null; }
+
+async function loadOfficialFplVisualAssets(){
+  try{
+    const res=await fetch('https://fantasy.premierleague.com/api/bootstrap-static/?_='+(Date.now()),{cache:'no-store'});
+    if(!res.ok) return false;
+    const data=await res.json();
+    (data.teams||[]).forEach(t=>officialFplVisuals.teams.set(Number(t.id),t));
+    (data.elements||[]).forEach(p=>officialFplVisuals.players.set(Number(p.id),p));
+    officialFplVisuals.loaded=true;
+    return true;
+  }catch(e){ return false; }
+}
+
+async function loadOfficialElementSummary(playerId){
+  const id=Number(playerId);
+  if(!id) return null;
+  if(officialElementSummaryCache.has(id)) return officialElementSummaryCache.get(id);
+  try{
+    const res=await fetch('https://fantasy.premierleague.com/api/element-summary/'+id+'/?_='+(Date.now()),{cache:'no-store'});
+    if(!res.ok) return null;
+    const data=await res.json();
+    officialElementSummaryCache.set(id,data);
+    return data;
+  }catch(e){ return null; }
+}
+
+function playerVisualAsset(full){
+  const off=officialPlayerById(full?.id);
+  const code=off?.code || full?.code || null;
+  const teamId=off?.team || full?.teamId || null;
+  const team=officialTeamById(teamId) || officialTeamByShort(full?.team);
+  return {off,team,photo:fplPlayerPhotoUrl(code),badge:fplTeamBadgeUrl(team?.code)};
+}
+
 // ---- Player sheet: stack-based navigation (action menu <-> player info) ----
 let sheetStack = [];
 
@@ -3390,7 +3575,141 @@ function fullPlayerRecord(p) {
   return full ? { ...p, ...full, id: p.id, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench, extra: p.extra, fixtures: p.fixtures } : p;
 }
 
-function openPlayerActionMenu(p) {
+let playerInfoReturnState = null;
+let currentPlayerInfo = null;
+let playerInfoHistoryPushed = false;
+
+function playerInfoRecentRows(full) {
+  const official=officialElementSummaryCache.get(Number(full?.id));
+  if(official && Array.isArray(official.history) && official.history.length){
+    return official.history.slice().sort((a,b)=>Number(b.round)-Number(a.round)).slice(0,4).map(r=>{
+      const opp=officialTeamById(r.opponent_team);
+      const hs=r.team_h_score, as=r.team_a_score;
+      return {gw:Number(r.round),points:Number(r.total_points),opponent:opp?.short_name||opp?.name||'—',opponentTeamId:r.opponent_team,venue:r.was_home?'H':'A',score:(hs!=null&&as!=null)?(hs+'-'+as):null};
+    });
+  }
+  const candidates = [full?.recentHistory, full?.recentGames, full?.gwHistory, full?.history].find(Array.isArray) || [];
+  const rows = candidates.map(r => ({
+    gw: Number(r.gw ?? r.event ?? r.round ?? r.gameweek),
+    points: Number(r.points ?? r.total_points ?? r.event_points ?? r.totalPoints),
+    opponent: r.opponent || r.opponentName || r.opp || r.fixtureLabel || null,
+    opponentTeamId:r.opponentTeamId||r.opponent_team||null,
+    venue: r.venue || (r.was_home === true ? 'H' : (r.was_home === false ? 'A' : null)),
+    score: r.score || r.result || null
+  })).filter(r => Number.isFinite(r.gw) && Number.isFinite(r.points)).sort((a,b)=>b.gw-a.gw).slice(0,4);
+  if (!rows.length) {
+    const lastPts = Number(full?.lastGwPoints ?? full?.eventPoints ?? full?.event_points);
+    const lastGw = Number((homeData?.gw ?? gwDecision?.gw ?? 0) - 1);
+    if (Number.isFinite(lastPts) && lastGw > 0) rows.push({gw:lastGw,points:lastPts,opponent:null,venue:null,score:null});
+  }
+  return rows;
+}
+
+function playerInfoProjectionRows(full) {
+  const official=officialElementSummaryCache.get(Number(full?.id));
+  const rawFixtures=(official&&Array.isArray(official.fixtures)&&official.fixtures.length) ? official.fixtures.map(f=>{
+    const teamId=f.is_home?f.team_a:f.team_h; const opp=officialTeamById(teamId);
+    return {gw:f.event,opponent:opp?.short_name||opp?.name||'—',opponentTeamId:teamId,venue:f.is_home?'H':'A',difficulty:Number(f.difficulty||3)};
+  }) : (typeof getPlanningFixtures === 'function' ? getPlanningFixtures(full) : (full?.fixtures || [])).slice(0,6);
+  const fixtures=rawFixtures.slice(0,6);
+  const proj = typeof aiProjectionRecord === 'function' ? aiProjectionRecord(full) : {xpByGw:[]};
+  return fixtures.map((f,i)=>({
+    gw:f.gw??f.event, opponent:f.opponent || f.opponentName || '—', opponentTeamId:f.opponentTeamId||f.opponent_team||null, venue:f.venue || '', difficulty:Number(f.difficulty || 3), xp:proj?.xpByGw?.[i] ?? null
+  }));
+}
+
+function renderFullPlayerInfo(p) {
+  const full = fullPlayerRecord(p);
+  const pos = full.position || p.position || '—';
+  const visual=playerVisualAsset(full);
+  const team = visual.team?.short_name || visual.team?.name || full.team || p.team || '—';
+  const teamName=visual.team?.name || full.teamName || team;
+  const off=visual.off;
+  const totalPoints=off?.total_points ?? full.totalPoints ?? '—';
+  const ppg=off?.points_per_game ?? full.pointsPerGame;
+  const ownership=off?.selected_by_percent ?? full.ownership;
+  const goals=off?.goals_scored ?? full.goalsScored ?? '—';
+  const assists=off?.assists ?? full.assists ?? '—';
+  const cleanSheets=off?.clean_sheets ?? full.cleanSheets ?? '—';
+  const bonus=off?.bonus ?? full.bonus ?? '—';
+  const price=off?.now_cost!=null ? Number(off.now_cost)/10 : full.price;
+  const thirdLabel = (pos === 'DEF' || pos === 'GKP') ? 'Clean sheets' : 'Bonus';
+  const thirdValue = (pos === 'DEF' || pos === 'GKP') ? cleanSheets : bonus;
+  const recent = playerInfoRecentRows(full);
+  const projections = playerInfoProjectionRows(full);
+  const title=document.getElementById('playerInfoTitle'); if(title) title.textContent=p.name;
+  const content=document.getElementById('playerInfoContent'); if(!content) return;
+  const recentHtml = recent.length ? recent.map(r=>{
+    const oppTeam=officialTeamById(r.opponentTeamId); const badge=fplTeamBadgeUrl(oppTeam?.code);
+    const label=r.opponent ? escapeHtml(r.opponent) : '—';
+    const venue=r.venue ? ' ('+escapeHtml(r.venue)+')' : '';
+    const score=r.score ? '<strong>'+escapeHtml(r.score)+'</strong>' : '';
+    return '<div class="player-info-form-row"><div class="player-info-gw">GW'+r.gw+'</div><div class="player-info-match"><div class="player-info-match-main">'+(badge?'<img class="player-info-opp-badge" src="'+badge+'" alt="" onerror="this.style.display=\'none\'">':'')+'<span class="player-info-match-text">'+label+venue+'</span>'+score+'</div></div><div class="player-info-points">'+r.points+'pts</div></div>';
+  }).join('') : '<div class="player-info-empty">Match-by-match history is loading from the official FPL player endpoint.</div>';
+  const projHtml = projections.length ? projections.map(r=>{
+    const cls=r.difficulty<=2?'easy':r.difficulty>=4?'hard':'mid';
+    const xp = r.xp != null && Number.isFinite(Number(r.xp)) ? Number(r.xp).toFixed(1)+'pts' : '—';
+    const venue = r.venue === 'H' ? 'Home' : (r.venue === 'A' ? 'Away' : r.venue);
+    const oppTeam=officialTeamById(r.opponentTeamId); const badge=fplTeamBadgeUrl(oppTeam?.code);
+    return '<div class="player-info-proj-row"><div class="player-info-gw">GW'+(r.gw ?? '—')+'</div><div class="player-info-proj-pill '+cls+'"><span class="player-info-match-main">'+(badge?'<img class="player-info-opp-badge" src="'+badge+'" alt="" onerror="this.style.display=\'none\'">':'')+'<span>'+escapeHtml(r.opponent)+(venue?' ('+escapeHtml(venue)+')':'')+'</span></span><span class="xp">'+xp+'</span></div></div>';
+  }).join('') : '<div class="player-info-empty">No future fixture data available.</div>';
+  const avatar=visual.photo ? '<img class="player-info-player-photo" src="'+visual.photo+'" alt="'+escapeHtml(p.name)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">' : '';
+  const fallback='<div class="player-info-avatar-fallback" style="'+(visual.photo?'display:none;':'')+'"><div class="pitch-jersey '+(pos==='GKP'?'gk':'')+'" style="background:'+teamColor(team)+'"></div></div>';
+  const badge=visual.badge ? '<img class="player-info-team-badge" src="'+visual.badge+'" alt="'+escapeHtml(teamName)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">' : '';
+  content.innerHTML=''+
+    '<div class="player-info-hero">'+
+      '<div class="player-info-avatar">'+avatar+fallback+'</div>'+
+      '<div class="player-info-meta">'+
+        '<div class="player-info-club">'+badge+'<span class="player-info-club-dot '+(visual.badge?'has-asset':'asset-fallback')+'" style="background:'+teamColor(team)+'">'+escapeHtml(String(team).slice(0,1))+'</span><span>'+escapeHtml(teamName)+'</span></div>'+
+        '<div class="player-info-meta-grid">'+
+          '<div class="player-info-mini"><div class="player-info-mini-label">Position</div><div class="player-info-mini-value">'+escapeHtml(pos)+'</div></div>'+
+          '<div class="player-info-mini"><div class="player-info-mini-label">Price</div><div class="player-info-mini-value">£'+(price != null ? Number(price).toFixed(1) : '—')+'m</div></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="player-info-card"><div class="player-info-statgrid">'+
+      '<div><div class="player-info-stat-label">Total points</div><div class="player-info-stat-value">'+totalPoints+'pts</div></div>'+
+      '<div><div class="player-info-stat-label">Points / match</div><div class="player-info-stat-value">'+(ppg != null ? Number(ppg).toFixed(1)+'pts' : '—')+'</div></div>'+
+      '<div><div class="player-info-stat-label">Selected by</div><div class="player-info-stat-value">'+(ownership != null ? Number(ownership).toFixed(1)+'%' : '—')+'</div></div>'+
+      '<div><div class="player-info-stat-label">Goals</div><div class="player-info-stat-value">'+goals+'</div></div>'+
+      '<div><div class="player-info-stat-label">Assists</div><div class="player-info-stat-value">'+assists+'</div></div>'+
+      '<div><div class="player-info-stat-label">'+thirdLabel+'</div><div class="player-info-stat-value">'+thirdValue+'</div></div>'+
+    '</div></div>'+
+    '<div class="player-info-card"><div class="player-info-section-head"><span>Form</span><span class="player-info-source">Official FPL match history</span></div>'+recentHtml+'</div>'+
+    '<div class="player-info-card"><div class="player-info-section-head"><span>Projected points</span><span class="player-info-source">Tracker projections + official fixtures</span></div>'+projHtml+'<div class="player-info-empty" style="padding-top:16px">No projection is invented: missing tracker xPts stay as —.</div></div>'+
+    '<div class="player-info-build">BUILD v6.0.0 · OFFICIAL FPL VISUALS</div>';
+}
+
+function openFullPlayerInfo(p) {
+  currentPlayerInfo = p;
+  playerInfoReturnState = { scrollY: window.scrollY, section: activeSection };
+  closePlayerSheet();
+  renderFullPlayerInfo(p);
+  Promise.all([officialFplVisuals.loaded ? Promise.resolve(true) : loadOfficialFplVisualAssets(), loadOfficialElementSummary(p.id)]).then(()=>{
+    if(currentPlayerInfo && Number(currentPlayerInfo.id)===Number(p.id)) renderFullPlayerInfo(currentPlayerInfo);
+  }).catch(()=>{});
+  const page=document.getElementById('playerInfoPage');
+  page.classList.add('open'); page.setAttribute('aria-hidden','false'); page.scrollTop=0;
+  document.body.classList.add('player-info-open');
+  try { history.pushState({fplPlayerInfo:true}, '', location.href); playerInfoHistoryPushed=true; } catch(e) { playerInfoHistoryPushed=false; }
+}
+
+function closeFullPlayerInfo(fromPopState=false) {
+  const page=document.getElementById('playerInfoPage');
+  if(!page || !page.classList.contains('open')) return;
+  page.classList.remove('open'); page.setAttribute('aria-hidden','true');
+  document.body.classList.remove('player-info-open');
+  const ret=playerInfoReturnState; currentPlayerInfo=null; playerInfoReturnState=null;
+  if(!fromPopState && playerInfoHistoryPushed) {
+    playerInfoHistoryPushed=false;
+    try { history.back(); } catch(e) {}
+  } else { playerInfoHistoryPushed=false; }
+  if(ret) requestAnimationFrame(()=>window.scrollTo({top:ret.scrollY,left:0,behavior:'instant'}));
+}
+
+function openPlayerActionMenu(p, anchorEl) {
+  document.querySelectorAll('.pitch-card.ps-selected-player').forEach(el => el.classList.remove('ps-selected-player'));
+  if (anchorEl) anchorEl.classList.add('ps-selected-player');
   sheetStack = [{ view: 'menu', player: p }];
   renderSheetView();
 }
@@ -3431,15 +3750,14 @@ function renderSheetView() {
           <div class="ps-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 ${statusLabel}</div>
         </div>
       </div>
-      ${captainRow}
-      ${viceRow}
-      <div class="ps-action-row" data-ps-action="sub">${subLabel}</div>
-      <div class="ps-action-row" data-ps-action="transferout">Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Replacement Browser</span></div>
-      <div class="ps-action-row" data-ps-action="sendtolab">Send to Transfer Lab <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Quick shortlist</span></div>
-      <div class="ps-action-row disabled" data-ps-action="recommend">Recommend Transfer <span class="ps-action-phase-tag">Phase 4</span></div>
-      <div class="ps-action-row" data-ps-action="compare">Compare</div>
-      <div class="ps-action-row" data-ps-action="info">See Player Info</div>
-      <div class="ps-action-row" data-ps-action="watchlist">${inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}</div>
+      <div class="ps-hub-actions">
+        <div class="ps-action-row ${isCap ? 'disabled' : ''}" data-ps-action="captain"><span class="ps-hub-icon ps-hub-letter">C</span><span>${isCap ? 'Captain' : 'Make captain'}</span></div>
+        <div class="ps-action-row ${isVc ? 'disabled' : ''}" data-ps-action="vice"><span class="ps-hub-icon ps-hub-letter dark">V</span><span>${isVc ? 'Vice captain' : 'Make vice captain'}</span></div>
+        <div class="ps-action-row" data-ps-action="sub"><span class="ps-hub-icon ps-hub-symbol">⇄</span><span>Substitute</span></div>
+        <div class="ps-action-row" data-ps-action="transferout"><span class="ps-hub-icon ps-hub-symbol">⇥</span><span>Transfer out</span></div>
+        <div class="ps-action-row disabled" data-ps-action="recommend"><span class="ps-hub-icon ps-hub-symbol">✧</span><span>Recommend transfer</span></div>
+        <div class="ps-action-row" data-ps-action="info"><span class="ps-hub-icon ps-hub-symbol">ⓘ</span><span>See player info</span></div>
+      </div>
       <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
     `;
     body.querySelectorAll('[data-ps-action]').forEach(row => {
@@ -3560,8 +3878,7 @@ function sheetBack() {
 
 async function handleSheetAction(action, p) {
   if (action === 'info') {
-    sheetStack.push({ view: 'info', player: p });
-    renderSheetView();
+    openFullPlayerInfo(p);
     return;
   }
   if (action === 'captain') {
@@ -3611,12 +3928,13 @@ async function handleSheetAction(action, p) {
   }
 }
 
-function openPlayerSheet(p) { openPlayerActionMenu(p); }
+function openPlayerSheet(p, anchorEl) { openPlayerActionMenu(p, anchorEl); }
 
 function closePlayerSheet() {
   sheetStack = [];
   document.getElementById('playerSheet').classList.remove('open');
   document.getElementById('playerSheetBackdrop').classList.remove('open');
+  document.querySelectorAll('.pitch-card.ps-selected-player').forEach(el => el.classList.remove('ps-selected-player'));
 }
 
 function renderHome() {
@@ -9456,6 +9774,13 @@ updateShellContext(activeSection, null);
 updateSubNavVisibility();
 
 document.getElementById('playerSheetBackdrop').addEventListener('click', closePlayerSheet);
+document.getElementById('playerInfoBack')?.addEventListener('click', () => closeFullPlayerInfo(false));
+document.getElementById('playerInfoMore')?.addEventListener('click', () => { if(currentPlayerInfo) openPlayerActionMenu(currentPlayerInfo, null); });
+window.addEventListener('popstate', () => {
+  const page=document.getElementById('playerInfoPage');
+  if(page?.classList.contains('open')) closeFullPlayerInfo(true);
+});
+
 
 document.getElementById('pitchQuickActionsBtn').addEventListener('click', () => {
   const sheet = document.getElementById('quickActionsSheet');
@@ -9523,6 +9848,7 @@ document.querySelectorAll('.pv-toggle-btn[data-pitch-mode]').forEach(btn => {
 
 /* ---- FPL Harry snapshot save ---- */
 (async function init() {
+  await loadOfficialFplVisualAssets();
   await loadSnapshots();
   await loadChips();
   await loadCyprus();
