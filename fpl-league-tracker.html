@@ -32,6 +32,12 @@ body {
   min-height: 100vh; padding: 28px 16px calc(84px + env(safe-area-inset-bottom, 0px));
 }
 .wrap { max-width: 760px; margin: 0 auto; }
+@media (min-width: 1024px) {
+  .wrap { max-width: 1000px; }
+}
+@media (min-width: 1440px) {
+  .wrap { max-width: 1220px; }
+}
 
 /* ---- Bottom navigation ---- */
 .bottom-nav {
@@ -404,6 +410,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .gw-card-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
 .gw-card-deadline { font-size: 13px; color: var(--text-dim); margin-top: 2px; margin-bottom: 14px; }
 .gw-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (min-width: 1024px) {
+  .gw-card-grid { grid-template-columns: repeat(4, 1fr); }
+  .landing-card { max-width: none; }
+}
 .gw-card-stat {}
 .gw-card-val { font-family: var(--font-mono); font-size: 26px; font-weight: 700; color: var(--lime); line-height: 1.1; }
 .gw-card-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-top: 3px; }
@@ -440,6 +450,23 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   border-radius: 6px; padding: 12px 14px; margin-bottom: 8px;
 }
 .watchlist-remove { background: none; border: 1px solid var(--border); color: var(--text-faint); border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+
+/* ---- Decision Centre ---- */
+.decision-hero-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.decision-hero-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+.decision-hero-deadline { font-size: 13px; color: var(--text-dim); margin-top: 2px; margin-bottom: 16px; }
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (min-width: 1024px) {
+  .decision-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.decision-card { background: var(--bg-elev-2); border-radius: 6px; padding: 12px 14px; }
+.decision-card-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; }
+.decision-card-val { font-size: 14px; font-weight: 700; margin-top: 4px; word-break: break-word; }
+.decision-card-sub { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.decision-readiness-card { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+.decision-readiness-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 6px; }
+.decision-readiness-status { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--gold); }
+#decReadinessList { font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.7; }
 .quick-actions-sheet { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; margin-bottom: 16px; }
 
 /* ---- Global Top ---- */
@@ -1448,6 +1475,29 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       <div class="empty-note">Waiting for first sync…</div>
     </div>
 
+    <div class="section-label">Gameweek Decision Centre</div>
+    <div class="decision-hero-card">
+      <div class="decision-hero-title" id="decHeroGwLabel">GAMEWEEK —</div>
+      <div class="decision-hero-deadline" id="decHeroDeadline">—</div>
+      <div class="decision-grid">
+        <div class="decision-card"><div class="decision-card-label">Transfer</div><div class="decision-card-val" id="decCardTransfer">—</div><div class="decision-card-sub" id="decCardTransferSub"></div></div>
+        <div class="decision-card"><div class="decision-card-label">Captain</div><div class="decision-card-val" id="decCardCaptain">—</div></div>
+        <div class="decision-card"><div class="decision-card-label">Vice Captain</div><div class="decision-card-val" id="decCardVice">—</div></div>
+        <div class="decision-card"><div class="decision-card-label">Chip</div><div class="decision-card-val" id="decCardChip">—</div></div>
+        <div class="decision-card"><div class="decision-card-label">Free Transfers</div><div class="decision-card-val" id="decCardFT">—</div><div class="verify-tag">TRACKER CALCULATION</div></div>
+        <div class="decision-card"><div class="decision-card-label">Hit</div><div class="decision-card-val" id="decCardHit">—</div></div>
+      </div>
+      <div class="decision-readiness-card">
+        <div class="decision-readiness-title">Decision readiness</div>
+        <div class="decision-readiness-status" id="decReadinessStatus">—</div>
+        <div id="decReadinessList"></div>
+      </div>
+      <button class="ai-export-btn" id="decLockBtnProxy" style="margin-top:14px;width:100%">Lock GW Decision</button>
+    </div>
+
+    <button class="lab-add-pair-btn" id="decDetailsToggle" style="margin:10px 0">▸ Show detailed data (research checklist, changes since sync, elite manager intelligence, locked history)</button>
+    <div id="decDetailsSection" style="display:none">
+
     <!-- ================= PHASE 5 — LIVE GW INTELLIGENCE ================= -->
     <div class="section-label"><span>Phase 5 — Deadline Centre</span><span id="p5GwLabel"></span></div>
     <div class="p5-grid" id="p5DeadlineGrid">
@@ -1464,6 +1514,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       <div class="p5-card"><div class="p5-card-title">Research readiness — automated</div><div class="p5-card-sub">Official tracker checks update automatically. Items requiring the open web are flagged for the AI handoff instead of asking you to fill them.</div><div id="p5ResearchWrap"></div></div>
       <div class="p5-card full"><div class="p5-card-title">Elite manager / similar squad intelligence</div><div class="p5-card-sub">No manual entry. The tracker exports our exact squad and instructs the receiving AI to find and verify 14/15+ matches (13/15 fallback), then compare their actions with ours.</div><div id="p5ExpertsWrap"></div><div id="p5ExpertVerdict" class="p5-note"></div></div>
       <div class="p5-card full"><div class="p5-card-title">Locked GW decisions / post-GW review</div><div class="p5-card-sub">Stores what we actually decided before the deadline so results do not rewrite the reasoning later.</div><div id="p5HistoryWrap"><div class="empty-note">No locked GW decisions yet.</div></div></div>
+    </div>
+
     </div>
 
     <div class="section-label"><span>This gameweek</span><span id="decGwLabel"></span></div>
@@ -1769,6 +1821,7 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
         <button class="pv-toggle-btn" data-ml-stats="captains">Captains</button>
         <button class="pv-toggle-btn" data-ml-stats="transfers">Transfers</button>
         <button class="pv-toggle-btn" data-ml-stats="chips">Chips</button>
+        <button class="pv-toggle-btn" data-ml-stats="ownership">Ownership</button>
       </div>
       <div id="mlStatsContentWrap"></div>
     </div>
@@ -2307,6 +2360,23 @@ function renderMlStats() {
       }).join('');
       return `<div class="ml-transfer-row"><div><div class="ml-table-name">${escapeHtml(m.entry_name)}</div><div style="margin-top:6px">${statusHtml}</div></div></div>`;
     }).join('');
+  } else if (mlStatsTab === 'ownership') {
+    const ownership = computeLeagueOwnership();
+    if (!ownership.length) { wrap.innerHTML = '<div class="empty-note">No ownership data yet.</div>'; return; }
+    const total = ownership[0].totalManagers;
+    const mostOwned = ownership.filter(e => e.owned >= Math.ceil(total * 0.5));
+    const oursOnly = ownership.filter(e => e.iOwn && e.owned === 1);
+    const rivalsOnly = ownership.filter(e => !e.iOwn && e.owned >= 1);
+    const section = (title, list) => list.length ? `
+      <div class="pm-position-label" style="margin-top:14px">${title}</div>
+      ${list.slice(0, 8).map(e => `<div class="ml-award-row"><span>${escapeHtml(e.name)} <span style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px">${escapeHtml(e.team)}</span></span><span>${e.owned}/${total}</span></div>`).join('')}
+    ` : '';
+    wrap.innerHTML = `
+      <div class="heuristic-note">Ownership within Almost Champions only — context, never automatic transfer advice.</div>
+      ${section('Most owned', mostOwned)}
+      ${section('Our differentials (we own, no one else does)', oursOnly)}
+      ${section('Rivals own, we do not', rivalsOnly.slice(0, 8))}
+    `;
   }
 }
 
@@ -2348,7 +2418,7 @@ function renderWatchlist() {
       <div class="watchlist-row">
         <div>
           <div class="ml-table-name">${escapeHtml(w.name)}</div>
-          <div class="ml-table-manager">${full ? escapeHtml(full.team) + ' \u00b7 ' + full.position + ' \u00b7 \\u00a3' + full.price.toFixed(1) + 'm' : 'Not in current squad pool'}</div>
+          <div class="ml-table-manager">${full ? escapeHtml(full.team) + ' \u00b7 ' + full.position + ' \u00b7 \u00a3' + full.price.toFixed(1) + 'm' : 'Not in current squad pool'}</div>
         </div>
         <button class="watchlist-remove" data-watchlist-remove="${w.id}">Remove</button>
       </div>
@@ -5712,13 +5782,13 @@ function phase5AutomatedDecision(){const squad=(gwPlanner?.squad||[]);const live
 function phase5AutoResearch(){const squad=gwPlanner?.squad||[];const officialReady=!!lastSyncedAt&&squad.length===FPL_RULES.squadSize;const hasAvailability=officialReady&&squad.every(p=>p.status!=null);return{pressers:'web',europe:'web',injuries:hasAvailability?'web':'wait',prices:officialReady?'done':'wait',experts:'web',lateNews:'web'};}
 function phase5AutoStatus(){const flagged=(playerAnalysis||[]).some(p=>['Injury/Availability Risk','Sell'].includes(p.heuristic?.bucket));const research=phase5AutoResearch();const officialPending=['injuries','prices'].some(k=>research[k]!=='done');if(flagged)return'action';if(officialPending)return'wait';return'wait';}
 function phase5AutomatedNote(){const research=phase5AutoResearch();const pendingWeb=PHASE5_RESEARCH_ITEMS.filter(([k])=>research[k]==='web').map(([,l])=>l);const flagged=(playerAnalysis||[]).filter(p=>['Injury/Availability Risk','Sell'].includes(p.heuristic?.bucket)).map(p=>p.name);let parts=[];if(flagged.length)parts.push('Tracker action flags: '+flagged.join(', ')+'.');if(pendingWeb.length)parts.push('AI/web verification still required: '+pendingWeb.join('; ')+'.');if(!parts.length)parts.push('Internal tracker checks are clear.');return parts.join(' ');}
-function renderPhase5(){const label=document.getElementById('p5GwLabel');if(!label)return;const auto=phase5AutomatedDecision();phase5State.transfer=auto.transfer;phase5State.captain=auto.captain;phase5State.vice=auto.vice;phase5State.chip=auto.chip;phase5State.hit=auto.hit;phase5State.note=phase5AutomatedNote();phase5State.research=phase5AutoResearch();label.textContent=`GW${homeData?.gw??gwDecision?.gw??'—'}`;const meta=document.getElementById('p5DeadlineMeta');if(meta)meta.textContent=phase5DeadlineText();const status=phase5AutoStatus(),el=document.getElementById('p5DecisionStatus');if(el){el.className=`p5-status ${status}`;el.textContent=status==='ready'?'READY TO LOCK':status==='action'?'ACTION REQUIRED':'WAIT FOR WEB CHECK';}const values={p5Transfer:auto.transfer,p5Captain:auto.captain||'—',p5Vice:auto.vice||'—',p5DecisionNote:phase5State.note,p5ChipAuto:auto.chip||'HOLD',p5StatusAuto:status==='action'?'ACTION REQUIRED':status==='ready'?'READY TO LOCK':'WAIT FOR WEB CHECK',p5HitAuto:auto.hit?'-'+auto.hit:'0'};Object.entries(values).forEach(([id,val])=>{const x=document.getElementById(id);if(x)x.value=val;});renderPhase5Changes();renderPhase5Research();renderPhase5Experts();renderPhase5History();}
+function renderPhase5(){const label=document.getElementById('p5GwLabel');if(!label)return;const auto=phase5AutomatedDecision();phase5State.transfer=auto.transfer;phase5State.captain=auto.captain;phase5State.vice=auto.vice;phase5State.chip=auto.chip;phase5State.hit=auto.hit;phase5State.note=phase5AutomatedNote();phase5State.research=phase5AutoResearch();label.textContent=`GW${homeData?.gw??gwDecision?.gw??'—'}`;const meta=document.getElementById('p5DeadlineMeta');if(meta)meta.textContent=phase5DeadlineText();const status=phase5AutoStatus(),el=document.getElementById('p5DecisionStatus');if(el){el.className=`p5-status ${status}`;el.textContent=status==='ready'?'READY TO LOCK':status==='action'?'ACTION REQUIRED':'WAIT FOR WEB CHECK';}const values={p5Transfer:auto.transfer,p5Captain:auto.captain||'—',p5Vice:auto.vice||'—',p5DecisionNote:phase5State.note,p5ChipAuto:auto.chip||'HOLD',p5StatusAuto:status==='action'?'ACTION REQUIRED':status==='ready'?'READY TO LOCK':'WAIT FOR WEB CHECK',p5HitAuto:auto.hit?'-'+auto.hit:'0'};Object.entries(values).forEach(([id,val])=>{const x=document.getElementById(id);if(x)x.value=val;});renderPhase5Changes();renderPhase5Research();renderPhase5Experts();renderPhase5History();const gwCard=document.getElementById('decHeroGwLabel');if(gwCard)gwCard.textContent='GAMEWEEK '+(homeData?.gw??gwDecision?.gw??'\u2014');const ddl=document.getElementById('decHeroDeadline');if(ddl)ddl.textContent=phase5DeadlineText();const dCT=document.getElementById('decCardTransfer');if(dCT)dCT.textContent=auto.transfer;const dCTs=document.getElementById('decCardTransferSub');if(dCTs)dCTs.textContent=auto.hit?('Requires -'+auto.hit+' hit'):'';const dCC=document.getElementById('decCardCaptain');if(dCC)dCC.textContent=auto.captain||'\u2014';const dCV=document.getElementById('decCardVice');if(dCV)dCV.textContent=auto.vice||'\u2014';const dCCh=document.getElementById('decCardChip');if(dCCh)dCCh.textContent=auto.chip||'HOLD';const dCFT=document.getElementById('decCardFT');if(dCFT)dCFT.textContent=(gwPlanner?.ftEstimate??'\u2014');const dCH=document.getElementById('decCardHit');if(dCH)dCH.textContent=auto.hit?('-'+auto.hit):'0';const readyStatus=document.getElementById('decReadinessStatus');const readyList=document.getElementById('decReadinessList');if(readyStatus&&readyList){const research=phase5State.research||{};const pending=PHASE5_RESEARCH_ITEMS.filter(([k])=>research[k]&&research[k]!=='done');readyStatus.textContent=pending.length?'PARTIAL':'READY';readyList.innerHTML=pending.length?pending.map(([k,lbl])=>`\u2022 ${lbl} \u2014 ${research[k]==='web'?'external research required':'waiting for sync'}<br>`).join(''):'All tracker-checkable items are ready.';}}
 function renderPhase5Changes(){const w=document.getElementById('p5ChangesWrap');if(!w)return;const c=phase5State.changes||[];w.innerHTML=c.length?c.map(x=>`<div class="p5-change"><span class="p5-change-tag">${escapeHtml(x.tag)}</span><span>${escapeHtml(x.text)}</span></div>`).join(''):'<div class="empty-note">No material tracker changes detected since the previous successful sync.</div>';}
 function renderPhase5Research(){const w=document.getElementById('p5ResearchWrap');if(!w)return;const r=phase5AutoResearch();w.innerHTML=PHASE5_RESEARCH_ITEMS.map(([k,l])=>{const v=r[k];const label=v==='done'?'AUTO VERIFIED':v==='web'?'AI / WEB REQUIRED':'WAITING FOR SYNC';const cls=v==='done'?'ready':v==='web'?'wait':'action';return`<div class="p5-change"><span class="p5-status ${cls}" style="min-width:112px;justify-content:center">${label}</span><span>${escapeHtml(l)}</span></div>`;}).join('');}
 function renderPhase5Experts(){const w=document.getElementById('p5ExpertsWrap');if(!w)return;w.innerHTML='<div class="p5-change"><span class="p5-status wait">AI / WEB</span><span>Automatically requested in the AI handoff report: find verified current elite/high-performing managers, calculate exact squad and XI overlap, prioritize 14/15+ matches, then compare transfers/captain/chip with our plan.</span></div>';const v=document.getElementById('p5ExpertVerdict');if(v)v.textContent='You do not need to enter managers manually. This remains external research because a static GitHub Pages tracker cannot reliably verify current web sources on its own.';}
 function renderPhase5History(){const w=document.getElementById('p5HistoryWrap');if(!w)return;const rows=[...(phase5State.locked||[])].slice(-6).reverse();w.innerHTML=rows.length?rows.map(x=>`<div class="p5-history-item"><strong>GW${escapeHtml(String(x.gw??'—'))} · ${escapeHtml(x.status||'LOCKED')}</strong> · ${escapeHtml(new Date(x.lockedAt).toLocaleString())}<br>Transfer: ${escapeHtml(x.transfer||'HOLD')} · C: ${escapeHtml(x.captain||'—')} · VC: ${escapeHtml(x.vice||'—')} · Chip: ${escapeHtml(x.chip||'HOLD')} · Hit: ${x.hit?'-'+x.hit:'0'}${x.note?`<br>${escapeHtml(x.note)}`:''}</div>`).join(''):'<div class="empty-note">No locked GW decisions yet.</div>';}
 async function lockPhase5Decision(){const auto=phase5AutomatedDecision();phase5State.transfer=auto.transfer;phase5State.captain=auto.captain;phase5State.vice=auto.vice;phase5State.chip=auto.chip;phase5State.hit=auto.hit;phase5State.note=phase5AutomatedNote();phase5State.research=phase5AutoResearch();const status=phase5AutoStatus();if(status!=='ready'&&!confirm('External web checks are still outstanding or tracker action flags remain. Lock the current automated decision anyway?'))return;phase5State.locked.push({gw:homeData?.gw??gwDecision?.gw??null,lockedAt:new Date().toISOString(),status:'LOCKED',transfer:phase5State.transfer||'HOLD',captain:phase5State.captain,vice:phase5State.vice,chip:phase5State.chip,hit:phase5State.hit,note:phase5State.note,research:{...phase5State.research}});phase5State.locked=phase5State.locked.slice(-30);await savePhase5State();renderPhase5History();}
-function wirePhase5(){document.getElementById('p5LockGw')?.addEventListener('click',lockPhase5Decision);}
+function wirePhase5(){document.getElementById('p5LockGw')?.addEventListener('click',lockPhase5Decision);document.getElementById('decLockBtnProxy')?.addEventListener('click',lockPhase5Decision);document.getElementById('decDetailsToggle')?.addEventListener('click',()=>{const s=document.getElementById('decDetailsSection');const b=document.getElementById('decDetailsToggle');const open=s.style.display!=='none';s.style.display=open?'none':'';b.textContent=open?'▸ Show detailed data (research checklist, changes since sync, elite manager intelligence, locked history)':'▾ Hide detailed data';});}
 /* ---- Decisions tab rendering ---- */
 function fixtureBadge(f) {
   if (!f) return '';
