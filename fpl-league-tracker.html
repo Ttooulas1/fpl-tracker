@@ -471,6 +471,15 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .planned-context-title { font-family: var(--font-mono); font-size: 11px; color: var(--lime); text-transform: uppercase; margin-bottom: 10px; }
 .planned-context-row { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--border-soft); font-size: 13px; }
 .planned-context-status { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); font-family: var(--font-mono); font-size: 11px; color: var(--gold); }
+.lab-current-analysis-card { background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.lab-current-analysis-title { font-family: var(--font-mono); font-size: 11px; color: var(--lime); text-transform: uppercase; margin-bottom: 8px; }
+.lab-current-analysis-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.lab-current-analysis-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; margin-bottom: 10px; }
+.lab-clear-context-btn { background: none; border: 1px solid var(--border); color: var(--text-faint); font-family: var(--font-body); font-size: 11px; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+.lab-saved-scenario-card { background: var(--bg-elev); border: 1px solid var(--border-soft); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; }
+.lab-saved-scenario-when { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-bottom: 6px; }
+.lab-saved-scenario-line { font-size: 12px; color: var(--text-dim); }
+.lab-restore-btn { background: none; border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--font-body); font-size: 11px; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-top: 8px; }
 
 /* ---- Phase 2: planned lineup banner + toast + substitute sheet ---- */
 .planned-banner {
@@ -1742,6 +1751,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
   <!-- ================= TRANSFER LAB TAB ================= -->
   <div class="tab-panel" id="tab-translab">
 
+    <div id="labCurrentAnalysisWrap"></div>
+
     <div class="section-label">🧪 Transfer lab verdict</div>
     <div id="labVerdictWrap"></div>
     <div id="labAddToPlanWrap"></div>
@@ -1767,6 +1778,9 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       <div class="section-label" id="labHitLabel" style="display:none">Hit analysis</div>
       <div id="labHitWrap"></div>
     </div>
+
+    <div class="section-label">Saved scenarios <span style="font-weight:400">— from before the current analysis, never deleted</span></div>
+    <div id="labSavedScenariosWrap"></div>
 
   </div>
 
@@ -2615,6 +2629,60 @@ async function saveTransferLab() {
   await storageSet(TRANSFER_LAB_KEY, JSON.stringify(transferScenarios));
 }
 
+/* ---- Transfer Lab handoff context: distinguishes a fresh player-driven
+   analysis from unrelated old scenarios, without ever deleting saved data. ---- */
+const TRANSFER_LAB_CONTEXT_KEY = 'fpl-transfer-lab-context';
+const SAVED_TRANSFER_SCENARIOS_KEY = 'fpl-saved-transfer-scenarios';
+let transferLabContext = null;
+let savedTransferScenarios = [];
+
+async function loadTransferLabContext() {
+  const val = await storageGet(TRANSFER_LAB_CONTEXT_KEY);
+  transferLabContext = val ? JSON.parse(val) : null;
+}
+async function saveTransferLabContext() {
+  await storageSet(TRANSFER_LAB_CONTEXT_KEY, JSON.stringify(transferLabContext));
+}
+async function loadSavedTransferScenarios() {
+  const val = await storageGet(SAVED_TRANSFER_SCENARIOS_KEY);
+  savedTransferScenarios = val ? JSON.parse(val) : [];
+}
+async function saveSavedTransferScenarios() {
+  await storageSet(SAVED_TRANSFER_SCENARIOS_KEY, JSON.stringify(savedTransferScenarios));
+}
+
+function scenariosHaveData(scenarios) {
+  return (scenarios || []).some(sc => (sc.pairs || []).some(pr => pr.outId || pr.inId));
+}
+
+// Single entry point for every "send this player to Transfer Lab" action in the app.
+// Stashes any genuinely populated prior scenarios (never deletes them), resets A/B/C
+// to a clean slate for the new player, and records why we're here.
+async function enterTransferLabHandoff(outId, source) {
+  if (scenariosHaveData(transferScenarios) && !(transferLabContext && transferLabContext.active && transferLabContext.outPlayerId === outId)) {
+    savedTransferScenarios.push({ scenarios: transferScenarios, savedAt: new Date().toISOString() });
+    await saveSavedTransferScenarios();
+  }
+  const outPlayer = plannedPlayerLookup(outId) || (gwPlanner ? gwPlanner.allPlayers.find(p => p.id === outId) : null);
+  transferScenarios = [
+    { pairs: [{ outId, inId: null }], name: '', reason: '' },
+    { pairs: [], name: '', reason: '' },
+    { pairs: [], name: '', reason: '' }
+  ];
+  transferLabContext = {
+    active: true, outPlayerId: outId, position: outPlayer ? outPlayer.position : null,
+    source, openedAt: new Date().toISOString()
+  };
+  await saveTransferLab();
+  await saveTransferLabContext();
+}
+
+async function clearTransferLabContext() {
+  transferLabContext = null;
+  await saveTransferLabContext();
+  renderTransferLab();
+}
+
 async function loadPlannerPlans() {
   const val = await storageGet(PLANNER_PLANS_KEY);
   if (val) {
@@ -3147,8 +3215,7 @@ async function handleSheetAction(action, p) {
   }
   if (action === 'transferout') {
     closePlayerSheet();
-    transferScenarios[0] = { pairs: [{ outId: p.id, inId: null }], name: '', reason: '' };
-    await saveTransferLab();
+    await enterTransferLabHandoff(p.id, 'player-handoff');
     activeSection = 'transfers';
     document.querySelectorAll('.bn-btn').forEach(b => b.classList.toggle('active', b.dataset.sectionNav === 'transfers'));
     openFeature('translab', 'transfers');
@@ -4408,7 +4475,77 @@ function renderLabVerdict(allMetrics) {
   renderLabAddToPlanWidget();
 }
 
+function renderLabCurrentAnalysis() {
+  const wrap = document.getElementById('labCurrentAnalysisWrap');
+  if (!wrap) return;
+  if (!transferLabContext || !transferLabContext.active || !gwPlanner) { wrap.innerHTML = ''; return; }
+  const p = labGetSquadPlayer(transferLabContext.outPlayerId) || plannedPlayerLookup(transferLabContext.outPlayerId);
+  if (!p) { wrap.innerHTML = ''; return; }
+  const fx = getNextPlanningFixture(p);
+  const sellingP = labSellingPrice(p);
+  ensurePlannedLineup();
+  const isStarting = plannedLineup && plannedLineup.starters.includes(p.element);
+  const isCap = plannedLineup && plannedLineup.captain === p.element;
+  const sourceLabel = transferLabContext.source === 'recommend-transfer' ? 'Recommend Transfer' : 'Player action menu';
+  wrap.innerHTML = `
+    <div class="lab-current-analysis-card">
+      <div class="lab-current-analysis-title">Analysing Transfer Out <span style="font-weight:400">(via ${escapeHtml(sourceLabel)})</span></div>
+      <div class="lab-current-analysis-name">${escapeHtml(p.name)}</div>
+      <div class="lab-current-analysis-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 \u00a3${p.price != null ? p.price.toFixed(1) : '\u2014'}m</div>
+      <div class="ps-row"><span>Fixture run</span><span>${fx ? escapeHtml(fx.opponent) + ' (' + fx.venue + ')' : '\u2014'}</span></div>
+      <div class="ps-row"><span>Starting XI status</span><span>${isStarting ? 'Starting (planned)' : 'Bench (planned)'}</span></div>
+      <div class="ps-row"><span>Captain status</span><span>${isCap ? 'Planned captain' : 'Not planned captain'}</span></div>
+      <div class="ps-row ${sellingP == null ? 'warn' : ''}"><span>Selling price</span><span>${sellingP != null ? '\u00a3' + sellingP.toFixed(1) + 'm' : 'NOT AVAILABLE'}</span></div>
+      <div class="ps-row ${sellingP == null ? 'warn' : ''}"><span>Affordability</span><span>${sellingP != null ? 'Can be verified' : 'UNVERIFIED'}</span></div>
+      <button class="lab-clear-context-btn" id="labClearContextBtn">Clear current analysis</button>
+    </div>
+  `;
+  document.getElementById('labClearContextBtn').addEventListener('click', clearTransferLabContext);
+}
+
+function renderLabSavedScenarios() {
+  const wrap = document.getElementById('labSavedScenariosWrap');
+  if (!wrap) return;
+  if (!savedTransferScenarios.length) { wrap.innerHTML = '<div class="empty-note">No saved scenarios yet.</div>'; return; }
+  wrap.innerHTML = [...savedTransferScenarios].reverse().map((entry, revIdx) => {
+    const idx = savedTransferScenarios.length - 1 - revIdx;
+    const lines = entry.scenarios.map((sc, i) => {
+      const pairs = (sc.pairs || []).filter(pr => pr.outId || pr.inId);
+      if (!pairs.length) return null;
+      const txt = pairs.map(pr => {
+        const outP = pr.outId ? (labGetSquadPlayer(pr.outId) || plannedPlayerLookup(pr.outId)) : null;
+        const inP = pr.inId ? plannerGetPlayer(pr.inId) : null;
+        return (outP ? outP.name : '?') + ' \u2192 ' + (inP ? inP.name : '?');
+      }).join(', ');
+      return `<div class="lab-saved-scenario-line">${SCENARIO_LABELS[i]}: ${escapeHtml(txt)}</div>`;
+    }).filter(Boolean).join('');
+    if (!lines) return '';
+    return `
+      <div class="lab-saved-scenario-card">
+        <div class="lab-saved-scenario-when">Saved ${new Date(entry.savedAt).toLocaleString()}</div>
+        ${lines}
+        <div><button class="lab-restore-btn" data-restore-saved="${idx}">Restore into current scenarios</button></div>
+      </div>
+    `;
+  }).join('');
+  wrap.querySelectorAll('[data-restore-saved]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.restoreSaved);
+      const entry = savedTransferScenarios[idx];
+      if (!entry) return;
+      transferScenarios = entry.scenarios;
+      transferLabContext = null;
+      await saveTransferLab();
+      await saveTransferLabContext();
+      renderTransferLab();
+      showToast('Saved scenario restored');
+    });
+  });
+}
+
 function renderTransferLab() {
+  renderLabCurrentAnalysis();
+  renderLabSavedScenarios();
   renderLabNeeds();
   renderLabScenarioBuilders();
   renderLabHoldHero();
@@ -5589,8 +5726,7 @@ function renderPlayerAnalysis() {
   wrap.querySelectorAll('[data-send-to-lab]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const outId = Number(btn.dataset.sendToLab);
-      transferScenarios[0] = { pairs: [{ outId, inId: null }], name: '', reason: '' };
-      await saveTransferLab();
+      await enterTransferLabHandoff(outId, 'recommend-transfer');
       document.querySelector('.tab-btn[data-tab="translab"]').click();
       renderTransferLab();
     });
@@ -8247,6 +8383,8 @@ document.querySelectorAll('.pv-toggle-btn[data-pitch-mode]').forEach(btn => {
   await loadGlobalTop();
   await loadWatchlist();
   await loadPlannedLineup();
+  await loadTransferLabContext();
+  await loadSavedTransferScenarios();
   await loadPhase5State();
   await loadPhase5Baseline();
   renderAllViews();
