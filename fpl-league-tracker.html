@@ -467,6 +467,10 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .decision-readiness-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 6px; }
 .decision-readiness-status { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--gold); }
 #decReadinessList { font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.7; }
+.planned-context-card { background: var(--bg-elev); border: 1px solid var(--lime-dim); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+.planned-context-title { font-family: var(--font-mono); font-size: 11px; color: var(--lime); text-transform: uppercase; margin-bottom: 10px; }
+.planned-context-row { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--border-soft); font-size: 13px; }
+.planned-context-status { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); font-family: var(--font-mono); font-size: 11px; color: var(--gold); }
 
 /* ---- Phase 2: planned lineup banner + toast + substitute sheet ---- */
 .planned-banner {
@@ -1519,6 +1523,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
       <button class="ai-export-btn" id="decLockBtnProxy" style="margin-top:14px;width:100%">Lock GW Decision</button>
     </div>
 
+    <div id="decPlannedContextWrap"></div>
+
     <button class="lab-add-pair-btn" id="decDetailsToggle" style="margin:10px 0">▸ Show detailed data (research checklist, changes since sync, elite manager intelligence, locked history)</button>
     <div id="decDetailsSection" style="display:none">
 
@@ -1670,6 +1676,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 
   <!-- ================= CAPTAIN & CHIPS TAB ================= -->
   <div class="tab-panel" id="tab-captain">
+
+    <div id="captainPlannedWrap"></div>
 
     <div class="section-label">Captain centre <span style="font-weight:400">— candidates from your squad</span></div>
     <div class="sandbox-col" style="margin-bottom:12px">
@@ -2970,6 +2978,7 @@ function renderSheetView() {
     const viceRow = isVc
       ? `<div class="ps-action-row disabled">Vice Captain ✓ <span class="ps-action-phase-tag">Current planned vice</span></div>`
       : `<div class="ps-action-row" data-ps-action="vice">Make Vice Captain</div>`;
+    const subLabel = isStarting ? 'Substitute' : (plannedLineup.benchGk === p.id ? 'Substitute with Starting GK' : 'Substitute into XI');
     body.innerHTML = `
       ${backHtml}
       <div class="ps-head">
@@ -2981,7 +2990,7 @@ function renderSheetView() {
       </div>
       ${captainRow}
       ${viceRow}
-      <div class="ps-action-row" data-ps-action="sub">Substitute</div>
+      <div class="ps-action-row" data-ps-action="sub">${subLabel}</div>
       <div class="ps-action-row" data-ps-action="transferout">Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Opens Transfer Lab</span></div>
       <div class="ps-action-row disabled" data-ps-action="recommend">Recommend Transfer <span class="ps-action-phase-tag">Phase 4</span></div>
       <div class="ps-action-row" data-ps-action="compare">Compare</div>
@@ -6076,7 +6085,35 @@ function renderCaptaincyHistory() {
   `;
 }
 
+function renderCaptainPlannedContext() {
+  const wrap = document.getElementById('captainPlannedWrap');
+  if (!wrap) return;
+  if (!homeData || !homeData.squad || !homeData.squad.length) { wrap.innerHTML = ''; return; }
+  ensurePlannedLineup();
+  const off = buildOfficialLineup();
+  const plannedCap = plannedPlayerLookup(plannedLineup.captain);
+  const plannedVice = plannedPlayerLookup(plannedLineup.viceCaptain);
+  const differs = plannedLineup.captain !== off.captain || plannedLineup.viceCaptain !== off.viceCaptain;
+  if (!differs) {
+    wrap.innerHTML = `<div class="heuristic-note">Planned captain/vice currently match the official synced lineup: <b>${escapeHtml(plannedCap?.name||'—')}</b> (C) / <b>${escapeHtml(plannedVice?.name||'—')}</b> (V).</div>`;
+    return;
+  }
+  const officialCap = plannedPlayerLookup(off.captain);
+  const officialVice = plannedPlayerLookup(off.viceCaptain);
+  wrap.innerHTML = `
+    <div class="planned-context-card">
+      <div class="planned-context-title">Planned</div>
+      <div class="planned-context-row"><span>C</span><span>${escapeHtml(plannedCap?.name||'—')}</span></div>
+      <div class="planned-context-row"><span>V</span><span>${escapeHtml(plannedVice?.name||'—')}</span></div>
+      <div class="planned-context-title" style="margin-top:12px">Official synced</div>
+      <div class="planned-context-row"><span>C</span><span>${escapeHtml(officialCap?.name||'—')}</span></div>
+      <div class="planned-context-row"><span>V</span><span>${escapeHtml(officialVice?.name||'—')}</span></div>
+    </div>
+  `;
+}
+
 function renderCaptainChipsTab() {
+  renderCaptainPlannedContext();
   renderCaptainTable();
   renderChipCentre();
   renderRivalChipIntel();
@@ -6120,7 +6157,38 @@ function fixtureBadge(f) {
   return `<span class="fdr-cell fdr-${f.difficulty}" style="display:inline-block;min-width:auto;padding:2px 6px;font-size:10px;margin-left:6px">${escapeHtml(f.opponent)} (${f.venue})</span>`;
 }
 
+function renderDecisionsPlannedContext() {
+  const wrap = document.getElementById('decPlannedContextWrap');
+  if (!wrap) return;
+  if (!homeData || !homeData.squad || !homeData.squad.length) { wrap.innerHTML = ''; return; }
+  ensurePlannedLineup();
+  const diff = plannedDiffCount();
+  if (!diff) { wrap.innerHTML = ''; return; }
+  const off = buildOfficialLineup();
+  const plannedCap = plannedPlayerLookup(plannedLineup.captain);
+  const plannedVice = plannedPlayerLookup(plannedLineup.viceCaptain);
+  const officialCap = plannedPlayerLookup(off.captain);
+  const officialVice = plannedPlayerLookup(off.viceCaptain);
+  const xiChanges = plannedLineup.starters.filter(id => !off.starters.includes(id)).length;
+  wrap.innerHTML = `
+    <div class="planned-context-card">
+      <div class="planned-context-title">Planned Lineup Context</div>
+      ${plannedLineup.captain !== off.captain ? `
+        <div class="planned-context-row"><span>Captain</span><span>${escapeHtml(plannedCap?.name||'—')}</span></div>
+        <div class="planned-context-row"><span>Official synced captain</span><span>${escapeHtml(officialCap?.name||'—')}</span></div>
+      ` : ''}
+      ${plannedLineup.viceCaptain !== off.viceCaptain ? `
+        <div class="planned-context-row"><span>Vice</span><span>${escapeHtml(plannedVice?.name||'—')}</span></div>
+        <div class="planned-context-row"><span>Official synced vice</span><span>${escapeHtml(officialVice?.name||'—')}</span></div>
+      ` : ''}
+      ${xiChanges ? `<div class="planned-context-row"><span>Starting XI changes</span><span>${xiChanges}</span></div>` : ''}
+      <div class="planned-context-status">STATUS: TRACKER PLANNING ONLY -- NOT LOCKED</div>
+    </div>
+  `;
+}
+
 function renderDecisions() {
+  renderDecisionsPlannedContext();
   const heroWrap = document.getElementById('decHero');
   const gwLabelEl = document.getElementById('decGwLabel');
 
@@ -6750,6 +6818,30 @@ function runSystemDiagnostics() {
   add(exportCheck.ok?'ok':'warn','AI handoff export',exportCheck.ok?'Ready to export':`Needs: ${exportCheck.missing.join(', ')}`);
   add(lastSyncedAt?'ok':'warn','Sync state',lastSyncedAt?`Last successful sync ${lastSyncedAt.toLocaleString()}`:'No successful sync in this browser session');
   phase7Audit().forEach(c=>checks.push(c));
+  ensurePlannedLineup();
+  if (!plannedLineup) {
+    add('warn','Planned lineup integrity','No official squad synced yet — cannot initialise');
+  } else {
+    const pIds = [...plannedLineup.starters, ...(plannedLineup.benchGk?[plannedLineup.benchGk]:[]), ...plannedLineup.benchOutfield];
+    const uniqueOk = new Set(pIds).size === pIds.length && pIds.length === FPL_RULES.squadSize;
+    add(uniqueOk?'ok':'err','Planned lineup integrity',uniqueOk?'Valid — 15 unique squad members represented':`${pIds.length} planned IDs, ${new Set(pIds).size} unique (expected ${FPL_RULES.squadSize})`);
+    const officialIds = new Set((gwPlanner?.squad||[]).map(p=>p.element));
+    const allResolve = pIds.every(id=>officialIds.has(id));
+    add(allResolve?'ok':'err','Planned IDs resolve to synced squad',allResolve?'All planned IDs are in the current 15-man squad':'One or more planned IDs are not in the current synced squad');
+    const counts = countPositions(plannedLineup.starters);
+    const validXi = isValidFormation(counts) && plannedLineup.starters.length===11;
+    add(validXi?'ok':'err','Planned XI',validXi?`11 legal starters (${counts.DEF}-${counts.MID}-${counts.FWD})`:`${plannedLineup.starters.length} starters, ${counts.DEF} DEF / ${counts.MID} MID / ${counts.FWD} FWD — not a legal formation`);
+    const benchOk = !!plannedLineup.benchGk && plannedLineup.benchOutfield.length===3;
+    add(benchOk?'ok':'err','Planned bench',benchOk?'1 GK + 3 outfield':'Bench GK or outfield bench count is wrong');
+    const capOk = plannedLineup.starters.includes(plannedLineup.captain);
+    const capP = plannedPlayerLookup(plannedLineup.captain);
+    add(capOk?'ok':'err','Planned captain',capOk?(capP?capP.name:'In starting XI'):'Captain is not in the planned starting XI');
+    const viceOk = plannedLineup.starters.includes(plannedLineup.viceCaptain);
+    const viceP = plannedPlayerLookup(plannedLineup.viceCaptain);
+    add(viceOk?'ok':'err','Planned vice',viceOk?(viceP?viceP.name:'In starting XI'):'Vice is not in the planned starting XI');
+    add(plannedLineup.captain!==plannedLineup.viceCaptain?'ok':'err','Captain != vice',plannedLineup.captain!==plannedLineup.viceCaptain?'Distinct players':'Captain and vice are the same player');
+    add(plannedLineupValid()?'ok':'warn','Planned state compatibility',plannedLineupValid()?'Matches current 15-player squad and GW':'Stale — will reset from official on next render');
+  }
   return checks;
 }
 function renderSystemHealth(){
@@ -7806,6 +7898,7 @@ function aiMachineState(lines) {
     captain:squad.find(p=>p.isCaptain)?.name||null,vice:squad.find(p=>p.isVice)?.name||null,
     benchGoalkeeper:squad.filter(p=>p.isBench).find(p=>p.position==='GKP')?.name||null,
     outfieldBenchOrder:squad.filter(p=>p.isBench&&p.position!=='GKP').map(p=>p.name),
+    plannedLineup:(()=>{ensurePlannedLineup();if(!plannedLineup)return null;return{active:true,sourceGw:plannedLineup.sourceGw,starters:[...plannedLineup.starters],benchGk:plannedLineup.benchGk,benchOutfield:[...plannedLineup.benchOutfield],captain:plannedLineup.captain,viceCaptain:plannedLineup.viceCaptain,changesFromOfficial:plannedDiffCount(),source:'tracker local planning state',isOfficial:false,isCurrentRecommendation:false};})(),
     currentInjuries:squad.map(sp=>{const p=aiPlayerById(sp.element)||sp;return p.news?{name:sp.name,status:p.status||null,chanceOfPlaying:aiFirst(p,['chanceOfPlaying','chance_of_playing_next_round'],null),news:p.news,source:'Official FPL/tracker sync',updated:lastSyncedAt?lastSyncedAt.toISOString():null}:null;}).filter(Boolean),
     clubConcentration:Object.fromEntries([...new Set(squad.map(p=>p.team))].map(t=>[t,squad.filter(p=>p.team===t).length])),
     savedScenario:{transfer:phase5State?.transfer||null,captain:phase5State?.captain||null,vice:phase5State?.vice||null,chip:phase5State?.chip||null,hit:phase5State?.hit||0,source:'SAVED OLD PLAN / TRACKER STATE',isCurrentRecommendation:false},currentRecommendation:null,
