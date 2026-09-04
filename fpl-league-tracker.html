@@ -467,6 +467,28 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
 .decision-readiness-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-transform: uppercase; margin-bottom: 6px; }
 .decision-readiness-status { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--gold); }
 #decReadinessList { font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.7; }
+
+/* ---- Phase 2: planned lineup banner + toast + substitute sheet ---- */
+.planned-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(198,255,61,0.08);
+  border: 1px solid var(--lime-dim); border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;
+}
+.planned-banner-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.toast-msg {
+  position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px); z-index: 95;
+  background: var(--bg-elev); border: 1px solid var(--lime-dim); color: var(--text); font-size: 13px; font-weight: 600;
+  padding: 10px 18px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+  max-width: 90vw; text-align: center;
+}
+.toast-msg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.sub-candidate-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 4px;
+  border-top: 1px solid var(--border-soft); cursor: pointer; min-height: 48px;
+}
+.sub-candidate-row.invalid { opacity: 0.5; cursor: default; }
+.sub-candidate-name { font-weight: 700; font-size: 14px; }
+.sub-candidate-meta { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.sub-candidate-reason { font-size: 10px; color: var(--red); margin-top: 2px; }
 .quick-actions-sheet { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; margin-bottom: 16px; }
 
 /* ---- Global Top ---- */
@@ -1301,6 +1323,8 @@ button:disabled { background: var(--border); color: var(--text-faint); cursor: n
     <div class="home-strip" id="homeStrip">
       <div class="empty-note">Waiting for first sync…</div>
     </div>
+
+    <div id="plannedBannerWrap"></div>
 
     <div class="pitch-view-toggle" id="pitchViewToggle">
       <button class="pv-toggle-btn active" data-pitch-mode="live">Live</button>
@@ -2625,17 +2649,249 @@ function computeRankMovement() {
 
 let pitchViewMode = 'live';
 
+/* ============================================================
+   PHASE 2 -- PLANNED LINEUP STATE (local tracker planning only,
+   never claims to write to official FPL)
+   ============================================================ */
+const PLANNED_LINEUP_KEY = 'fpl-planned-lineup';
+let plannedLineup = null;
+
+function buildOfficialLineup() {
+  if (!homeData || !homeData.squad || !homeData.squad.length) return null;
+  const squad = homeData.squad;
+  const starters = squad.filter(p => !p.isBench).map(p => p.element);
+  const benchPlayers = squad.filter(p => p.isBench);
+  const benchGkP = benchPlayers.find(p => p.position === 'GKP');
+  const benchOutfield = benchPlayers.filter(p => p.position !== 'GKP').map(p => p.element);
+  const captain = squad.find(p => p.isCaptain)?.element || null;
+  const viceCaptain = squad.find(p => p.isVice)?.element || null;
+  return {
+    sourceGw: homeData.gw,
+    squadIds: squad.map(p => p.element).sort((a, b) => a - b),
+    starters, benchGk: benchGkP ? benchGkP.element : null, benchOutfield,
+    captain, viceCaptain, updatedAt: new Date().toISOString()
+  };
+}
+
+function plannedLineupValid() {
+  if (!plannedLineup || !homeData || !homeData.squad || !homeData.squad.length) return false;
+  const officialIds = homeData.squad.map(p => p.element).sort((a, b) => a - b);
+  const plannedIds = [...(plannedLineup.squadIds || [])].sort((a, b) => a - b);
+  if (officialIds.length !== plannedIds.length) return false;
+  for (let i = 0; i < officialIds.length; i++) { if (officialIds[i] !== plannedIds[i]) return false; }
+  if (plannedLineup.sourceGw !== homeData.gw) return false;
+  return true;
+}
+
+// Ensures a usable plannedLineup exists, preferring the persisted one when it's
+// still valid against the current official squad, and resetting from official
+// (never guessing) when it isn't.
+function ensurePlannedLineup() {
+  if (!plannedLineupValid()) {
+    plannedLineup = buildOfficialLineup();
+  }
+}
+
+async function loadPlannedLineup() {
+  try {
+    const val = await storageGet(PLANNED_LINEUP_KEY);
+    plannedLineup = val ? JSON.parse(val) : null;
+  } catch (err) {
+    plannedLineup = null;
+  }
+}
+async function savePlannedLineup() {
+  if (!plannedLineup) return;
+  plannedLineup.updatedAt = new Date().toISOString();
+  await storageSet(PLANNED_LINEUP_KEY, JSON.stringify(plannedLineup));
+}
+
+function plannedPlayerLookup(id) {
+  if (id == null) return null;
+  if (gwPlanner && gwPlanner.squad) {
+    const p = gwPlanner.squad.find(x => x.element === id);
+    if (p) return p;
+  }
+  if (homeData && homeData.squad) {
+    const p = homeData.squad.find(x => x.element === id);
+    if (p) return p;
+  }
+  return typeof plannerGetPlayer === 'function' ? plannerGetPlayer(id) : null;
+}
+
+function plannedDiffCount() {
+  ensurePlannedLineup();
+  const off = buildOfficialLineup();
+  if (!off || !plannedLineup) return 0;
+  let diff = 0;
+  const offStarters = new Set(off.starters);
+  const planStarters = new Set(plannedLineup.starters);
+  offStarters.forEach(id => { if (!planStarters.has(id)) diff++; });
+  if (off.captain !== plannedLineup.captain) diff++;
+  if (off.viceCaptain !== plannedLineup.viceCaptain) diff++;
+  return diff;
+}
+
+function countPositions(starterIds) {
+  const counts = { GKP: 0, DEF: 0, MID: 0, FWD: 0 };
+  starterIds.forEach(id => {
+    const p = plannedPlayerLookup(id);
+    if (p && counts[p.position] !== undefined) counts[p.position]++;
+  });
+  return counts;
+}
+function isValidFormation(counts) {
+  if (counts.GKP !== 1) return false;
+  if (counts.DEF < 3 || counts.DEF > 5) return false;
+  if (counts.MID < 2 || counts.MID > 5) return false;
+  if (counts.FWD < 1 || counts.FWD > 3) return false;
+  if (counts.GKP + counts.DEF + counts.MID + counts.FWD !== 11) return false;
+  return true;
+}
+
+function showToast(msg) {
+  let el = document.getElementById('toastMsg');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toastMsg';
+    el.className = 'toast-msg';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+async function makeCaptainPlanned(id) {
+  ensurePlannedLineup();
+  if (!plannedLineup.starters.includes(id)) { showToast('Captain must be in the starting XI'); return; }
+  if (plannedLineup.viceCaptain === id) {
+    const oldCaptain = plannedLineup.captain;
+    plannedLineup.captain = id;
+    plannedLineup.viceCaptain = oldCaptain;
+  } else {
+    plannedLineup.captain = id;
+  }
+  await savePlannedLineup();
+  renderHomePitch();
+  renderPlannedBanner();
+  showToast('Planned captain updated');
+}
+
+async function makeVicePlanned(id) {
+  ensurePlannedLineup();
+  if (!plannedLineup.starters.includes(id)) { showToast('Vice captain must be in the starting XI'); return; }
+  if (plannedLineup.captain === id) {
+    const oldVice = plannedLineup.viceCaptain;
+    plannedLineup.viceCaptain = id;
+    plannedLineup.captain = oldVice;
+  } else {
+    plannedLineup.viceCaptain = id;
+  }
+  await savePlannedLineup();
+  renderHomePitch();
+  renderPlannedBanner();
+  showToast('Planned vice captain updated');
+}
+
+function eligibleSubstitutes(playerId) {
+  ensurePlannedLineup();
+  const player = plannedPlayerLookup(playerId);
+  if (!player) return [];
+  const isStarter = plannedLineup.starters.includes(playerId);
+  const pool = isStarter
+    ? [plannedLineup.benchGk, ...plannedLineup.benchOutfield].filter(Boolean)
+    : [...plannedLineup.starters];
+  return pool.map(id => {
+    const p = plannedPlayerLookup(id);
+    if (!p) return null;
+    let valid, reason;
+    if (player.position === 'GKP' || p.position === 'GKP') {
+      valid = (player.position === 'GKP' && p.position === 'GKP');
+      reason = valid ? '' : 'A goalkeeper can only swap with the bench goalkeeper';
+    } else {
+      const newStarters = isStarter
+        ? plannedLineup.starters.map(s => s === playerId ? id : s)
+        : plannedLineup.starters.map(s => s === id ? playerId : s);
+      const counts = countPositions(newStarters);
+      valid = isValidFormation(counts);
+      reason = valid ? '' : `Would leave ${counts.DEF} DEF / ${counts.MID} MID / ${counts.FWD} FWD -- invalid formation`;
+    }
+    return { id, name: p.name, position: p.position, team: p.team, valid, reason };
+  }).filter(Boolean);
+}
+
+async function commitSubstitution(starterId, benchId) {
+  ensurePlannedLineup();
+  const idx = plannedLineup.starters.indexOf(starterId);
+  if (idx === -1) return;
+  plannedLineup.starters[idx] = benchId;
+  if (plannedLineup.benchGk === benchId) {
+    plannedLineup.benchGk = starterId;
+  } else {
+    const bIdx = plannedLineup.benchOutfield.indexOf(benchId);
+    if (bIdx > -1) plannedLineup.benchOutfield[bIdx] = starterId;
+  }
+  await savePlannedLineup();
+  renderHomePitch();
+  renderPlannedBanner();
+  const inName = plannedPlayerLookup(benchId)?.name || 'Player';
+  const outName = plannedPlayerLookup(starterId)?.name || 'Player';
+  showToast(`${inName} moved into starting XI, ${outName} moved to bench`);
+}
+
+async function resetPlannedLineup() {
+  plannedLineup = buildOfficialLineup();
+  await savePlannedLineup();
+  renderHomePitch();
+  renderPlannedBanner();
+  showToast('Planned team reset to official synced lineup');
+}
+
+function renderPlannedBanner() {
+  const wrap = document.getElementById('plannedBannerWrap');
+  if (!wrap) return;
+  if (!homeData || !homeData.squad || !homeData.squad.length) { wrap.innerHTML = ''; return; }
+  ensurePlannedLineup();
+  const diff = plannedDiffCount();
+  if (!diff) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <div class="planned-banner">
+      <div><b>PLANNED TEAM ACTIVE</b><div class="planned-banner-sub">${diff} change${diff === 1 ? '' : 's'} from official synced lineup -- local tracker planning only, not submitted to FPL</div></div>
+      <button class="rw-goto-btn" id="resetPlannedBtn">Reset to official</button>
+    </div>
+  `;
+  document.getElementById('resetPlannedBtn').addEventListener('click', resetPlannedLineup);
+}
+
+
 function renderHomePitch() {
-  if (!homeData) return;
+  if (!homeData || !homeData.squad || !homeData.squad.length) return;
+  ensurePlannedLineup();
   const h = homeData;
   const gwPlannerByElement = {};
   if (gwPlanner) gwPlanner.squad.forEach(p => { gwPlannerByElement[p.element] = p; });
+  const officialByElement = {};
+  h.squad.forEach(p => { officialByElement[p.element] = p; });
 
-  const players = h.squad.map(p => {
-    const gp = gwPlannerByElement[p.element];
+  const orderedIds = [
+    ...plannedLineup.starters,
+    ...(plannedLineup.benchGk ? [plannedLineup.benchGk] : []),
+    ...plannedLineup.benchOutfield
+  ];
+
+  const players = orderedIds.map(id => {
+    const p = officialByElement[id] || gwPlannerByElement[id];
+    if (!p) return null;
+    const gp = gwPlannerByElement[id];
+    const isBenchNow = !plannedLineup.starters.includes(id);
+    const isCap = plannedLineup.captain === id;
+    const isVc = plannedLineup.viceCaptain === id;
+
     if (pitchViewMode === 'nextgw') {
       return {
-        id: p.element, name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
+        id, name: p.name, team: p.team, position: p.position, isCaptain: isCap, isVice: isVc, isBench: isBenchNow,
         news: p.news, extra: p.nextFixture ? 'GW' + gwPlanner?.nextGw + ' FDR ' + p.nextFixture.difficulty : '',
         fixtures: p.nextFixture ? [p.nextFixture] : [], fixtureCount: 1
       };
@@ -2643,18 +2899,19 @@ function renderHomePitch() {
     if (pitchViewMode === 'next3') {
       const fx = gp ? getPlanningFixtures(gp).slice(0, 3) : (p.nextFixture ? [p.nextFixture] : []);
       return {
-        id: p.element, name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
+        id, name: p.name, team: p.team, position: p.position, isCaptain: isCap, isVice: isVc, isBench: isBenchNow,
         news: p.news, extra: gp && gp.price != null ? '\u00a3' + gp.price.toFixed(1) + 'm' : '',
         fixtures: fx, fixtureCount: 3
       };
     }
     return {
-      id: p.element, name: p.name, team: p.team, position: p.position, isCaptain: p.isCaptain, isVice: p.isVice, isBench: p.isBench,
-      news: p.news, extra: p.contribution + ' pts', fixtures: p.nextFixture ? [p.nextFixture] : [], fixtureCount: 1
+      id, name: p.name, team: p.team, position: p.position, isCaptain: isCap, isVice: isVc, isBench: isBenchNow,
+      news: p.news, extra: (p.contribution != null ? p.contribution : 0) + ' pts', fixtures: p.nextFixture ? [p.nextFixture] : [], fixtureCount: 1
     };
-  });
+  }).filter(Boolean);
 
   renderPitchView('squadWrap', players, { emptyMessage: 'No squad data yet.' });
+  renderPlannedBanner();
 }
 
 // ---- Watchlist ----
@@ -2697,19 +2954,34 @@ function renderSheetView() {
   const backHtml = sheetStack.length > 1 ? `<button class="ps-back-btn" id="psBackBtn">\u2039 Back</button>` : '';
 
   if (top.view === 'menu') {
+    ensurePlannedLineup();
     const inWatchlist = watchlist.some(w => w.id === p.id);
+    const isCap = plannedLineup.captain === p.id;
+    const isVc = plannedLineup.viceCaptain === p.id;
+    const isStarting = plannedLineup.starters.includes(p.id);
+    let statusLabel = 'Starting';
+    if (!isStarting) {
+      if (plannedLineup.benchGk === p.id) statusLabel = 'Bench GK';
+      else statusLabel = 'Bench ' + (plannedLineup.benchOutfield.indexOf(p.id) + 1);
+    }
+    const captainRow = isCap
+      ? `<div class="ps-action-row disabled">Captain ✓ <span class="ps-action-phase-tag">Current planned captain</span></div>`
+      : `<div class="ps-action-row" data-ps-action="captain">Make Captain</div>`;
+    const viceRow = isVc
+      ? `<div class="ps-action-row disabled">Vice Captain ✓ <span class="ps-action-phase-tag">Current planned vice</span></div>`
+      : `<div class="ps-action-row" data-ps-action="vice">Make Vice Captain</div>`;
     body.innerHTML = `
       ${backHtml}
       <div class="ps-head">
         <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)};width:40px;height:40px;margin:0"></div>
         <div>
-          <div class="ps-name">${escapeHtml(p.name)}${p.isCaptain ? ' <span class="squad-badge c">C</span>' : ''}${p.isVice ? ' <span class="squad-badge v">V</span>' : ''}</div>
-          <div class="ps-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 ${p.isBench ? 'Bench' : 'Starting'}</div>
+          <div class="ps-name">${escapeHtml(p.name)}${isCap ? ' <span class="squad-badge c">C</span>' : ''}${isVc ? ' <span class="squad-badge v">V</span>' : ''}</div>
+          <div class="ps-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''} \u00b7 ${statusLabel}</div>
         </div>
       </div>
-      <div class="ps-action-row disabled" data-ps-action="captain">Make Captain <span class="ps-action-phase-tag">Phase 2</span></div>
-      <div class="ps-action-row disabled" data-ps-action="vice">Make Vice Captain <span class="ps-action-phase-tag">Phase 2</span></div>
-      <div class="ps-action-row disabled" data-ps-action="sub">Substitute <span class="ps-action-phase-tag">Phase 2</span></div>
+      ${captainRow}
+      ${viceRow}
+      <div class="ps-action-row" data-ps-action="sub">Substitute</div>
       <div class="ps-action-row" data-ps-action="transferout">Transfer Out <span class="ps-action-phase-tag" style="color:var(--lime);border-color:var(--lime-dim)">Opens Transfer Lab</span></div>
       <div class="ps-action-row disabled" data-ps-action="recommend">Recommend Transfer <span class="ps-action-phase-tag">Phase 4</span></div>
       <div class="ps-action-row" data-ps-action="compare">Compare</div>
@@ -2719,6 +2991,44 @@ function renderSheetView() {
     `;
     body.querySelectorAll('[data-ps-action]').forEach(row => {
       row.addEventListener('click', () => handleSheetAction(row.dataset.psAction, p));
+    });
+    document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
+  } else if (top.view === 'substitute') {
+    const candidates = eligibleSubstitutes(p.id);
+    const validOnes = candidates.filter(c => c.valid);
+    const invalidOnes = candidates.filter(c => !c.valid);
+    body.innerHTML = `
+      ${backHtml}
+      <div class="ps-head">
+        <div class="pitch-jersey ${p.position === 'GKP' ? 'gk' : ''}" style="background:${teamColor(p.team)};width:40px;height:40px;margin:0"></div>
+        <div>
+          <div class="ps-name">Substitute ${escapeHtml(p.name)}</div>
+          <div class="ps-meta">${escapeHtml(p.team || '')} \u00b7 ${p.position || ''}</div>
+        </div>
+      </div>
+      <div class="pm-position-label" style="margin-top:10px">Choose replacement</div>
+      ${validOnes.map(c => `
+        <div class="sub-candidate-row" data-sub-target="${c.id}">
+          <div><div class="sub-candidate-name">${escapeHtml(c.name)}</div><div class="sub-candidate-meta">${escapeHtml(c.team)} \u00b7 ${c.position}</div></div>
+          <span style="color:var(--lime);font-size:12px">Valid →</span>
+        </div>
+      `).join('') || '<div class="empty-note">No valid replacements.</div>'}
+      ${invalidOnes.length ? `<div class="pm-position-label" style="margin-top:10px">Not available</div>` : ''}
+      ${invalidOnes.map(c => `
+        <div class="sub-candidate-row invalid">
+          <div><div class="sub-candidate-name">${escapeHtml(c.name)}</div><div class="sub-candidate-meta">${escapeHtml(c.team)} \u00b7 ${c.position}</div><div class="sub-candidate-reason">${escapeHtml(c.reason)}</div></div>
+        </div>
+      `).join('')}
+      <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
+    `;
+    body.querySelectorAll('[data-sub-target]').forEach(row => {
+      row.addEventListener('click', async () => {
+        const targetId = Number(row.dataset.subTarget);
+        const isPStarter = plannedLineup.starters.includes(p.id);
+        closePlayerSheet();
+        if (isPStarter) await commitSubstitution(p.id, targetId);
+        else await commitSubstitution(targetId, p.id);
+      });
     });
     document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
   } else if (top.view === 'info') {
@@ -2798,6 +3108,21 @@ function sheetBack() {
 async function handleSheetAction(action, p) {
   if (action === 'info') {
     sheetStack.push({ view: 'info', player: p });
+    renderSheetView();
+    return;
+  }
+  if (action === 'captain') {
+    await makeCaptainPlanned(p.id);
+    renderSheetView();
+    return;
+  }
+  if (action === 'vice') {
+    await makeVicePlanned(p.id);
+    renderSheetView();
+    return;
+  }
+  if (action === 'sub') {
+    sheetStack.push({ view: 'substitute', player: p });
     renderSheetView();
     return;
   }
@@ -7146,6 +7471,26 @@ function aiExactSquad(lines) {
   lines.push('CRITICAL SELLING-PRICE NOTE: selling price is exported when the synced data contains it. If it says NOT AVAILABLE IN TRACKER, the receiving AI must obtain the real selling value before affordability calculations. Current market price is not a substitute.');
 }
 
+function aiPlannedLineup(lines) {
+  aiSection(lines, '2B. TRACKER PLANNED LINEUP');
+  ensurePlannedLineup();
+  if (!plannedLineup || !gwPlanner) { lines.push('No planned lineup state available.'); return; }
+  lines.push('PLANNED TRACKER STATE -- NOT OFFICIAL FPL SUBMISSION -- NOT FINAL RECOMMENDATION. This is the local editable planning state, kept separate from the official synced lineup above.');
+  const diff = plannedDiffCount();
+  lines.push('Differs from official synced lineup: ' + (diff ? diff + ' change(s)' : 'No -- planned lineup currently matches official.'));
+  const starters = plannedLineup.starters.map(id => plannedPlayerLookup(id)).filter(Boolean);
+  const counts = countPositions(plannedLineup.starters);
+  lines.push('Planned starting XI: ' + starters.map(p => p.name + (plannedLineup.captain === p.element ? ' (C)' : '') + (plannedLineup.viceCaptain === p.element ? ' (V)' : '')).join(', '));
+  lines.push('Planned formation: ' + counts.DEF + '-' + counts.MID + '-' + counts.FWD);
+  const benchGkP = plannedPlayerLookup(plannedLineup.benchGk);
+  lines.push('Planned bench GK: ' + (benchGkP ? benchGkP.name : '—'));
+  lines.push('Planned outfield bench: ' + plannedLineup.benchOutfield.map((id, i) => { const p = plannedPlayerLookup(id); return (i + 1) + '. ' + (p ? p.name : '?'); }).join(' | '));
+  const capP = plannedPlayerLookup(plannedLineup.captain);
+  const viceP = plannedPlayerLookup(plannedLineup.viceCaptain);
+  lines.push('Planned captain: ' + (capP ? capP.name : '—'));
+  lines.push('Planned vice-captain: ' + (viceP ? viceP.name : '—'));
+}
+
 function aiPerformance(lines) {
   aiSection(lines, '3. PLAYER PERFORMANCE DATA');
   (gwPlanner?.squad || []).forEach(sp=>{
@@ -7541,6 +7886,7 @@ function buildAiHandoffReport() {
   lines.push('');
   aiReportMetadata(lines);
   aiExactSquad(lines);
+  aiPlannedLineup(lines);
   aiPerformance(lines);
   aiRoleMinutes(lines);
   aiFixtures8(lines);
@@ -7807,6 +8153,7 @@ document.querySelectorAll('.pv-toggle-btn[data-pitch-mode]').forEach(btn => {
   await loadPlannerPlans();
   await loadGlobalTop();
   await loadWatchlist();
+  await loadPlannedLineup();
   await loadPhase5State();
   await loadPhase5Baseline();
   renderAllViews();
