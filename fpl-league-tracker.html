@@ -1683,6 +1683,7 @@ body{background:radial-gradient(circle at 50% -180px,rgba(201,255,53,.075),trans
 .player-info-proj-row:last-child{margin-bottom:0}
 .player-info-proj-pill{min-height:70px;border-radius:22px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;gap:18px;font-size:20px;background:#a95c1e;color:#fff}
 .player-info-proj-pill.easy{background:#4b915d}.player-info-proj-pill.hard{background:#9b3b32}.player-info-proj-pill.mid{background:#a95c1e}
+.player-info-proj-pill.xp-elite{background:#245b34}.player-info-proj-pill.xp-good{background:#438556}.player-info-proj-pill.xp-mid{background:#a85d1f}.player-info-proj-pill.xp-low{background:#9f4038}
 .player-info-proj-pill .xp{font-size:23px;font-weight:800;white-space:nowrap}
 .player-info-empty{font-size:16px;color:#aeb4b3;line-height:1.5;padding:8px 0}
 body.player-info-open{overflow:hidden}
@@ -1858,30 +1859,30 @@ body.player-info-open .player-sheet{z-index:1901}
 /* ===== v11 player-info density + reliable touch + tap guard ===== */
 @media (max-width:768px){
   .player-info-page{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;touch-action:pan-y!important;}
-  .player-info-shell{padding:0 16px calc(24px + env(safe-area-inset-bottom,0px))!important;min-height:auto!important;}
-  .player-info-topbar{grid-template-columns:46px 1fr 46px!important;gap:12px!important;min-height:62px!important;margin:0 0 12px!important;}
+  .player-info-shell{padding:0 14px calc(20px + env(safe-area-inset-bottom,0px))!important;min-height:auto!important;}
+  .player-info-topbar{grid-template-columns:46px 1fr 46px!important;gap:10px!important;min-height:52px!important;margin:0 0 8px!important;}
   .player-info-back,.player-info-more{width:46px!important;height:46px!important;}
-  .player-info-back::before{font-size:46px!important;}
+  .player-info-back::before{font-size:42px!important;}
   .player-info-more{gap:4px!important;}.player-info-more span{width:5px!important;height:5px!important;}
-  .player-info-title{font-size:28px!important;line-height:1.05!important;}
-  .player-info-hero{grid-template-columns:35% 1fr!important;gap:12px!important;margin-bottom:14px!important;}
-  .player-info-avatar{min-height:158px!important;border-radius:0 0 26px 26px!important;}
-  .player-info-player-photo{min-height:158px!important;}
-  .player-info-club{min-height:66px!important;padding:10px 14px!important;font-size:17px!important;gap:10px!important;border-radius:0 0 26px 26px!important;}
-  .player-info-team-badge{width:36px!important;height:36px!important;}
-  .player-info-meta{gap:10px!important;}.player-info-meta-grid{gap:10px!important;}
-  .player-info-mini{padding:10px 14px!important;border-radius:22px!important;}
-  .player-info-mini-label{font-size:14px!important;margin-bottom:4px!important;}.player-info-mini-value{font-size:17px!important;}
-  .player-info-card{border-radius:28px!important;padding:20px!important;margin-bottom:14px!important;}
-  .player-info-statgrid{gap:17px 14px!important;}.player-info-stat-label{font-size:14px!important;margin-bottom:5px!important;}.player-info-stat-value{font-size:19px!important;}
-  .player-info-section-head{font-size:20px!important;margin-bottom:13px!important;}.player-info-source{font-size:11px!important;}
-  .player-info-form-row{grid-template-columns:46px 1fr auto!important;gap:8px!important;margin-bottom:8px!important;}.player-info-gw{font-size:15px!important;}
-  .player-info-match{min-height:46px!important;border-radius:15px!important;padding:0 12px!important;font-size:15px!important;gap:7px!important;}.player-info-points{font-size:17px!important;}
-  .player-info-opp-badge{width:22px!important;height:22px!important;}
-  .player-info-proj-row{grid-template-columns:46px 1fr!important;gap:8px!important;margin-bottom:8px!important;}
-  .player-info-proj-pill{min-height:50px!important;border-radius:15px!important;padding:0 14px!important;font-size:15px!important;}.player-info-proj-pill .xp{font-size:17px!important;}
+  .player-info-title{font-size:22px!important;line-height:1.05!important;}
+  .player-info-hero{grid-template-columns:30% 1fr!important;gap:10px!important;margin-bottom:10px!important;}
+  .player-info-avatar{min-height:112px!important;border-radius:0 0 20px 20px!important;}
+  .player-info-player-photo{min-height:112px!important;}
+  .player-info-club{min-height:52px!important;padding:8px 12px!important;font-size:15px!important;gap:8px!important;border-radius:0 0 20px 20px!important;}
+  .player-info-team-badge{width:30px!important;height:30px!important;}
+  .player-info-meta{gap:8px!important;}.player-info-meta-grid{gap:8px!important;}
+  .player-info-mini{padding:8px 12px!important;border-radius:18px!important;}
+  .player-info-mini-label{font-size:12px!important;margin-bottom:2px!important;}.player-info-mini-value{font-size:15px!important;}
+  .player-info-card{border-radius:20px!important;padding:14px!important;margin-bottom:10px!important;}
+  .player-info-statgrid{gap:12px 10px!important;}.player-info-stat-label{font-size:12px!important;margin-bottom:3px!important;}.player-info-stat-value{font-size:17px!important;}
+  .player-info-section-head{font-size:17px!important;margin-bottom:8px!important;}.player-info-source{font-size:10px!important;}
+  .player-info-form-row{grid-template-columns:40px 1fr auto!important;gap:6px!important;margin-bottom:6px!important;}.player-info-gw{font-size:13px!important;}
+  .player-info-match{min-height:38px!important;border-radius:12px!important;padding:0 10px!important;font-size:13px!important;gap:6px!important;}.player-info-points{font-size:15px!important;}
+  .player-info-opp-badge{width:18px!important;height:18px!important;}
+  .player-info-proj-row{grid-template-columns:40px 1fr!important;gap:6px!important;margin-bottom:6px!important;}
+  .player-info-proj-pill{min-height:40px!important;border-radius:12px!important;padding:0 12px!important;font-size:13px!important;}.player-info-proj-pill .xp{font-size:15px!important;}
   .player-info-proj-pill.xp-elite{background:#245b34!important;}.player-info-proj-pill.xp-good{background:#438556!important;}.player-info-proj-pill.xp-mid{background:#a85d1f!important;}.player-info-proj-pill.xp-low{background:#9f4038!important;}
-  .player-info-empty{font-size:14px!important;padding:4px 0!important;}.player-info-build{display:none!important;}
+  .player-info-empty{font-size:13px!important;padding:4px 0!important;}.player-info-build{display:none!important;}
   #playerInfoContent,#playerInfoContent *{pointer-events:none!important;touch-action:pan-y!important;-webkit-user-drag:none!important;}
   .player-info-topbar,.player-info-topbar *{pointer-events:auto!important;}
   .player-info-page img{user-select:none!important;-webkit-user-select:none!important;-webkit-user-drag:none!important;}
@@ -3708,6 +3709,36 @@ async function toggleWatchlist(id, name) {
 // ---- Official FPL public visual assets / element detail ----
 const officialFplVisuals={players:new Map(),teams:new Map(),loaded:false};
 const officialElementSummaryCache=new Map();
+// Persistent cache (localStorage-backed, on top of the in-memory Map) so repeatedly
+// opening the same player's Player Info doesn't refetch the official history endpoint
+// every time. Versioned key + expiry means a stale cache can never permanently override
+// fresh data, and never wipes any other tracker state.
+const ELEMENT_SUMMARY_CACHE_KEY = 'fpl-element-summary-cache-v1';
+const ELEMENT_SUMMARY_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+let elementSummaryDiskCacheLoaded = false;
+async function loadElementSummaryDiskCache() {
+  if (elementSummaryDiskCacheLoaded) return;
+  elementSummaryDiskCacheLoaded = true;
+  try {
+    const raw = await storageGet(ELEMENT_SUMMARY_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    Object.keys(parsed || {}).forEach(idStr => {
+      const entry = parsed[idStr];
+      if (entry && entry.savedAt && (now - entry.savedAt) < ELEMENT_SUMMARY_CACHE_TTL_MS && entry.data) {
+        officialElementSummaryCache.set(Number(idStr), entry.data);
+      }
+    });
+  } catch (e) { /* corrupt cache -- ignore and continue with an empty cache, never crash */ }
+}
+async function saveElementSummaryDiskCache() {
+  try {
+    const out = {};
+    officialElementSummaryCache.forEach((data, id) => { out[id] = { savedAt: Date.now(), data }; });
+    await storageSet(ELEMENT_SUMMARY_CACHE_KEY, JSON.stringify(out));
+  } catch (e) { /* best-effort only -- never block the UI on a cache write failure */ }
+}
 
 function fplPlayerPhotoUrl(code){ return code ? 'https://resources.premierleague.com/premierleague/photos/players/250x250/p'+code+'.png' : ''; }
 function fplTeamBadgeUrl(code){ return code ? 'https://resources.premierleague.com/premierleague/badges/70/t'+code+'.png' : ''; }
@@ -3748,6 +3779,7 @@ async function loadOfficialFplVisualAssets(){
 async function loadOfficialElementSummary(playerId){
   const id=Number(playerId);
   if(!id) return null;
+  await loadElementSummaryDiskCache();
   if(officialElementSummaryCache.has(id)) return officialElementSummaryCache.get(id);
   const target='https://fantasy.premierleague.com/api/element-summary/'+id+'/';
   const urls=[target+'?_='+(Date.now()),'https://api.allorigins.win/raw?url='+encodeURIComponent(target)+'&_='+(Date.now()),'https://corsproxy.io/?url='+encodeURIComponent(target)];
@@ -3756,7 +3788,7 @@ async function loadOfficialElementSummary(playerId){
       const res=await fetch(url,{cache:'no-store'});
       if(!res.ok) continue;
       const data=await res.json();
-      if(data && Array.isArray(data.history)){officialElementSummaryCache.set(id,data);return data;}
+      if(data && Array.isArray(data.history)){officialElementSummaryCache.set(id,data);saveElementSummaryDiskCache();return data;}
     }catch(e){}
   }
   return null;
@@ -3943,7 +3975,14 @@ function closeFullPlayerInfo(fromPopState=false) {
     playerInfoHistoryPushed=false;
     try { history.back(); } catch(e) {}
   } else { playerInfoHistoryPushed=false; }
-  if(ret) requestAnimationFrame(()=>window.scrollTo({top:ret.scrollY,left:0,behavior:'instant'}));
+  // Restore exactly where the user came from: section first (if it changed),
+  // then scroll position on the next frame once that section has rendered.
+  if(ret) {
+    if (ret.section && ret.section !== activeSection && typeof switchSection === 'function') {
+      switchSection(ret.section);
+    }
+    requestAnimationFrame(()=>window.scrollTo({top:ret.scrollY,left:0,behavior:'instant'}));
+  }
 }
 
 function openPlayerActionMenu(p, anchorEl) {
