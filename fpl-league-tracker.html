@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build-version="v11.0.0">
+<html lang="en" data-build-version="v12.0.0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="fpl-build-version" content="v11.0.0">
+<meta name="fpl-build-version" content="v12.0.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FPL Tracker">
@@ -15,7 +15,7 @@
 <title>FPL Tracker</title>
 <script>
 /* Build watchdog: once this build is installed, future GitHub Pages updates self-refresh without re-adding the Home Screen app. */
-window.FPL_TRACKER_BUILD='v11.0.0';
+window.FPL_TRACKER_BUILD='v12.0.0';
 (async function fplFreshBuildWatchdog(){
   if(!/^https?:$/.test(location.protocol)) return;
   try{
@@ -1737,10 +1737,6 @@ body.player-info-open .player-sheet{z-index:1901}
 
 /* ===== v7 pixel-match pass: pitch + player info touch + visual fallbacks ===== */
 @media(max-width:768px){
-  .player-info-page,.player-info-page *{touch-action:pan-y}
-  .player-info-page{overscroll-behavior-y:contain;scrollbar-width:none}
-  .player-info-page::-webkit-scrollbar{display:none}
-  .player-info-shell{min-height:110vh}
   .player-info-more{padding:0;display:flex;align-items:center;justify-content:center;gap:6px}
   .player-info-more span{width:7px;height:7px;border-radius:50%;background:#f6f8f7;display:block}
   .player-info-back{font-family:Arial,sans-serif;font-size:0;padding:0}
@@ -1802,12 +1798,6 @@ body.player-info-open .player-sheet{z-index:1901}
 
 /* ===== v9 touch-scroll + pitch visual correction ===== */
 @media(max-width:768px){
-  /* Player info: drag-to-scroll from every non-control surface, including dark cards. */
-  .player-info-page{overflow-y:scroll!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior-y:auto!important}
-  .player-info-shell{touch-action:pan-y!important}
-  .player-info-hero,.player-info-card,.player-info-card *,.player-info-avatar,.player-info-meta,.player-info-mini,.player-info-club{touch-action:pan-y!important}
-  .player-info-card,.player-info-hero{pointer-events:none}
-  .player-info-topbar,.player-info-topbar *{pointer-events:auto}
 
   /* Smaller contextual action menu, closer to the Hub proportions instead of dominating the screen. */
   .player-sheet{top:clamp(170px,24vh,255px)!important;width:min(330px,calc(100vw - 72px))!important;max-height:none!important;padding:0 18px!important;border-radius:17px!important;overflow:hidden!important}
@@ -1858,7 +1848,6 @@ body.player-info-open .player-sheet{z-index:1901}
 
 /* ===== v11 player-info density + reliable touch + tap guard ===== */
 @media (max-width:768px){
-  .player-info-page{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;touch-action:pan-y!important;}
   .player-info-shell{padding:0 14px calc(20px + env(safe-area-inset-bottom,0px))!important;min-height:auto!important;}
   .player-info-topbar{grid-template-columns:46px 1fr 46px!important;gap:10px!important;min-height:52px!important;margin:0 0 8px!important;}
   .player-info-back,.player-info-more{width:46px!important;height:46px!important;}
@@ -1883,11 +1872,33 @@ body.player-info-open .player-sheet{z-index:1901}
   .player-info-proj-pill{min-height:40px!important;border-radius:12px!important;padding:0 12px!important;font-size:13px!important;}.player-info-proj-pill .xp{font-size:15px!important;}
   .player-info-proj-pill.xp-elite{background:#245b34!important;}.player-info-proj-pill.xp-good{background:#438556!important;}.player-info-proj-pill.xp-mid{background:#a85d1f!important;}.player-info-proj-pill.xp-low{background:#9f4038!important;}
   .player-info-empty{font-size:13px!important;padding:4px 0!important;}.player-info-build{display:none!important;}
-  #playerInfoContent,#playerInfoContent *{pointer-events:none!important;touch-action:pan-y!important;-webkit-user-drag:none!important;}
-  .player-info-topbar,.player-info-topbar *{pointer-events:auto!important;}
   .player-info-page img{user-select:none!important;-webkit-user-select:none!important;-webkit-user-drag:none!important;}
   .player-sheet{top:clamp(150px,22vh,220px)!important;width:min(318px,calc(100vw - 64px))!important;border-radius:16px!important;padding:0 16px!important;max-height:none!important;overflow:hidden!important;}
   .player-sheet .ps-action-row{min-height:54px!important;font-size:15px!important;gap:11px!important;padding:0!important;}.player-sheet .ps-hub-icon{width:28px!important;min-width:28px!important;height:28px!important;font-size:15px!important;}
+}
+
+/* ===== v12 iOS interaction cleanup: ONE native scroll/touch model ===== */
+@media (max-width:768px){
+  .player-info-page{
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:auto!important;
+  }
+  .player-info-shell,#playerInfoContent,.player-info-hero,.player-info-card,
+  .player-info-card *,.player-info-avatar,.player-info-meta,.player-info-mini,.player-info-club{
+    touch-action:auto!important;
+    pointer-events:auto!important;
+  }
+  .player-info-page img{
+    -webkit-user-drag:none!important;
+    user-select:none!important;
+    -webkit-user-select:none!important;
+  }
+  .player-info-back,.player-info-more{touch-action:manipulation!important;}
+  .pitch-card{touch-action:pan-y!important;-webkit-tap-highlight-color:transparent;}
+  .player-sheet,.player-sheet *{touch-action:manipulation;}
 }
 </style>
 </head>
@@ -2055,7 +2066,7 @@ body.player-info-open .player-sheet{z-index:1901}
         <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
         <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
       </div>
-      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v11.0.0 · AUTO-UPDATE ENABLED</div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v12.0.0 · AUTO-UPDATE ENABLED</div>
     </div>
   </div>
 
@@ -2682,17 +2693,27 @@ function renderPitchView(containerId, players, opts) {
 
   wrap.innerHTML = html;
   wrap.querySelectorAll('.pitch-card').forEach(card => {
-    let downX=0, downY=0, moved=false;
-    card.addEventListener('pointerdown',(e)=>{if(e.pointerType==='mouse'&&e.button!==0)return;downX=e.clientX;downY=e.clientY;moved=false;},{passive:true});
-    card.addEventListener('pointermove',(e)=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>10)moved=true;},{passive:true});
-    card.addEventListener('pointerup',()=>{
-      if(moved)return;
-      if(window.__fplPlayerTapLock&&Date.now()-window.__fplPlayerTapLock<320)return;
+    let touchStartX=0, touchStartY=0, touchMoved=false, lastTouchEnd=0;
+    card.addEventListener('touchstart',(e)=>{
+      const t=e.touches&&e.touches[0]; if(!t)return;
+      touchStartX=t.clientX; touchStartY=t.clientY; touchMoved=false;
+    },{passive:true});
+    card.addEventListener('touchmove',(e)=>{
+      const t=e.touches&&e.touches[0]; if(!t)return;
+      if(Math.hypot(t.clientX-touchStartX,t.clientY-touchStartY)>8) touchMoved=true;
+    },{passive:true});
+    card.addEventListener('touchend',()=>{ lastTouchEnd=Date.now(); },{passive:true});
+    card.addEventListener('touchcancel',()=>{ touchMoved=true; },{passive:true});
+    card.addEventListener('click',(e)=>{
+      // Native click is intentionally the ONLY event that opens a player. iOS cancels it after a real scroll.
+      // The movement guard also blocks borderline drags/momentum taps.
+      if(touchMoved){ touchMoved=false; e.preventDefault(); return; }
+      if(e.detail===0 && Date.now()-lastTouchEnd<450){ e.preventDefault(); return; }
+      if(window.__fplPlayerTapLock&&Date.now()-window.__fplPlayerTapLock<260){ e.preventDefault(); return; }
       window.__fplPlayerTapLock=Date.now();
       const idx=Number(card.dataset.pitchIdx),cid=card.dataset.pitchContainer,player=(pitchPlayersByContainer[cid]||[])[idx];
-      if(player)openPlayerSheet(player,card);
-    },{passive:true});
-    card.addEventListener('click',(e)=>e.preventDefault());
+      if(player) openPlayerSheet(player,card);
+    });
   });
 }
 
@@ -3941,7 +3962,7 @@ function renderFullPlayerInfo(p) {
     '</div></div>'+
     '<div class="player-info-card"><div class="player-info-section-head"><span>Form</span><span class="player-info-source">Form</span></div>'+recentHtml+'</div>'+
     '<div class="player-info-card"><div class="player-info-section-head"><span>Projected points</span><span class="player-info-source">Next GWs</span></div>'+projHtml+'</div>'+
-    '<div class="player-info-build">BUILD v11.0.0 · LIVE VISUAL FALLBACKS</div>';
+    '<div class="player-info-build">BUILD v12.0.0 · LIVE VISUAL FALLBACKS</div>';
 }
 
 function openFullPlayerInfo(p) {
@@ -3966,6 +3987,8 @@ function openFullPlayerInfo(p) {
 }
 
 function closeFullPlayerInfo(fromPopState=false) {
+  window.__fplMenuOpenedAt=0;
+  window.__fplPlayerTapLock=0;
   const page=document.getElementById('playerInfoPage');
   if(!page || !page.classList.contains('open')) return;
   page.classList.remove('open'); page.setAttribute('aria-hidden','true');
@@ -4040,7 +4063,10 @@ function renderSheetView() {
       <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
     `;
     body.querySelectorAll('[data-ps-action]').forEach(row => {
-      row.addEventListener('click', () => handleSheetAction(row.dataset.psAction, p));
+      row.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        handleSheetAction(row.dataset.psAction, p);
+      });
     });
     document.getElementById('playerSheetCloseInner').addEventListener('click', closePlayerSheet);
   } else if (top.view === 'substitute') {
@@ -4072,7 +4098,8 @@ function renderSheetView() {
       <button class="ps-close-btn" id="playerSheetCloseInner">Close</button>
     `;
     body.querySelectorAll('[data-sub-target]').forEach(row => {
-      row.addEventListener('click', async () => {
+      row.addEventListener('click', async (e) => {
+        e.preventDefault(); e.stopPropagation();
         const targetId = Number(row.dataset.subTarget);
         const isPStarter = plannedLineup.starters.includes(p.id);
         closePlayerSheet();
@@ -4211,6 +4238,9 @@ async function handleSheetAction(action, p) {
 function openPlayerSheet(p, anchorEl) { openPlayerActionMenu(p, anchorEl); }
 
 function closePlayerSheet() {
+  window.__fplMenuOpenedAt=0;
+  window.__fplPlayerTapLock=0;
+  document.querySelectorAll('.pitch-card.ps-selected-player').forEach(el=>el.classList.remove('ps-selected-player'));
   sheetStack = [];
   document.getElementById('playerSheet').classList.remove('open');
   document.getElementById('playerSheetBackdrop').classList.remove('open');
@@ -10053,9 +10083,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 updateShellContext(activeSection, null);
 updateSubNavVisibility();
 
-document.getElementById('playerSheetBackdrop').addEventListener('click', closePlayerSheet);
+document.getElementById('playerSheetBackdrop').addEventListener('click', (e)=>{e.preventDefault();e.stopPropagation();closePlayerSheet();});
 document.getElementById('playerInfoBack')?.addEventListener('click', () => closeFullPlayerInfo(false));
 document.getElementById('playerInfoMore')?.addEventListener('click', () => { if(currentPlayerInfo) openPlayerActionMenu(currentPlayerInfo, null); });
+window.addEventListener('scroll',()=>{ window.__fplPlayerTapLock=0; },{passive:true});
 window.addEventListener('popstate', () => {
   const page=document.getElementById('playerInfoPage');
   if(page?.classList.contains('open')) closeFullPlayerInfo(true);
