@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build-version="v10.0.0">
+<html lang="en" data-build-version="v11.0.0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="fpl-build-version" content="v10.0.0">
+<meta name="fpl-build-version" content="v11.0.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FPL Tracker">
@@ -15,7 +15,7 @@
 <title>FPL Tracker</title>
 <script>
 /* Build watchdog: once this build is installed, future GitHub Pages updates self-refresh without re-adding the Home Screen app. */
-window.FPL_TRACKER_BUILD='v10.0.0';
+window.FPL_TRACKER_BUILD='v11.0.0';
 (async function fplFreshBuildWatchdog(){
   if(!/^https?:$/.test(location.protocol)) return;
   try{
@@ -1854,6 +1854,40 @@ body.player-info-open .player-sheet{z-index:1901}
  .pitch-name{font-size:12.5px!important}.pitch-extra{font-size:12px!important}
 }
 
+
+/* ===== v11 player-info density + reliable touch + tap guard ===== */
+@media (max-width:768px){
+  .player-info-page{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;touch-action:pan-y!important;}
+  .player-info-shell{padding:0 16px calc(24px + env(safe-area-inset-bottom,0px))!important;min-height:auto!important;}
+  .player-info-topbar{grid-template-columns:46px 1fr 46px!important;gap:12px!important;min-height:62px!important;margin:0 0 12px!important;}
+  .player-info-back,.player-info-more{width:46px!important;height:46px!important;}
+  .player-info-back::before{font-size:46px!important;}
+  .player-info-more{gap:4px!important;}.player-info-more span{width:5px!important;height:5px!important;}
+  .player-info-title{font-size:28px!important;line-height:1.05!important;}
+  .player-info-hero{grid-template-columns:35% 1fr!important;gap:12px!important;margin-bottom:14px!important;}
+  .player-info-avatar{min-height:158px!important;border-radius:0 0 26px 26px!important;}
+  .player-info-player-photo{min-height:158px!important;}
+  .player-info-club{min-height:66px!important;padding:10px 14px!important;font-size:17px!important;gap:10px!important;border-radius:0 0 26px 26px!important;}
+  .player-info-team-badge{width:36px!important;height:36px!important;}
+  .player-info-meta{gap:10px!important;}.player-info-meta-grid{gap:10px!important;}
+  .player-info-mini{padding:10px 14px!important;border-radius:22px!important;}
+  .player-info-mini-label{font-size:14px!important;margin-bottom:4px!important;}.player-info-mini-value{font-size:17px!important;}
+  .player-info-card{border-radius:28px!important;padding:20px!important;margin-bottom:14px!important;}
+  .player-info-statgrid{gap:17px 14px!important;}.player-info-stat-label{font-size:14px!important;margin-bottom:5px!important;}.player-info-stat-value{font-size:19px!important;}
+  .player-info-section-head{font-size:20px!important;margin-bottom:13px!important;}.player-info-source{font-size:11px!important;}
+  .player-info-form-row{grid-template-columns:46px 1fr auto!important;gap:8px!important;margin-bottom:8px!important;}.player-info-gw{font-size:15px!important;}
+  .player-info-match{min-height:46px!important;border-radius:15px!important;padding:0 12px!important;font-size:15px!important;gap:7px!important;}.player-info-points{font-size:17px!important;}
+  .player-info-opp-badge{width:22px!important;height:22px!important;}
+  .player-info-proj-row{grid-template-columns:46px 1fr!important;gap:8px!important;margin-bottom:8px!important;}
+  .player-info-proj-pill{min-height:50px!important;border-radius:15px!important;padding:0 14px!important;font-size:15px!important;}.player-info-proj-pill .xp{font-size:17px!important;}
+  .player-info-proj-pill.xp-elite{background:#245b34!important;}.player-info-proj-pill.xp-good{background:#438556!important;}.player-info-proj-pill.xp-mid{background:#a85d1f!important;}.player-info-proj-pill.xp-low{background:#9f4038!important;}
+  .player-info-empty{font-size:14px!important;padding:4px 0!important;}.player-info-build{display:none!important;}
+  #playerInfoContent,#playerInfoContent *{pointer-events:none!important;touch-action:pan-y!important;-webkit-user-drag:none!important;}
+  .player-info-topbar,.player-info-topbar *{pointer-events:auto!important;}
+  .player-info-page img{user-select:none!important;-webkit-user-select:none!important;-webkit-user-drag:none!important;}
+  .player-sheet{top:clamp(150px,22vh,220px)!important;width:min(318px,calc(100vw - 64px))!important;border-radius:16px!important;padding:0 16px!important;max-height:none!important;overflow:hidden!important;}
+  .player-sheet .ps-action-row{min-height:54px!important;font-size:15px!important;gap:11px!important;padding:0!important;}.player-sheet .ps-hub-icon{width:28px!important;min-width:28px!important;height:28px!important;font-size:15px!important;}
+}
 </style>
 </head>
 <body>
@@ -2020,7 +2054,7 @@ body.player-info-open .player-sheet{z-index:1901}
         <div><div class="system-health-title">System Health</div><div class="system-health-sub">Phase 4 reliability checks: shared rules, squad integrity, planner state, duplicate DOM ids and AI-export readiness.</div></div>
         <div class="system-health-actions"><span class="health-badge" id="systemHealthBadge">NOT CHECKED</span><button class="sync-btn" id="runDiagnosticsBtn">Run checks</button></div>
       </div>
-      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v10.0.0 · AUTO-UPDATE ENABLED</div>
+      <div class="system-health-list" id="systemHealthList"><div class="health-row warn">Run diagnostics after sync.</div></div><div class="player-info-build">APP BUILD v11.0.0 · AUTO-UPDATE ENABLED</div>
     </div>
   </div>
 
@@ -2647,12 +2681,17 @@ function renderPitchView(containerId, players, opts) {
 
   wrap.innerHTML = html;
   wrap.querySelectorAll('.pitch-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const idx = Number(card.dataset.pitchIdx);
-      const cid = card.dataset.pitchContainer;
-      const player = (pitchPlayersByContainer[cid] || [])[idx];
-      if (player) openPlayerSheet(player, card);
-    });
+    let downX=0, downY=0, moved=false;
+    card.addEventListener('pointerdown',(e)=>{if(e.pointerType==='mouse'&&e.button!==0)return;downX=e.clientX;downY=e.clientY;moved=false;},{passive:true});
+    card.addEventListener('pointermove',(e)=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>10)moved=true;},{passive:true});
+    card.addEventListener('pointerup',()=>{
+      if(moved)return;
+      if(window.__fplPlayerTapLock&&Date.now()-window.__fplPlayerTapLock<320)return;
+      window.__fplPlayerTapLock=Date.now();
+      const idx=Number(card.dataset.pitchIdx),cid=card.dataset.pitchContainer,player=(pitchPlayersByContainer[cid]||[])[idx];
+      if(player)openPlayerSheet(player,card);
+    },{passive:true});
+    card.addEventListener('click',(e)=>e.preventDefault());
   });
 }
 
@@ -3710,13 +3749,17 @@ async function loadOfficialElementSummary(playerId){
   const id=Number(playerId);
   if(!id) return null;
   if(officialElementSummaryCache.has(id)) return officialElementSummaryCache.get(id);
-  try{
-    const res=await fetch('https://fantasy.premierleague.com/api/element-summary/'+id+'/?_='+(Date.now()),{cache:'no-store'});
-    if(!res.ok) return null;
-    const data=await res.json();
-    officialElementSummaryCache.set(id,data);
-    return data;
-  }catch(e){ return null; }
+  const target='https://fantasy.premierleague.com/api/element-summary/'+id+'/';
+  const urls=[target+'?_='+(Date.now()),'https://api.allorigins.win/raw?url='+encodeURIComponent(target)+'&_='+(Date.now()),'https://corsproxy.io/?url='+encodeURIComponent(target)];
+  for(const url of urls){
+    try{
+      const res=await fetch(url,{cache:'no-store'});
+      if(!res.ok) continue;
+      const data=await res.json();
+      if(data && Array.isArray(data.history)){officialElementSummaryCache.set(id,data);return data;}
+    }catch(e){}
+  }
+  return null;
 }
 
 function playerVisualAsset(full){
@@ -3833,7 +3876,7 @@ function renderFullPlayerInfo(p) {
     const venue=r.venue ? ' ('+escapeHtml(r.venue)+')' : '';
     const score=r.score ? '<strong>'+escapeHtml(r.score)+'</strong>' : '';
     return '<div class="player-info-form-row"><div class="player-info-gw">GW'+r.gw+'</div><div class="player-info-match"><div class="player-info-match-main">'+(badge?'<img class="player-info-opp-badge" src="'+badge+'" alt="" onerror="this.style.display=\'none\'">':'')+'<span class="player-info-match-text">'+label+venue+'</span>'+score+'</div></div><div class="player-info-points">'+r.points+'pts</div></div>';
-  }).join('') : '<div class="player-info-empty">Match-by-match history is loading from the official FPL player endpoint.</div>';
+  }).join('') : '<div class="player-info-empty">Previous Gameweek history is temporarily unavailable. The tracker will retry the official FPL history feed automatically.</div>';
   const projHtml = projections.length ? projections.map(r=>{
     const xpNum=(r.xp != null && Number.isFinite(Number(r.xp)))?Number(r.xp):null;
     const cls=xpNum!=null?(xpNum>=5?'xp-elite':xpNum>=4?'xp-good':xpNum>=3?'xp-mid':'xp-low'):(r.difficulty<=2?'xp-good':r.difficulty>=4?'xp-low':'xp-mid');
@@ -3866,7 +3909,7 @@ function renderFullPlayerInfo(p) {
     '</div></div>'+
     '<div class="player-info-card"><div class="player-info-section-head"><span>Form</span><span class="player-info-source">Form</span></div>'+recentHtml+'</div>'+
     '<div class="player-info-card"><div class="player-info-section-head"><span>Projected points</span><span class="player-info-source">Next GWs</span></div>'+projHtml+'</div>'+
-    '<div class="player-info-build">BUILD v10.0.0 · LIVE VISUAL FALLBACKS</div>';
+    '<div class="player-info-build">BUILD v11.0.0 · LIVE VISUAL FALLBACKS</div>';
 }
 
 function openFullPlayerInfo(p) {
@@ -3904,6 +3947,7 @@ function closeFullPlayerInfo(fromPopState=false) {
 }
 
 function openPlayerActionMenu(p, anchorEl) {
+  window.__fplMenuOpenedAt=Date.now();
   document.querySelectorAll('.pitch-card.ps-selected-player').forEach(el => el.classList.remove('ps-selected-player'));
   if (anchorEl) anchorEl.classList.add('ps-selected-player');
   sheetStack = [{ view: 'menu', player: p }];
@@ -4073,6 +4117,7 @@ function sheetBack() {
 }
 
 async function handleSheetAction(action, p) {
+  if(window.__fplMenuOpenedAt&&Date.now()-window.__fplMenuOpenedAt<280)return;
   if (action === 'info') {
     openFullPlayerInfo(p);
     return;
